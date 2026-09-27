@@ -16,19 +16,19 @@ import {
   scoreRound,
   setupRound,
 } from './logic'
-import { MAX_PLAYERS, MAX_VOTES, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
+import { MAX_PLAYERS, MAX_VOTES, type GameId, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
 
 // 'missions' is from the previous version, kept so a room an old phone moved there can recover.
 const SECRET_PHASES: string[] = ['reveal', 'guess', 'missions', 'score', 'over']
 
 export const roomPath = (code: string) => `rooms/${code}`
 
-export async function createRoom(be: Backend): Promise<string> {
+export async function createRoom(be: Backend, game: GameId = 'uljez'): Promise<string> {
   for (let i = 0; i < 20; i++) {
     const code = makeRoomCode(Math.random)
     const taken = await be.get(`${roomPath(code)}/pub/hostUid`)
     if (taken) continue
-    const pub: Pub = { hostUid: be.uid, createdAt: Date.now(), mode: 'normal', phase: 'lobby', round: 0 }
+    const pub: Pub = { hostUid: be.uid, game, createdAt: Date.now(), mode: 'normal', phase: 'lobby', round: 0 }
     await be.set(`${roomPath(code)}/pub`, pub)
     return code
   }

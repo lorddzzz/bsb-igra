@@ -1,3 +1,5 @@
+import type { BlefState } from '../blef/types'
+
 export type Phase =
   | 'lobby'
   | 'category'
@@ -7,6 +9,13 @@ export type Phase =
   | 'guess'
   | 'score'
   | 'over'
+  // Blef
+  | 'write'
+  | 'pick'
+  | 'truth'
+
+/** Which game a room plays. Rooms from before the game picker have none and play Uljez. */
+export type GameId = 'uljez' | 'blef'
 
 export type Mode = 'quick' | 'normal' | 'endless'
 
@@ -57,6 +66,7 @@ export interface RoundResult {
 /** Everything every player may see. Lives at rooms/{code}/pub. */
 export interface Pub {
   hostUid: string
+  game?: GameId
   createdAt: number
   /** Random per game; seeds the category choices. Missing in rooms from older versions. */
   seed?: number
@@ -79,6 +89,8 @@ export interface Pub {
   usedWords?: string[]
   /** How many rounds in a row each player has been an impostor. */
   impostorStreak?: Record<string, number>
+  /** Blef's own state; only in Blef rooms. */
+  blef?: BlefState
 }
 
 /** One player's private card for the round. Lives at rooms/{code}/tickets/{uid}. */

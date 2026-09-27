@@ -1016,3 +1016,142 @@ main {
   align-items: center;
   gap: 6px;
 }
+
+/* Game picker */
+.game-picker {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.game-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 16px 10px;
+  border-radius: 18px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  text-align: center;
+}
+.game-card b {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: 1px;
+}
+.game-card small {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+.game-card .game-icon {
+  font-size: 30px;
+}
+.game-card.on {
+  border-color: var(--ice-strong);
+  background: rgba(95, 208, 255, 0.12);
+  box-shadow: 0 0 18px rgba(95, 208, 255, 0.35);
+}
+
+/* Blef */
+.double {
+  color: var(--pink);
+}
+.question p {
+  margin: 0;
+  font-size: 21px;
+  line-height: 1.45;
+  font-weight: 700;
+}
+.blank {
+  color: var(--ice);
+  letter-spacing: 2px;
+}
+.blank.filled {
+  color: var(--good);
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+.my-lie,
+.answer-text,
+.vote.answer span:first-child {
+  text-transform: uppercase;
+  font-weight: 800;
+}
+.my-lie {
+  font-family: var(--display);
+  font-size: 26px;
+}
+.vote.answer {
+  text-align: left;
+  gap: 10px;
+}
+.vote.own {
+  opacity: 0.45;
+  border-style: dashed;
+}
+.blef-steps {
+  margin: 0;
+  padding-left: 20px;
+  line-height: 1.5;
+  color: var(--muted);
+}
+.answers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.answer-card,
+.after-reveal {
+  animation: pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1) both;
+}
+.after-reveal {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  animation-name: fadein;
+  animation-timing-function: ease-out;
+}
+@keyframes fadein {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+.answer-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+}
+.answer-card .answer-text {
+  font-size: 19px;
+}
+.answer-card.lie {
+  border-color: rgba(255, 95, 210, 0.5);
+}
+.answer-card.truth {
+  border-color: var(--good);
+  box-shadow: 0 0 36px rgba(125, 255, 176, 0.35);
+}
+.answer-card.truth .answer-text {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 26px;
+  color: var(--good);
+}
+.truth-tag {
+  color: var(--good);
+}
+.liars,
+.answer-pickers {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-size: 14px;
+}

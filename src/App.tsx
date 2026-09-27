@@ -1,14 +1,22 @@
 import { Component, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { connect, useLocalBackend, type Backend } from './backend'
 import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './game/room'
-import { BADGES } from './game/types'
+import { BADGES, type GameId } from './game/types'
+import { Blef } from './screens/Blef'
 import { Game } from './screens/Game'
-import { Button, Modal, Rules, Waiting } from './ui/components'
+import { BlefRules, Button, Modal, Rules, Waiting } from './ui/components'
 import * as sound from './ui/sound'
 import { keepAwake } from './ui/wakeLock'
 
 const ROOM_KEY = 'uljez-room'
 const NAME_KEY = 'uljez-name'
+const GAME_KEY = 'bsb-game'
+
+const GAMES: { id: GameId; name: string; icon: string; tagline: string; players: string }[] = [
+  { id: 'uljez', name: 'ULJEZ', icon: '🕵️', tagline: 'Svi znaju tajnu reč. Osim jednog.', players: '3 do 5 igrača' },
+  { id: 'blef', name: 'BLEF', icon: '🤥', tagline: 'Izmisli laž, pronađi istinu.', players: '3 do 5, najbolje 3 ili 4' },
+]
+const gameName = (id: GameId) => GAMES.find((g) => g.id === id)?.name ?? 'ULJEZ'
 
 function saved(key: string): string {
   try {
@@ -38,6 +46,10 @@ export default function App() {
   const [code, setCode] = useState<string>(() => roomFromUrl() || saved(ROOM_KEY))
   const [rules, setRules] = useState(false)
   const [muted, setMuted] = useState(sound.isMuted())
+  // The game shown in the header and rules: the room's once inside one, else the one picked on the home screen.
+  const [picked, setPicked] = useState<GameId>(() => (saved(GAME_KEY) === 'blef' ? 'blef' : 'uljez'))
+  const [roomGame, setRoomGame] = useState<GameId | null>(null)
+  const game = (code && roomGame) || picked
 
   useEffect(() => {
     connect()
@@ -64,6 +76,7 @@ export default function App() {
   const leave = () => {
     save(ROOM_KEY, null)
     setCode('')
+    setRoomGame(null)
   }
 
   return (
@@ -74,7 +87,7 @@ export default function App() {
         <div className="stars" />
       </div>
       <header className="top">
-        <span className="logo chrome">ULJEZ</span>
+        <span className="logo chrome">{gameName(game)}</span>
         {code && <span className="code-chip">{code}</span>}
         <span className="spacer" />
         <button
@@ -108,9 +121,17 @@ export default function App() {
         ) : !be ? (
           <Waiting>Povezivanje</Waiting>
         ) : code ? (
-          <Room be={be} code={code} onLeave={leave} />
+          <Room be={be} code={code} onLeave={leave} onGame={setRoomGame} />
         ) : (
-          <Home be={be} onEnter={enter} />
+          <Home
+            be={be}
+            game={picked}
+            onPick={(g) => {
+              save(GAME_KEY, g)
+              setPicked(g)
+            }}
+            onEnter={enter}
+          />
         )}
         </Crashed>
       </main>
@@ -118,7 +139,7 @@ export default function App() {
       {useLocalBackend() && <div className="local-note">Probni režim (bez interneta)</div>}
       {rules && (
         <Modal title="Kako se igra" onClose={() => setRules(false)}>
-          <Rules />
+          {game === 'blef' ? <BlefRules /> : <Rules />}
         </Modal>
       )}
     </div>
@@ -146,21 +167,47 @@ class Crashed extends Component<{ children: ReactNode }, { error: string }> {
   }
 }
 
-function Home({ be, onEnter }: { be: Backend; onEnter: (code: string) => void }) {
+function Home({
+  be,
+  game,
+  onPick,
+  onEnter,
+}: {
+  be: Backend
+  game: GameId
+  onPick: (game: GameId) => void
+  onEnter: (code: string) => void
+}) {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
+  const current = GAMES.find((g) => g.id === game) ?? GAMES[0]
 
   return (
     <section className="screen home">
       <div className="hero">
         <div className="hero-sub">BACKSTREET EDITION · 2026</div>
-        <h1 className="hero-title chrome">ULJEZ</h1>
-        <p className="muted">Svi znaju tajnu reč. Osim jednog.</p>
+        <h1 className="hero-title chrome">{current.name}</h1>
+        <p className="muted">{current.tagline}</p>
+      </div>
+      <div className="game-picker" role="radiogroup" aria-label="Izaberi igru">
+        {GAMES.map((g) => (
+          <button
+            key={g.id}
+            role="radio"
+            aria-checked={g.id === game}
+            className={`game-card${g.id === game ? ' on' : ''}`}
+            onClick={() => onPick(g.id)}
+          >
+            <span className="game-icon">{g.icon}</span>
+            <b>{g.name}</b>
+            <small>{g.players}</small>
+          </button>
+        ))}
       </div>
       <Button
         onClick={async () => {
           try {
-            onEnter(await createRoom(be))
+            onEnter(await createRoom(be, game))
           } catch (e) {
             setError(String((e as Error).message))
           }
@@ -204,8 +251,20 @@ const JOIN_ERRORS: Record<JoinError, string> = {
   started: 'Igra je već počela bez tebe. Neka domaćin pokrene novu igru.',
 }
 
-function Room({ be, code, onLeave }: { be: Backend; code: string; onLeave: () => void }) {
+function Room({
+  be,
+  code,
+  onLeave,
+  onGame,
+}: {
+  be: Backend
+  code: string
+  onLeave: () => void
+  onGame: (game: GameId) => void
+}) {
   const view = useRoom(be, code)
+  const game = view.pub?.game ?? 'uljez'
+  useEffect(() => onGame(game), [game, onGame])
   if (view.loading) return <Waiting>Učitavanje sobe</Waiting>
   if (!view.pub)
     return (
@@ -215,6 +274,7 @@ function Room({ be, code, onLeave }: { be: Backend; code: string; onLeave: () =>
       </div>
     )
   if (!view.pub.players?.[be.uid]) return <Join be={be} code={code} view={view} onLeave={onLeave} />
+  if (game === 'blef') return <Blef be={be} code={code} view={view} />
   return <Game be={be} code={code} view={view} />
 }
 
