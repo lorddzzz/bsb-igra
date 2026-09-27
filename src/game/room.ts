@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Backend } from '../backend'
 import {
   allGuessed,
+  normalizeSecret,
   allVoted,
   applyRound,
   caughtImpostors,
@@ -15,7 +16,8 @@ import {
 } from './logic'
 import { MAX_PLAYERS, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
 
-const SECRET_PHASES: Phase[] = ['reveal', 'guess', 'score', 'over']
+// 'missions' is from the previous version, kept so a room an old phone moved there can recover.
+const SECRET_PHASES: string[] = ['reveal', 'guess', 'missions', 'score', 'over']
 
 export const roomPath = (code: string) => `rooms/${code}`
 
@@ -105,7 +107,7 @@ export function useRoom(be: Backend, code: string): RoomView {
     const start = (attempt: number) => {
       stop = be.listen(
         `${roomPath(code)}/secret`,
-        (v) => setSecret(v as Secret | null),
+        (v) => setSecret(normalizeSecret(v)),
         () => {
           if (attempt < 5) retry = setTimeout(() => start(attempt + 1), 400 * (attempt + 1))
         },
@@ -187,6 +189,15 @@ export function useActions(be: Backend, code: string, view: RoomView) {
   useEffect(() => {
     if (pub?.phase === 'guess' && roundSecret && allGuessed(pub, roundSecret)) void actions.finishGuessing()
   }, [pub, roundSecret, actions])
+  // A phone still on the old version may move the room into the removed missions screen; score the round instead.
+  useEffect(() => {
+    if ((pub?.phase as string) === 'missions' && roundSecret)
+      void be.transaction<Pub>(`${roomPath(code)}/pub`, (p) =>
+        p && (p.phase as string) === 'missions' && p.round === roundSecret.round
+          ? applyRound(p, scoreRound(p, roundSecret))
+          : undefined,
+      )
+  }, [be, code, pub, roundSecret])
 
   return actions
 }

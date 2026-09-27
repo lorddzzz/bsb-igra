@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { Backend } from '../backend'
 import { getCategory } from '../data/words'
 import {
+  asList,
   catchThreshold,
   categoryChoices,
   caughtImpostors,
@@ -46,6 +47,9 @@ export function Game({ be, code, view }: Props) {
       return <Score {...common} />
     case 'over':
       return <GameOver {...common} />
+    default:
+      // e.g. a phone on an older version moved the room to a screen this version no longer has
+      return <Waiting>Učitavanje</Waiting>
   }
 }
 
@@ -391,7 +395,7 @@ function Score({ pub, me, isHost, actions }: ScreenProps) {
               return (
                 <li key={uid}>
                   <PlayerTag player={pub.players?.[uid]} you={uid === me} />
-                  <span className="reasons">{g?.reasons?.join(', ') || '—'}</span>
+                  <span className="reasons">{asList<string>(g?.reasons).join(', ') || '—'}</span>
                   <b className={g?.points ? 'plus' : 'zero'}>+{g?.points ?? 0}</b>
                 </li>
               )
@@ -446,10 +450,10 @@ function GameOver({ pub, me, isHost, actions }: ScreenProps) {
 /** The round's word, plus how the caught impostors' guesses went. */
 function RoundWord({ pub }: { pub: Pub }) {
   const last = pub.last!
-  const right = last.guessedRight ?? []
+  const right = asList<string>(last.guessedRight)
   return (
     <div className="card center">
-      {(last.caught ?? []).map((uid) => (
+      {asList<string>(last.caught).map((uid) => (
         <p key={uid} className="big-line">
           {right.includes(uid) ? `${nameOf(pub, uid)} je pogodio reč! +2 🔥` : `${nameOf(pub, uid)} nije pogodio reč.`}
         </p>

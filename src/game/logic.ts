@@ -3,6 +3,25 @@ import { MODES, type Pub, type RoundResult, type Secret, type Ticket } from './t
 
 export type Rng = () => number
 
+/**
+ * Reads a list that came from the database. Firebase drops empty lists, may hand a list back as an
+ * object with numeric keys, and a phone still on an older version may have written another shape.
+ */
+export function asList<T>(value: unknown): T[] {
+  if (Array.isArray(value)) return value.filter((v) => v != null) as T[]
+  if (value && typeof value === 'object') return Object.values(value).filter((v) => v != null) as T[]
+  return []
+}
+
+/** Fixes up the round's answers as read from the database, including ones an older version wrote. */
+export function normalizeSecret(raw: unknown): Secret | null {
+  if (!raw || typeof raw !== 'object') return null
+  const s = raw as Secret & { impostor?: string }
+  const impostors = asList<string>(s.impostors)
+  if (!impostors.length && typeof s.impostor === 'string') impostors.push(s.impostor)
+  return { ...s, impostors, options: asList<string>(s.options) }
+}
+
 export function pickOne<T>(items: T[], rng: Rng): T {
   return items[Math.floor(rng() * items.length)]
 }
@@ -74,7 +93,7 @@ export interface RoundSetup {
 export function setupRound(pub: Pub, categoryId: string, rng: Rng): RoundSetup {
   const order = playerOrder(pub)
   const category = getCategory(categoryId)
-  const used = new Set(pub.usedWords ?? [])
+  const used = new Set(asList<string>(pub.usedWords))
   const fresh = category.words.filter((w) => !used.has(w))
   const word = pickOne(fresh.length ? fresh : category.words, rng)
   const impostors = shuffle(order, rng).slice(0, impostorCount(order.length, rng))
@@ -178,7 +197,7 @@ export function applyRound(pub: Pub, result: RoundResult): Pub {
     ...pub,
     scores,
     last: result,
-    usedWords: [...(pub.usedWords ?? []), result.word],
+    usedWords: [...asList<string>(pub.usedWords), result.word],
     phase: over ? 'over' : 'score',
   }
 }
