@@ -73,6 +73,8 @@ export interface Pub {
   scores?: Record<string, number>
   last?: RoundResult
   usedWords?: string[]
+  /** How many rounds in a row each player has been an impostor. */
+  impostorStreak?: Record<string, number>
 }
 
 /** One player's private card for the round. Lives at rooms/{code}/tickets/{uid}. */

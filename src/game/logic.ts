@@ -83,6 +83,28 @@ export function seededRng(seed: number): Rng {
   }
 }
 
+/** Draw weight by how many rounds in a row a player has just been an impostor. */
+export const STREAK_WEIGHTS = [1, 0.7, 0.1]
+/** Points for an impostor who was not caught. */
+export const ESCAPE_BONUS = 2
+
+/**
+ * Picks the impostors at random, but someone who was an impostor the last round is a bit less likely,
+ * and the last two rounds much less likely, so three in a row is rare yet never impossible.
+ */
+export function drawImpostors(order: string[], count: number, streak: Record<string, number>, rng: Rng): string[] {
+  const pool = [...order]
+  const picked: string[] = []
+  while (picked.length < count && pool.length) {
+    const weights = pool.map((uid) => STREAK_WEIGHTS[Math.min(streak[uid] ?? 0, STREAK_WEIGHTS.length - 1)])
+    let r = rng() * weights.reduce((a, b) => a + b, 0)
+    let i = 0
+    while (i < pool.length - 1 && r >= weights[i]) r -= weights[i++]
+    picked.push(pool.splice(i, 1)[0])
+  }
+  return picked
+}
+
 export interface RoundSetup {
   tickets: Record<string, Ticket>
   secret: Secret
@@ -96,7 +118,7 @@ export function setupRound(pub: Pub, categoryId: string, rng: Rng): RoundSetup {
   const used = new Set(asList<string>(pub.usedWords))
   const fresh = category.words.filter((w) => !used.has(w))
   const word = pickOne(fresh.length ? fresh : category.words, rng)
-  const impostors = shuffle(order, rng).slice(0, impostorCount(order.length, rng))
+  const impostors = drawImpostors(order, impostorCount(order.length, rng), pub.impostorStreak ?? {}, rng)
   const starter = pickOne(order, rng)
   const tickets: Record<string, Ticket> = {}
   for (const uid of order) {
@@ -155,6 +177,7 @@ export function allGuessed(pub: Pub, secret: Secret): boolean {
  * Scoring:
  *  - each of your (up to 2) votes that lands on an impostor: +1 for you
  *  - each vote for someone who knew the word: +1 for every impostor
+ *  - impostor who is not caught: +2
  *  - caught impostor who guesses the word: +2 for that impostor
  * Impostors' own votes score nothing.
  */
@@ -180,6 +203,7 @@ export function scoreRound(pub: Pub, secret: Secret): RoundResult {
   if (fooled) for (const imp of imps) give(imp, fooled, fooled === 1 ? 'Prevario 1 igrača' : `Prevario ${fooled} igrača`)
 
   const caught = caughtImpostors(pub, secret)
+  for (const imp of imps) if (!caught.includes(imp)) give(imp, ESCAPE_BONUS, 'Nije uhvaćen')
   const guessedRight = caught.filter((uid) => pub.guesses?.[uid] === secret.word)
   for (const uid of guessedRight) give(uid, 2, 'Pogodio reč')
 
@@ -200,9 +224,14 @@ export function applyRound(pub: Pub, result: RoundResult): Pub {
   for (const [uid, g] of Object.entries(result.gains)) scores[uid] = (scores[uid] ?? 0) + g.points
   const target = targetFor(pub)
   const over = target !== null && Object.values(scores).some((s) => s >= target)
+  const impostors = asList<string>(result.impostors)
+  const impostorStreak = Object.fromEntries(
+    playerOrder(pub).map((uid) => [uid, impostors.includes(uid) ? (pub.impostorStreak?.[uid] ?? 0) + 1 : 0]),
+  )
   return {
     ...pub,
     scores,
+    impostorStreak,
     last: result,
     usedWords: [...asList<string>(pub.usedWords), result.word],
     phase: over ? 'over' : 'score',
@@ -237,6 +266,7 @@ export function resetToLobby(pub: Pub): Pub {
     scores: undefined,
     last: undefined,
     usedWords: undefined,
+    impostorStreak: undefined,
   }
 }
 

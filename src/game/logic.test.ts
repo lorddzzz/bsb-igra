@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CATEGORIES } from '../data/words'
 import {
   allGuessed,
+  drawImpostors,
   allVoted,
   votesOf,
   asList,
@@ -81,7 +82,7 @@ describe('scoring', () => {
     const p = pub({ votes: { a: 'b', b: 'c', c: 'd' }, guesses: { d: 'Pica' } })
     expect(isCaught(p, 'd')).toBe(false)
     const r = scoreRound(p, secret)
-    expect(r.gains.d.points).toBe(2) // two fooled voters, no steal
+    expect(r.gains.d.points).toBe(4) // two fooled voters + escaped, no steal
     expect(r.guessedRight).toEqual([])
   })
 
@@ -90,8 +91,8 @@ describe('scoring', () => {
     const r = scoreRound(p, two)
     expect(r.gains.a.points).toBe(1)
     expect(r.gains.b.points).toBe(0)
-    expect(r.gains.c.points).toBe(1) // b fooled; impostor's own vote scores nothing
-    expect(r.gains.d.points).toBe(1)
+    expect(r.gains.c.points).toBe(3) // b fooled + escaped; impostor's own vote scores nothing
+    expect(r.gains.d.points).toBe(3)
     expect(r.caught).toEqual([])
   })
 
@@ -102,7 +103,7 @@ describe('scoring', () => {
     expect(r.gains.a.points).toBe(1)
     expect(r.gains.b.points).toBe(2)
     expect(r.gains.c.points).toBe(1) // a's miss on b
-    expect(r.gains.d.points).toBe(1)
+    expect(r.gains.d.points).toBe(3) // a's miss + escaped
     expect(r.caught).toEqual(['c'])
     expect(votesOf(p, 'a').sort()).toEqual(['b', 'c'])
   })
@@ -112,6 +113,23 @@ describe('scoring', () => {
     const r = scoreRound(p, secret)
     expect(r.gains.a.points).toBe(1)
     expect(r.gains.d.points).toBe(1)
+  })
+
+  it('makes a third impostor round in a row rare but possible', () => {
+    const rng = seeded(11)
+    const order = ['a', 'b', 'c', 'd']
+    let hits = 0
+    for (let i = 0; i < 5000; i++) if (drawImpostors(order, 1, { a: 2 }, rng)[0] === 'a') hits++
+    expect(hits / 5000).toBeGreaterThan(0.01)
+    expect(hits / 5000).toBeLessThan(0.06)
+    const two = drawImpostors(order, 2, {}, rng)
+    expect(new Set(two).size).toBe(2)
+  })
+
+  it('tracks impostor streaks across rounds', () => {
+    const p = pub({ impostorStreak: { a: 0, b: 0, c: 1, d: 1 }, votes: {} })
+    const after = applyRound(p, scoreRound(p, secret))
+    expect(after.impostorStreak).toEqual({ a: 0, b: 0, c: 0, d: 2 })
   })
 
   it('moves on only when everyone confirmed', () => {

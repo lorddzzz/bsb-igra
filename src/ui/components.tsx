@@ -201,7 +201,7 @@ export function Rules() {
           <b>+1</b> za svaki tvoj glas koji pogodi uljeza
         </li>
         <li>
-          <b>+1</b> svakom uljezu za svaki glas koji promaši
+          uljez: <b>+2</b> ako ga ne uhvate, plus <b>+1</b> za svaki promašen glas
         </li>
         <li>
           <b>+2</b> uljezu ako ga uhvate (većina glasa za njega), a on pogodi reč
