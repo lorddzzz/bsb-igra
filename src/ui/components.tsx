@@ -193,15 +193,15 @@ export function Rules() {
         <li>Neko bira kategoriju. Svi dobijaju istu tajnu reč, osim uljeza, koji zna samo kategoriju.</li>
         <li>Svake runde ima 1 ili 2 uljeza (2 samo kad vas je bar četvoro). Niko ne zna koliko.</li>
         <li>Idete u krug dva puta i svako kaže po jednu reč kao trag.</li>
-        <li>Svi glasaju na telefonu ko je uljez.</li>
+        <li>Svi glasaju na telefonu ko je uljez. Možeš da glasaš za jednu ili dve osobe.</li>
       </ol>
       <h3>Poeni</h3>
       <ul className="points">
         <li>
-          <b>+1</b> ako si glasao za uljeza (bilo kog)
+          <b>+1</b> za svaki tvoj glas koji pogodi uljeza
         </li>
         <li>
-          <b>+1</b> svakom uljezu za svaki pogrešan glas
+          <b>+1</b> svakom uljezu za svaki glas koji promaši
         </li>
         <li>
           <b>+2</b> uljezu ako ga uhvate (većina glasa za njega), a on pogodi reč

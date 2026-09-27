@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 import { CATEGORIES } from '../data/words'
 import {
   allGuessed,
+  allVoted,
+  votesOf,
   asList,
   normalizeSecret,
   applyRound,
@@ -91,6 +93,31 @@ describe('scoring', () => {
     expect(r.gains.c.points).toBe(1) // b fooled; impostor's own vote scores nothing
     expect(r.gains.d.points).toBe(1)
     expect(r.caught).toEqual([])
+  })
+
+  it('scores each of up to two votes', () => {
+    // a hedges on c and d, b hits both, c and d are the impostors
+    const p = pub({ votes: { a: { c: true, b: true }, b: { c: true, d: true }, c: { a: true }, d: { a: true } } })
+    const r = scoreRound(p, two)
+    expect(r.gains.a.points).toBe(1)
+    expect(r.gains.b.points).toBe(2)
+    expect(r.gains.c.points).toBe(1) // a's miss on b
+    expect(r.gains.d.points).toBe(1)
+    expect(r.caught).toEqual(['c'])
+    expect(votesOf(p, 'a').sort()).toEqual(['b', 'c'])
+  })
+
+  it('a hedge on one impostor still costs a point to the impostor', () => {
+    const p = pub({ votes: { a: { d: true, b: true }, b: { d: true }, c: { d: true } } })
+    const r = scoreRound(p, secret)
+    expect(r.gains.a.points).toBe(1)
+    expect(r.gains.d.points).toBe(1)
+  })
+
+  it('moves on only when everyone confirmed', () => {
+    const p = pub({ phase: 'voting', votes: { a: { b: true } }, locked: { a: true, b: true, c: true } })
+    expect(allVoted(p)).toBe(false)
+    expect(allVoted({ ...p, locked: { ...p.locked, d: true } })).toBe(true)
   })
 
   it('lets every caught impostor guess, and closes only when all have', () => {

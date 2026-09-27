@@ -11,9 +11,10 @@ import {
   standings,
   targetFor,
   votesAgainst,
+  votesOf,
 } from '../game/logic'
 import { useActions, type Actions, type RoomView } from '../game/room'
-import { MIN_PLAYERS, MODES, type Pub, type Secret } from '../game/types'
+import { MAX_VOTES, MIN_PLAYERS, MODES, type Pub, type Secret } from '../game/types'
 import { Badge, Button, Hint, nameOf, PlayerTag, Ticket, Waiting } from '../ui/components'
 import * as sound from '../ui/sound'
 
@@ -199,32 +200,42 @@ function Clues({ pub, me, isHost, actions, view }: ScreenProps) {
 
 function Voting({ pub, me, isHost, actions, view }: ScreenProps) {
   const order = playerOrder(pub)
-  const votes = pub.votes ?? {}
-  const myVote = votes[me]
-  const count = order.filter((uid) => votes[uid]).length
+  const mine = votesOf(pub, me)
+  const locked = pub.locked ?? {}
+  const count = order.filter((uid) => locked[uid]).length
+  const full = mine.length >= MAX_VOTES
   return (
     <section className="screen">
       <RoundTitle pub={pub} />
       <h1 className="title">Ko je uljez?</h1>
-      <Hint pub={pub}>Glasaju svi, i uljez, da ne bi upadao u oči. Možeš da promeniš glas dok svi ne glasaju.</Hint>
+      <Hint pub={pub}>
+        Glasaju svi, i uljez, da ne bi upadao u oči. Možeš da izabereš jednu ili dve osobe: svaki pogođen glas je +1,
+        ali svaki promašaj je poen za uljeza.
+      </Hint>
       <div className="vote-list">
         {order
           .filter((uid) => uid !== me)
           .map((uid) => (
             <button
               key={uid}
-              className={`vote${myVote === uid ? ' on' : ''}`}
+              className={`vote${mine.includes(uid) ? ' on' : ''}`}
+              disabled={Boolean(locked[me]) || (full && !mine.includes(uid))}
               onClick={() => actions.vote(uid)}
             >
               <PlayerTag player={pub.players?.[uid]} />
-              {myVote === uid && <span className="check">✓</span>}
+              {mine.includes(uid) && <span className="check">✓</span>}
             </button>
           ))}
       </div>
+      {!locked[me] && (
+        <Button disabled={!mine.length} onClick={actions.lockVote}>
+          {mine.length ? `Potvrdi glas (${mine.length} od ${MAX_VOTES}) 🗳️` : 'Izaberi 1 ili 2 osobe'}
+        </Button>
+      )}
       <div className="card center">
         <div className="voted-row">
           {order.map((uid) => (
-            <span key={uid} className={votes[uid] ? 'voted' : 'not-voted'}>
+            <span key={uid} className={locked[uid] ? 'voted' : 'not-voted'}>
               <Badge id={pub.players?.[uid]?.badge} size="sm" />
             </span>
           ))}
@@ -319,23 +330,26 @@ function Reveal({ pub, me, isHost, actions, view }: ScreenProps) {
 
 function VoteSummary({ pub, secret, me }: { pub: Pub; secret: Secret; me: string }) {
   const order = playerOrder(pub)
-  const votes = pub.votes ?? {}
   return (
     <div className="card">
       <h2>Glasovi</h2>
       <ul className="vote-summary">
-        {order.map((uid) =>
-          votes[uid] ? (
-            <li
-              key={uid}
-              className={!secret.impostors.includes(uid) && secret.impostors.includes(votes[uid]) ? 'right' : ''}
-            >
+        {order.map((uid) => {
+          const targets = votesOf(pub, uid)
+          if (!targets.length) return null
+          const knewWord = !secret.impostors.includes(uid)
+          return (
+            <li key={uid} className={knewWord && targets.some((t) => secret.impostors.includes(t)) ? 'right' : ''}>
               <PlayerTag player={pub.players?.[uid]} you={uid === me} />
               <span className="arrow">→</span>
-              <PlayerTag player={pub.players?.[votes[uid]]} />
+              <span className="vote-targets">
+                {targets.map((t) => (
+                  <PlayerTag key={t} player={pub.players?.[t]} />
+                ))}
+              </span>
             </li>
-          ) : null,
-        )}
+          )
+        })}
       </ul>
       <small className="muted">
         {secret.impostors.map((uid) => `${nameOf(pub, uid)}: ${votesAgainst(pub, uid)} od ${order.length - 1}`).join(', ')}{' '}

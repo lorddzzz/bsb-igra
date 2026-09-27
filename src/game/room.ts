@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Backend } from '../backend'
 import {
   allGuessed,
+  votesOf,
   normalizeSecret,
   allVoted,
   applyRound,
@@ -14,7 +15,7 @@ import {
   scoreRound,
   setupRound,
 } from './logic'
-import { MAX_PLAYERS, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
+import { MAX_PLAYERS, MAX_VOTES, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
 
 // 'missions' is from the previous version, kept so a room an old phone moved there can recover.
 const SECRET_PHASES: string[] = ['reveal', 'guess', 'missions', 'score', 'over']
@@ -158,7 +159,19 @@ export function useActions(be: Backend, code: string, view: RoomView) {
         await step('category', pub.round, (p) => ({ ...p, phase: 'clues', category: categoryId, starter: setup.starter }))
       },
       toVoting: () => isHost && pub && step('clues', pub.round, (p) => ({ ...p, phase: 'voting' })),
-      vote: (target: string) => pub?.phase === 'voting' && be.set(`${pubPath}/votes/${be.uid}`, target),
+      /** Adds or removes a suspect; at most MAX_VOTES, and not after confirming. */
+      vote: (target: string) => {
+        if (pub?.phase !== 'voting' || pub.locked?.[be.uid]) return
+        const mine = votesOf(pub, be.uid)
+        if (mine.includes(target)) {
+          if (typeof pub.votes?.[be.uid] === 'string') return be.set(`${pubPath}/votes/${be.uid}`, null)
+          return be.set(`${pubPath}/votes/${be.uid}/${target}`, null)
+        }
+        if (mine.length >= MAX_VOTES) return
+        return be.set(`${pubPath}/votes/${be.uid}/${target}`, true)
+      },
+      lockVote: () =>
+        pub?.phase === 'voting' && votesOf(pub, be.uid).length > 0 && be.set(`${pubPath}/locked/${be.uid}`, true),
       closeVoting: () => pub && step('voting', pub.round, (p) => ({ ...p, phase: 'reveal' })),
       afterReveal: () =>
         isHost &&

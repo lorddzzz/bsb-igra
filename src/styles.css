@@ -839,6 +839,14 @@ main {
 .arrow {
   color: var(--muted);
 }
+.vote-targets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+}
+.vote:disabled:not(.on) {
+  opacity: 0.4;
+}
 
 /* Scores */
 .gains,

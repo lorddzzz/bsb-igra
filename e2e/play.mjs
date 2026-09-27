@@ -96,6 +96,9 @@ for (let round = 1; round <= ROUNDS; round++) {
   // everyone votes for the next player in the list
   for (let i = 0; i < 4; i++) {
     await pages[i].locator('.vote').nth(round % 3 === 0 ? 1 : 0).click()
+    // every other round, hedge with a second vote
+    if (round % 2 === 0) await pages[i].locator('.vote').nth(2).click()
+    await pages[i].getByRole('button', { name: /Potvrdi glas/ }).click()
     if (i === 0 && round === 1) await shot(host, '08-voting')
   }
   await host.locator('.drumroll').waitFor()

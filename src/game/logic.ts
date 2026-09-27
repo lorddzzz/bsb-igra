@@ -121,12 +121,20 @@ export function setupRound(pub: Pub, categoryId: string, rng: Rng): RoundSetup {
 }
 
 export function allVoted(pub: Pub): boolean {
-  const votes = pub.votes ?? {}
-  return playerOrder(pub).every((uid) => votes[uid])
+  const locked = pub.locked ?? {}
+  return playerOrder(pub).every((uid) => locked[uid])
+}
+
+/** Who this player voted for. Also reads the single-vote shape the earlier version wrote. */
+export function votesOf(pub: Pub, voter: string): string[] {
+  const v = pub.votes?.[voter]
+  if (typeof v === 'string') return [v]
+  if (!v || typeof v !== 'object') return []
+  return Object.keys(v).filter((t) => v[t] && t !== voter)
 }
 
 export function votesAgainst(pub: Pub, target: string): number {
-  return Object.entries(pub.votes ?? {}).filter(([voter, t]) => voter !== target && t === target).length
+  return playerOrder(pub).filter((voter) => voter !== target && votesOf(pub, voter).includes(target)).length
 }
 
 export function isCaught(pub: Pub, impostor: string): boolean {
@@ -145,14 +153,13 @@ export function allGuessed(pub: Pub, secret: Secret): boolean {
 
 /**
  * Scoring:
- *  - you voted for an impostor: +1 for you
- *  - you voted for someone who knew the word: +1 for every impostor
+ *  - each of your (up to 2) votes that lands on an impostor: +1 for you
+ *  - each vote for someone who knew the word: +1 for every impostor
  *  - caught impostor who guesses the word: +2 for that impostor
  * Impostors' own votes score nothing.
  */
 export function scoreRound(pub: Pub, secret: Secret): RoundResult {
   const order = playerOrder(pub)
-  const votes = pub.votes ?? {}
   const gains: RoundResult['gains'] = {}
   for (const uid of order) gains[uid] = { points: 0, reasons: [] }
   const give = (uid: string, points: number, reason: string) => {
@@ -165,10 +172,10 @@ export function scoreRound(pub: Pub, secret: Secret): RoundResult {
   let fooled = 0
   for (const voter of order) {
     if (imps.includes(voter)) continue
-    const target = votes[voter]
-    if (!target) continue
-    if (imps.includes(target)) give(voter, 1, 'Pogodio uljeza')
-    else fooled++
+    const targets = votesOf(pub, voter)
+    const right = targets.filter((t) => imps.includes(t)).length
+    if (right) give(voter, right, right === 1 ? 'Pogodio uljeza' : 'Pogodio oba uljeza')
+    fooled += targets.length - right
   }
   if (fooled) for (const imp of imps) give(imp, fooled, fooled === 1 ? 'Prevario 1 igrača' : `Prevario ${fooled} igrača`)
 
@@ -217,6 +224,7 @@ export function nextRound(pub: Pub): Pub {
     category: undefined,
     starter: undefined,
     votes: undefined,
+    locked: undefined,
     guesses: undefined,
   }
 }

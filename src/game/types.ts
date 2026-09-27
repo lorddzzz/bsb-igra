@@ -31,6 +31,8 @@ export const BADGES: Badge[] = [
 ]
 
 export const MIN_PLAYERS = 3
+/** How many people each player may vote for, since a round can have two impostors. */
+export const MAX_VOTES = 2
 export const MAX_PLAYERS = BADGES.length
 
 export interface Player {
@@ -62,7 +64,10 @@ export interface Pub {
   players?: Record<string, Player>
   category?: string
   starter?: string
-  votes?: Record<string, string>
+  /** Each player's suspects (up to MAX_VOTES), as votes/{voter}/{target} = true. */
+  votes?: Record<string, Record<string, boolean> | string>
+  /** Players who confirmed their vote. */
+  locked?: Record<string, boolean>
   /** Word guesses by caught impostors, by uid. */
   guesses?: Record<string, string>
   scores?: Record<string, number>
