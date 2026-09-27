@@ -42,10 +42,10 @@ export function playerOrder(pub: Pub): string[] {
     .map(([uid]) => uid)
 }
 
-/** Whoever picks the category this round; rotates through players each round. */
+/** Whoever picks the category this round; starts with a random player, then rotates each round. */
 export function pickerFor(pub: Pub): string {
   const order = playerOrder(pub)
-  return order[(Math.max(pub.round, 1) - 1) % order.length]
+  return order[(Math.max(pub.round, 1) - 1 + (pub.pickerOffset ?? 0)) % order.length]
 }
 
 /** How many correct votes it takes to catch the impostor: 2 of 3 with four players. */
@@ -69,10 +69,24 @@ export function impostorCount(playerCount: number, rng: Rng): number {
 export const CATEGORY_CHOICES = 4
 
 export function categoryChoices(pub: Pub): Category[] {
-  const rng = seededRng(pub.createdAt + pub.round * 7919)
+  // Rooms from before per-game seeds fall back to the room's creation time.
+  const rng = seededRng(mixSeed(pub.seed ?? pub.createdAt, pub.round))
   const lastCategory = pub.last?.category
   const pool = CATEGORIES.filter((c) => c.id !== lastCategory)
   return shuffle(pool, rng).slice(0, CATEGORY_CHOICES)
+}
+
+/** A random seed for a new game, so replaying in the same room doesn't repeat the categories. */
+export function newGameSeed(rng: Rng): number {
+  return 1 + Math.floor(rng() * 2147483646)
+}
+
+/** Scrambles seed and round together so neighbouring seeds or rounds don't give similar draws. */
+export function mixSeed(seed: number, round: number): number {
+  let h = (Math.floor(seed) ^ Math.imul(round + 1, 0x9e3779b1)) >>> 0
+  h = Math.imul(h ^ (h >>> 16), 0x85ebca6b) >>> 0
+  h = Math.imul(h ^ (h >>> 13), 0xc2b2ae35) >>> 0
+  return (h ^ (h >>> 16)) >>> 0
 }
 
 export function seededRng(seed: number): Rng {

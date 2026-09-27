@@ -58,6 +58,10 @@ export interface RoundResult {
 export interface Pub {
   hostUid: string
   createdAt: number
+  /** Random per game; seeds the category choices. Missing in rooms from older versions. */
+  seed?: number
+  /** Random per game; who of the players (in join order) picks the category first. */
+  pickerOffset?: number
   mode: Mode
   phase: Phase
   round: number

@@ -9,6 +9,7 @@ import {
   caughtImpostors,
   makeRoomCode,
   nextRound,
+  newGameSeed,
   pickerFor,
   playerOrder,
   resetToLobby,
@@ -148,6 +149,8 @@ export function useActions(be: Backend, code: string, view: RoomView) {
           ...resetToLobby(p),
           phase: 'category',
           round: 1,
+          seed: newGameSeed(Math.random),
+          pickerOffset: Math.floor(Math.random() * playerOrder(p).length),
           scores: Object.fromEntries(playerOrder(p).map((uid) => [uid, 0])),
         })),
       pickCategory: async (categoryId: string) => {

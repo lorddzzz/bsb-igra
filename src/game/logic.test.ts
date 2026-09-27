@@ -14,6 +14,7 @@ import {
   impostorCount,
   isCaught,
   nextRound,
+  newGameSeed,
   pickerFor,
   scoreRound,
   setupRound,
@@ -189,6 +190,14 @@ describe('rounds', () => {
     expect(categoryChoices({ ...p, last }).map((c) => c.id)).not.toContain(first[0])
   })
 
+  it('offers different categories in a new game in the same room', () => {
+    const p = pub({ phase: 'category', createdAt: 1790000000000 })
+    const rng = seeded(42)
+    const draws = new Set<string>()
+    for (let i = 0; i < 20; i++) draws.add(categoryChoices({ ...p, seed: newGameSeed(rng) }).map((c) => c.id).join())
+    expect(draws.size).toBe(20)
+  })
+
   it('every category has enough distinct words for the guess options', () => {
     for (const c of CATEGORIES) expect(new Set(c.words).size).toBeGreaterThanOrEqual(12)
   })
@@ -210,6 +219,12 @@ describe('rounds', () => {
     expect(n.votes).toBeUndefined()
     expect(n.guesses).toBeUndefined()
     expect(n.phase).toBe('category')
+  })
+
+  it('starts the picking with whichever player the game drew', () => {
+    const p = pub({ phase: 'category', round: 1, pickerOffset: 2 })
+    expect(pickerFor(p)).toBe('c')
+    expect(pickerFor(nextRound(p))).toBe(pickerFor(pub({ round: 1, pickerOffset: 3 })))
   })
 })
 
