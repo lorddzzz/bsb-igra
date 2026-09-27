@@ -431,7 +431,7 @@ function Score({ pub, me, actions }: ScreenProps) {
               return (
                 <li key={uid}>
                   <PlayerTag player={pub.players?.[uid]} you={uid === me} />
-                  <span className="reasons">{g?.reasons.join(', ') || '—'}</span>
+                  <span className="reasons">{g?.reasons?.join(', ') || '—'}</span>
                   <b className={g?.points ? 'plus' : 'zero'}>+{g?.points ?? 0}</b>
                 </li>
               )

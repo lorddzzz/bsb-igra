@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from 'react'
+import { Component, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { connect, useLocalBackend, type Backend } from './backend'
 import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './game/room'
 import { BADGES } from './game/types'
@@ -98,6 +98,7 @@ export default function App() {
       </header>
 
       <main>
+        <Crashed>
         {error ? (
           <div className="card center">
             <h2>Nema veze sa serverom</h2>
@@ -111,6 +112,7 @@ export default function App() {
         ) : (
           <Home be={be} onEnter={enter} />
         )}
+        </Crashed>
       </main>
 
       {useLocalBackend() && <div className="local-note">Probni režim (bez interneta)</div>}
@@ -121,6 +123,27 @@ export default function App() {
       )}
     </div>
   )
+}
+
+/** If a screen crashes, show a reload button instead of a black page. The room is remembered, so reloading rejoins it. */
+class Crashed extends Component<{ children: ReactNode }, { error: string }> {
+  state = { error: '' }
+  static getDerivedStateFromError(e: unknown) {
+    return { error: String((e as Error)?.message ?? e) }
+  }
+  render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <div className="card center">
+        <h2>Ups, nešto je puklo</h2>
+        <p className="muted">Osveži stranicu, vraćaš se u istu sobu.</p>
+        <Button onClick={() => location.reload()}>Osveži</Button>
+        <p className="muted">
+          <small>{this.state.error}</small>
+        </p>
+      </div>
+    )
+  }
 }
 
 function Home({ be, onEnter }: { be: Backend; onEnter: (code: string) => void }) {

@@ -9,6 +9,8 @@ const ROUNDS = Number(process.env.ROUNDS ?? 2)
 // 'local' syncs tabs through localStorage (one shared browser context);
 // 'emu' uses the Firebase emulators, so each phone gets its own context and login.
 const MODE = process.env.MODE ?? 'local'
+// NOTHUMBS=1 approves no missions, so some players score 0 in a round.
+const NOTHUMBS = Boolean(process.env.NOTHUMBS)
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch({ executablePath: process.env.CHROME ?? '/opt/pw-browsers/chromium' })
@@ -108,7 +110,7 @@ for (let round = 1; round <= ROUNDS; round++) {
   await host.getByText('Tajne misije').waitFor()
   for (let i = 0; i < 4; i++) {
     const ups = pages[i].locator('.thumbs button:first-child')
-    for (let j = 0; j < (await ups.count()); j++) if (j !== i % 3) await ups.nth(j).click()
+    if (!NOTHUMBS) for (let j = 0; j < (await ups.count()); j++) if (j !== i % 3) await ups.nth(j).click()
     if (i === 0 && round === 1) await shot(host, '12-missions')
     await pages[i].getByRole('button', { name: /Gotovo/ }).click()
   }

@@ -14,6 +14,17 @@ function load(): Tree {
   }
 }
 
+/** Firebase never stores empty lists or objects, so drop them here too; otherwise local tests miss crashes. */
+function prune(value: unknown): unknown {
+  if (value === null || typeof value !== 'object') return value
+  const entries = Object.entries(value as Tree)
+    .map(([k, v]) => [k, prune(v)] as const)
+    .filter(([, v]) => v !== null && v !== undefined)
+  if (!entries.length) return null
+  if (Array.isArray(value)) return entries.map(([, v]) => v)
+  return Object.fromEntries(entries)
+}
+
 function parts(path: string): string[] {
   return path.split('/').filter(Boolean)
 }
@@ -79,18 +90,18 @@ export function createLocalBackend(): Backend {
       return read(load(), path)
     },
     async set(path, value) {
-      commit(write(load(), path, clean(value)))
+      commit(write(load(), path, prune(clean(value))))
     },
     async update(path, patch) {
       let tree = load()
-      for (const [k, v] of Object.entries(clean(patch))) tree = write(tree, `${path}/${k}`, v)
+      for (const [k, v] of Object.entries(clean(patch))) tree = write(tree, `${path}/${k}`, prune(v))
       commit(tree)
     },
     async transaction(path, fn) {
       const tree = load()
       const next = fn(read(tree, path) as never)
       if (next === undefined) return false
-      commit(write(tree, path, clean(next)))
+      commit(write(tree, path, prune(clean(next))))
       return true
     },
     presence(path) {
