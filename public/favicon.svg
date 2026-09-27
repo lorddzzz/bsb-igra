@@ -1,1 +1,76 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#9fb4cc"/><stop offset=".52" stop-color="#5d6f86"/><stop offset="1" stop-color="#d9e6f5"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="#04060d"/><circle cx="32" cy="32" r="22" fill="none" stroke="#5fd0ff" stroke-width="2" opacity=".5"/><text x="32" y="44" font-family="Arial Black,Arial" font-weight="900" font-size="34" text-anchor="middle" fill="url(#g)">U</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%">
+      <stop offset="0" stop-color="#16305e"/>
+      <stop offset=".55" stop-color="#0a1224"/>
+      <stop offset="1" stop-color="#04060d"/>
+    </radialGradient>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8fe3ff" stop-opacity=".35"/>
+      <stop offset="1" stop-color="#8fe3ff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="chrome" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset=".3" stop-color="#dce8f7"/>
+      <stop offset=".49" stop-color="#8ea3bd"/>
+      <stop offset=".51" stop-color="#4d5d74"/>
+      <stop offset=".75" stop-color="#b9cde4"/>
+      <stop offset="1" stop-color="#ffffff"/>
+    </linearGradient>
+    <radialGradient id="eye" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffe6f8"/>
+      <stop offset=".35" stop-color="#ff5fd2"/>
+      <stop offset="1" stop-color="#b3148f"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#000" flood-opacity=".6"/>
+    </filter>
+    <mask id="notches">
+      <rect x="-400" y="-240" width="800" height="480" fill="#fff"/>
+      <circle cx="170" cy="-220" r="36" fill="#000"/>
+      <circle cx="170" cy="220" r="36" fill="#000"/>
+    </mask>
+    <path id="star" d="M0,-60 C6,-10 10,-6 60,0 C10,6 6,10 0,60 C-6,10 -10,6 -60,0 C-10,-6 -6,-10 0,-60 Z"/>
+  </defs>
+
+  <rect width="1024" height="1024" fill="url(#bg)"/>
+  <!-- stage spotlights -->
+  <path d="M300,-20 L120,1024 L420,1024 Z" fill="url(#beam)" opacity=".35"/>
+  <path d="M724,-20 L604,1024 L904,1024 Z" fill="url(#beam)" opacity=".35"/>
+
+  <!-- boarding pass -->
+  <g transform="translate(512 540) rotate(-9)" filter="url(#shadow)">
+    <g mask="url(#notches)">
+      <rect x="-380" y="-220" width="760" height="440" rx="44" fill="url(#chrome)"/>
+      <rect x="-364" y="-204" width="728" height="408" rx="32" fill="none" stroke="#ffffff" stroke-opacity=".7" stroke-width="4"/>
+    </g>
+    <!-- perforation -->
+    <line x1="170" y1="-170" x2="170" y2="170" stroke="#04060d" stroke-width="10" stroke-linecap="round" stroke-dasharray="0 30" opacity=".75"/>
+    <!-- stub barcode -->
+    <g fill="#0a1224" opacity=".85">
+      <rect x="222" y="-130" width="14" height="260"/>
+      <rect x="248" y="-130" width="6" height="260"/>
+      <rect x="264" y="-130" width="20" height="260"/>
+      <rect x="296" y="-130" width="8" height="260"/>
+      <rect x="314" y="-130" width="16" height="260"/>
+    </g>
+    <!-- impostor mask -->
+    <g transform="translate(-100 6)">
+      <path d="M-250,-95 C-200,-70 -150,-100 -90,-92 C-45,-86 -18,-62 0,-50 C18,-62 45,-86 90,-92 C150,-100 200,-70 250,-95 C252,20 190,108 100,108 C52,108 24,72 0,72 C-24,72 -52,108 -100,108 C-190,108 -252,20 -250,-95 Z" stroke="#8fe3ff" stroke-opacity=".55" stroke-width="5" fill="#04060d"/>
+      <g filter="url(#glow)" opacity=".9">
+        <ellipse cx="-100" cy="4" rx="62" ry="30" fill="#ff5fd2" transform="rotate(10 -100 4)"/>
+        <ellipse cx="100" cy="4" rx="62" ry="30" fill="#ff5fd2" transform="rotate(-10 100 4)"/>
+      </g>
+      <path d="M-162,6 C-130,-34 -62,-34 -38,0 C-62,34 -130,40 -162,6 Z" fill="url(#eye)"/>
+      <path d="M162,6 C130,-34 62,-34 38,0 C62,34 130,40 162,6 Z" fill="url(#eye)"/>
+    </g>
+  </g>
+
+  <!-- Y2K sparkles -->
+  <use href="#star" transform="translate(206 214) scale(1.1)" fill="#ffffff"/>
+  <use href="#star" transform="translate(836 800) scale(.7)" fill="#8fe3ff"/>
+  <use href="#star" transform="translate(830 236) scale(.45)" fill="#dce8f7"/>
+</svg>
