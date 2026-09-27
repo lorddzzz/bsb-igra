@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Backend } from '../backend'
-import { CATEGORIES, getCategory } from '../data/words'
+import { getCategory } from '../data/words'
 import {
   catchThreshold,
-  isCaught,
+  categoryChoices,
+  caughtImpostors,
   pickerFor,
   playerOrder,
   standings,
@@ -41,8 +42,6 @@ export function Game({ be, code, view }: Props) {
       return <Reveal {...common} />
     case 'guess':
       return <Guess {...common} />
-    case 'missions':
-      return <Missions {...common} />
     case 'score':
       return <Score {...common} />
     case 'over':
@@ -147,7 +146,7 @@ function CategoryPick({ pub, me, actions }: ScreenProps) {
         <>
           <h1 className="title">Ti biraš kategoriju!</h1>
           <div className="category-grid">
-            {CATEGORIES.map((c) => (
+            {categoryChoices(pub).map((c) => (
               <button key={c.id} className="category" onClick={() => actions.pickCategory(c.id)}>
                 <span className="cat-icon">{c.icon}</span>
                 <span>{c.name}</span>
@@ -166,7 +165,7 @@ function CategoryPick({ pub, me, actions }: ScreenProps) {
   )
 }
 
-function Clues({ pub, me, actions, view }: ScreenProps) {
+function Clues({ pub, me, isHost, actions, view }: ScreenProps) {
   const category = pub.category ? getCategory(pub.category) : null
   return (
     <section className="screen">
@@ -176,8 +175,8 @@ function Clues({ pub, me, actions, view }: ScreenProps) {
       </div>
       <Ticket ticket={view.ticket} player={pub.players?.[me]} round={pub.round} />
       <Hint pub={pub}>
-        Ako znaš reč, daj trag koji pomaže ostalima, ali ne odaje reč uljezu. Ako si uljez, blefiraj! I ne zaboravi
-        misiju 🤫
+        Ako znaš reč, daj trag koji pomaže ostalima, ali ne odaje reč uljezu. Ako si uljez, blefiraj! Ove runde
+        može biti 1 ili 2 uljeza 🤫
       </Hint>
       <div className="card">
         <p className="big-line">
@@ -185,7 +184,11 @@ function Clues({ pub, me, actions, view }: ScreenProps) {
         </p>
         <p className="muted">Idite u krug dva puta. Svako kaže po jednu reč.</p>
       </div>
-      <Button onClick={actions.toVoting}>Gotovi smo, glasanje! 🗳️</Button>
+      {isHost ? (
+        <Button onClick={actions.toVoting}>Gotovi smo, glasanje! 🗳️</Button>
+      ) : (
+        <Waiting>{nameOf(pub, pub.hostUid)} pokreće glasanje kad završite</Waiting>
+      )}
     </section>
   )
 }
@@ -249,7 +252,7 @@ function Reveal({ pub, me, isHost, actions, view }: ScreenProps) {
     if (isHost) sound.drumRoll()
     const t = setTimeout(() => {
       setShown(true)
-      if (isHost) (isCaught(pub, secret.impostor) ? sound.cheer : sound.scratch)()
+      if (isHost) (caughtImpostors(pub, secret).length ? sound.cheer : sound.scratch)()
     }, 2400)
     return () => clearTimeout(t)
     // runs once, when the round's answers arrive
@@ -268,30 +271,44 @@ function Reveal({ pub, me, isHost, actions, view }: ScreenProps) {
       </section>
     )
 
-  const caught = isCaught(pub, secret.impostor)
-  const impostor = pub.players?.[secret.impostor]
+  const caught = caughtImpostors(pub, secret)
+  const two = secret.impostors.length > 1
   return (
     <section className="screen">
       <RoundTitle pub={pub} />
-      <div className={`reveal-card ${caught ? 'caught' : 'escaped'}`}>
-        <Badge id={impostor?.badge} size="lg" />
-        <div className="reveal-name">{impostor?.name ?? 'Neko'}</div>
-        <div className="reveal-verdict">{caught ? 'UHVAĆEN! 🎉' : 'POBEGAO! 😈'}</div>
-        {!caught && (
-          <div className="reveal-word">
-            Reč je bila <b>{secret.word}</b>
+      {two && <h1 className="title chrome">Bila su DVA uljeza!</h1>}
+      {secret.impostors.map((uid) => {
+        const got = caught.includes(uid)
+        const impostor = pub.players?.[uid]
+        return (
+          <div key={uid} className={`reveal-card ${got ? 'caught' : 'escaped'}`}>
+            <Badge id={impostor?.badge} size="lg" />
+            <div className="reveal-name">{impostor?.name ?? 'Neko'}</div>
+            <div className="reveal-verdict">{got ? 'UHVAĆEN! 🎉' : 'POBEGAO! 😈'}</div>
           </div>
-        )}
-      </div>
+        )
+      })}
+      {caught.length === 0 && (
+        <div className="card center">
+          <small className="label">REČ JE BILA</small>
+          <div className="reveal-word-big chrome">{secret.word}</div>
+        </div>
+      )}
       <VoteSummary pub={pub} secret={secret} me={me} />
-      {caught && (
+      {caught.length > 0 && (
         <p className="muted center">
-          {secret.impostor === me
+          {caught.includes(me)
             ? 'Ali nije gotovo: pogodi reč i ukradi 2 poena!'
-            : `${impostor?.name ?? 'Uljez'} sada može da pogađa reč za 2 poena.`}
+            : caught.length > 1
+              ? `${caught.map((uid) => nameOf(pub, uid)).join(' i ')} sada mogu da pogađaju reč za 2 poena.`
+              : `${nameOf(pub, caught[0])} sada može da pogađa reč za 2 poena.`}
         </p>
       )}
-      <Button onClick={actions.afterReveal}>Dalje</Button>
+      {isHost ? (
+        <Button onClick={actions.afterReveal}>Dalje</Button>
+      ) : (
+        <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} nastavi</Waiting>
+      )}
     </section>
   )
 }
@@ -305,7 +322,10 @@ function VoteSummary({ pub, secret, me }: { pub: Pub; secret: Secret; me: string
       <ul className="vote-summary">
         {order.map((uid) =>
           votes[uid] ? (
-            <li key={uid} className={uid !== secret.impostor && votes[uid] === secret.impostor ? 'right' : ''}>
+            <li
+              key={uid}
+              className={!secret.impostors.includes(uid) && secret.impostors.includes(votes[uid]) ? 'right' : ''}
+            >
               <PlayerTag player={pub.players?.[uid]} you={uid === me} />
               <span className="arrow">→</span>
               <PlayerTag player={pub.players?.[votes[uid]]} />
@@ -314,8 +334,8 @@ function VoteSummary({ pub, secret, me }: { pub: Pub; secret: Secret; me: string
         )}
       </ul>
       <small className="muted">
-        {votesAgainst(pub, secret.impostor)} od {order.length - 1} glasova za uljeza (treba{' '}
-        {catchThreshold(order.length)} da bi bio uhvaćen)
+        {secret.impostors.map((uid) => `${nameOf(pub, uid)}: ${votesAgainst(pub, uid)} od ${order.length - 1}`).join(', ')}{' '}
+        glasova (treba {catchThreshold(order.length)} da bi uljez bio uhvaćen)
       </small>
     </div>
   )
@@ -324,12 +344,12 @@ function VoteSummary({ pub, secret, me }: { pub: Pub; secret: Secret; me: string
 function Guess({ pub, me, actions, view }: ScreenProps) {
   const secret = view.secret?.round === pub.round ? view.secret : null
   if (!secret) return <Waiting>Učitavanje</Waiting>
-  const impostor = secret.impostor
   const category = getCategory(secret.category)
+  const guessing = caughtImpostors(pub, secret).filter((uid) => !pub.guesses?.[uid])
   return (
     <section className="screen">
       <RoundTitle pub={pub} />
-      {impostor === me ? (
+      {guessing.includes(me) ? (
         <>
           <h1 className="title">Koja je bila reč?</h1>
           <p className="muted center">
@@ -345,83 +365,23 @@ function Guess({ pub, me, actions, view }: ScreenProps) {
         </>
       ) : (
         <div className="card center">
-          <PlayerTag player={pub.players?.[impostor]} />
-          <Waiting>pogađa reč za 2 poena</Waiting>
+          {guessing.map((uid) => (
+            <PlayerTag key={uid} player={pub.players?.[uid]} />
+          ))}
+          <Waiting>{guessing.length > 1 ? 'pogađaju' : 'pogađa'} reč za 2 poena</Waiting>
         </div>
       )}
     </section>
   )
 }
 
-function Missions({ pub, me, isHost, actions, view }: ScreenProps) {
-  const secret = view.secret?.round === pub.round ? view.secret : null
-  if (!secret) return <Waiting>Učitavanje</Waiting>
-  const order = playerOrder(pub)
-  const mine = pub.missionVotes?.[me] ?? {}
-  const done = pub.missionDone ?? {}
-  const waitingOn = order.filter((uid) => !done[uid])
-  const caught = isCaught(pub, secret.impostor)
-
-  return (
-    <section className="screen">
-      <RoundTitle pub={pub} />
-      <div className="card center">
-        {caught && (
-          <p className="big-line">
-            {pub.guess === secret.word
-              ? `${nameOf(pub, secret.impostor)} je pogodio reč! +2 🔥`
-              : `${nameOf(pub, secret.impostor)} nije pogodio reč.`}
-          </p>
-        )}
-        <small className="label">REČ JE BILA</small>
-        <div className="reveal-word-big chrome">{secret.word}</div>
-      </div>
-
-      <h1 className="title">Tajne misije</h1>
-      <Hint pub={pub}>Da li je uspelo? Palac gore ako jeste. Misija vredi +1 ako se većina ostalih složi.</Hint>
-      <div className="mission-list">
-        {order.map((uid) => (
-          <div key={uid} className="card mission">
-            <PlayerTag player={pub.players?.[uid]} you={uid === me} />
-            <p>{secret.missions[uid]}</p>
-            {uid !== me && !done[me] && (
-              <div className="thumbs">
-                <button className={mine[uid] === true ? 'on up' : ''} onClick={() => actions.missionVote(uid, true)}>
-                  👍
-                </button>
-                <button
-                  className={mine[uid] === false ? 'on down' : ''}
-                  onClick={() => actions.missionVote(uid, false)}
-                >
-                  👎
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-      </div>
-      {!done[me] ? (
-        <Button onClick={actions.missionDone}>Gotovo ✓</Button>
-      ) : (
-        <div className="card center">
-          <Waiting>Čekamo: {waitingOn.map((uid) => nameOf(pub, uid)).join(', ')}</Waiting>
-          {isHost && waitingOn.length > 0 && (
-            <button className="link-btn" onClick={actions.finishRound}>
-              Ne čekaj ostale
-            </button>
-          )}
-        </div>
-      )}
-    </section>
-  )
-}
-
-function Score({ pub, me, actions }: ScreenProps) {
+function Score({ pub, me, isHost, actions }: ScreenProps) {
   const last = pub.last
   const next = pickerFor({ ...pub, round: pub.round + 1 })
   return (
     <section className="screen">
       <RoundTitle pub={pub} />
+      {last && <RoundWord pub={pub} />}
       {last && (
         <div className="card">
           <h2>Ova runda</h2>
@@ -440,7 +400,11 @@ function Score({ pub, me, actions }: ScreenProps) {
         </div>
       )}
       <Standings pub={pub} me={me} />
-      <Button onClick={actions.nextRound}>Sledeća runda ✈️</Button>
+      {isHost ? (
+        <Button onClick={actions.nextRound}>Sledeća runda ✈️</Button>
+      ) : (
+        <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene sledeću rundu</Waiting>
+      )}
       <p className="muted center">Sledeći bira: {nameOf(pub, next)}</p>
     </section>
   )
@@ -476,6 +440,23 @@ function GameOver({ pub, me, isHost, actions }: ScreenProps) {
         <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene novu igru</Waiting>
       )}
     </section>
+  )
+}
+
+/** The round's word, plus how the caught impostors' guesses went. */
+function RoundWord({ pub }: { pub: Pub }) {
+  const last = pub.last!
+  const right = last.guessedRight ?? []
+  return (
+    <div className="card center">
+      {(last.caught ?? []).map((uid) => (
+        <p key={uid} className="big-line">
+          {right.includes(uid) ? `${nameOf(pub, uid)} je pogodio reč! +2 🔥` : `${nameOf(pub, uid)} nije pogodio reč.`}
+        </p>
+      ))}
+      <small className="label">REČ JE BILA</small>
+      <div className="reveal-word-big chrome">{last.word}</div>
+    </div>
   )
 }
 

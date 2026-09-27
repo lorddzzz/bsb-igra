@@ -697,12 +697,6 @@ main {
   text-shadow: 0 0 18px rgba(255, 95, 210, 0.8);
   font-size: 30px;
 }
-.ticket-mission {
-  font-size: 16px;
-  font-weight: 600;
-  line-height: 1.35;
-}
-
 /* Voting */
 .vote-list {
   display: flex;
@@ -844,38 +838,6 @@ main {
 }
 .arrow {
   color: var(--muted);
-}
-
-/* Missions */
-.mission-list {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.mission p {
-  margin: 8px 0 0;
-  line-height: 1.4;
-}
-.thumbs {
-  display: flex;
-  gap: 10px;
-  margin-top: 10px;
-}
-.thumbs button {
-  flex: 1;
-  font-size: 22px;
-  padding: 8px;
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.04);
-  border: 1px solid var(--card-border);
-}
-.thumbs button.on.up {
-  border-color: var(--good);
-  background: rgba(125, 255, 176, 0.15);
-}
-.thumbs button.on.down {
-  border-color: var(--bad);
-  background: rgba(255, 107, 139, 0.15);
 }
 
 /* Scores */

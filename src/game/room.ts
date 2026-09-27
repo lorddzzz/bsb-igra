@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { Backend } from '../backend'
 import {
-  allMissionsDone,
+  allGuessed,
   allVoted,
   applyRound,
-  isCaught,
+  caughtImpostors,
   makeRoomCode,
   nextRound,
   pickerFor,
@@ -15,7 +15,7 @@ import {
 } from './logic'
 import { MAX_PLAYERS, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
 
-const SECRET_PHASES: Phase[] = ['reveal', 'guess', 'missions', 'score', 'over']
+const SECRET_PHASES: Phase[] = ['reveal', 'guess', 'score', 'over']
 
 export const roomPath = (code: string) => `rooms/${code}`
 
@@ -124,6 +124,8 @@ export function useRoom(be: Backend, code: string): RoomView {
 /** Every action a player can take. Phase changes go through transactions, so double taps are harmless. */
 export function useActions(be: Backend, code: string, view: RoomView) {
   const { pub, secret } = view
+  const roundSecret = secret && pub && secret.round === pub.round ? secret : null
+  const isHost = pub?.hostUid === be.uid
   const pubPath = `${roomPath(code)}/pub`
 
   const actions = useMemo(() => {
@@ -153,34 +155,38 @@ export function useActions(be: Backend, code: string, view: RoomView) {
         await be.update(roomPath(code), patch)
         await step('category', pub.round, (p) => ({ ...p, phase: 'clues', category: categoryId, starter: setup.starter }))
       },
-      toVoting: () => pub && step('clues', pub.round, (p) => ({ ...p, phase: 'voting' })),
+      toVoting: () => isHost && pub && step('clues', pub.round, (p) => ({ ...p, phase: 'voting' })),
       vote: (target: string) => pub?.phase === 'voting' && be.set(`${pubPath}/votes/${be.uid}`, target),
       closeVoting: () => pub && step('voting', pub.round, (p) => ({ ...p, phase: 'reveal' })),
       afterReveal: () =>
+        isHost &&
         pub &&
-        secret &&
-        step('reveal', pub.round, (p) => ({ ...p, phase: isCaught(p, secret.impostor) ? 'guess' : 'missions' })),
-      guess: (word: string) => pub && step('guess', pub.round, (p) => ({ ...p, guess: word, phase: 'missions' })),
-      missionVote: (target: string, up: boolean) =>
-        be.set(`${pubPath}/missionVotes/${be.uid}/${target}`, up),
-      missionDone: () => be.set(`${pubPath}/missionDone/${be.uid}`, true),
-      finishRound: () =>
+        roundSecret &&
+        step('reveal', pub.round, (p) =>
+          caughtImpostors(p, roundSecret).length ? { ...p, phase: 'guess' } : applyRound(p, scoreRound(p, roundSecret)),
+        ),
+      // The last caught impostor to guess also closes the round.
+      guess: (word: string) =>
         pub &&
-        secret &&
-        secret.round === pub.round &&
-        step('missions', pub.round, (p) => applyRound(p, scoreRound(p, secret))),
-      nextRound: () => pub && step('score', pub.round, (p) => nextRound(p)),
-      newGame: () => pub && step('over', pub.round, (p) => resetToLobby(p)),
+        roundSecret &&
+        step('guess', pub.round, (p) => {
+          const next = { ...p, guesses: { ...(p.guesses ?? {}), [be.uid]: word } }
+          return allGuessed(next, roundSecret) ? applyRound(next, scoreRound(next, roundSecret)) : next
+        }),
+      finishGuessing: () =>
+        pub && roundSecret && step('guess', pub.round, (p) => applyRound(p, scoreRound(p, roundSecret))),
+      nextRound: () => isHost && pub && step('score', pub.round, (p) => nextRound(p)),
+      newGame: () => isHost && pub && step('over', pub.round, (p) => resetToLobby(p)),
     }
-  }, [be, code, pub, secret, pubPath])
+  }, [be, code, pub, roundSecret, isHost, pubPath])
 
-  // Move on automatically once everyone has voted / judged the missions. Any phone may do it.
+  // Move on automatically once everyone has voted / guessed. Any phone may do it.
   useEffect(() => {
     if (pub?.phase === 'voting' && allVoted(pub)) void actions.closeVoting()
   }, [pub, actions])
   useEffect(() => {
-    if (pub?.phase === 'missions' && secret && allMissionsDone(pub)) void actions.finishRound()
-  }, [pub, secret, actions])
+    if (pub?.phase === 'guess' && roundSecret && allGuessed(pub, roundSecret)) void actions.finishGuessing()
+  }, [pub, roundSecret, actions])
 
   return actions
 }

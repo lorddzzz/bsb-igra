@@ -90,7 +90,7 @@ export function Waiting({ children }: { children: ReactNode }) {
   )
 }
 
-/** Boarding-pass ticket. Press and hold to see your word and mission; it hides the moment you let go. */
+/** Boarding-pass ticket. Press and hold to see your word; it hides the moment you let go. */
 export function Ticket({ ticket, player, round }: { ticket: TicketData | null; player: Player | undefined; round: number }) {
   const [peek, setPeek] = useState(false)
   useEffect(() => {
@@ -159,9 +159,6 @@ export function Ticket({ ticket, player, round }: { ticket: TicketData | null; p
                   TI SI ULJEZ <span>🤫</span>
                 </div>
               )}
-              <div className="perforation" />
-              <small className="ticket-cat">TAJNA MISIJA</small>
-              <div className="ticket-mission">{ticket.mission}</div>
             </>
           )}
         </div>
@@ -194,23 +191,20 @@ export function Rules() {
       </p>
       <ol>
         <li>Neko bira kategoriju. Svi dobijaju istu tajnu reč, osim uljeza, koji zna samo kategoriju.</li>
-        <li>Svako dobija i malu tajnu misiju za tu rundu.</li>
+        <li>Svake runde ima 1 ili 2 uljeza (2 samo kad vas je bar četvoro). Niko ne zna koliko.</li>
         <li>Idete u krug dva puta i svako kaže po jednu reč kao trag.</li>
         <li>Svi glasaju na telefonu ko je uljez.</li>
       </ol>
       <h3>Poeni</h3>
       <ul className="points">
         <li>
-          <b>+1</b> ako si glasao za uljeza
+          <b>+1</b> ako si glasao za uljeza (bilo kog)
         </li>
         <li>
-          <b>+1</b> uljezu za svaki pogrešan glas
+          <b>+1</b> svakom uljezu za svaki pogrešan glas
         </li>
         <li>
           <b>+2</b> uljezu ako ga uhvate (većina glasa za njega), a on pogodi reč
-        </li>
-        <li>
-          <b>+1</b> za misiju, ako se većina ostalih složi da je urađena
         </li>
       </ul>
     </div>

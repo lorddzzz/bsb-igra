@@ -89,7 +89,9 @@ for (let round = 1; round <= ROUNDS; round++) {
       await p.mouse.up()
     }
   }
-  await pages[1].getByRole('button', { name: /glasanje/ }).click()
+  // only the host moves the game along
+  if (await pages[1].getByRole('button', { name: /glasanje/ }).count()) errors.push('non-host sees the voting button')
+  await host.getByRole('button', { name: /glasanje/ }).click()
   await host.getByText('Ko je uljez?').waitFor()
   // everyone votes for the next player in the list
   for (let i = 0; i < 4; i++) {
@@ -98,21 +100,17 @@ for (let round = 1; round <= ROUNDS; round++) {
   }
   await host.locator('.drumroll').waitFor()
   if (round === 1) await shot(host, '09-drumroll')
-  await host.locator('.reveal-card').waitFor({ timeout: 8000 })
+  await host.locator('.reveal-card').first().waitFor({ timeout: 8000 })
   if (round === 1) await shot(host, '10-reveal')
-  await pages[2].getByRole('button', { name: 'Dalje' }).click()
-  // caught impostor guesses
-  const guesser = await findPage('Koja je bila reč?', 1500).catch(() => null)
-  if (guesser) {
-    await shot(guesser, `11-guess-r${round}`)
+  if (await pages[2].getByRole('button', { name: 'Dalje' }).count()) errors.push('non-host sees Dalje')
+  await host.getByRole('button', { name: 'Dalje' }).click()
+  // every caught impostor guesses (there can be two)
+  for (let g = 0; g < 2; g++) {
+    const guesser = await findPage('Koja je bila reč?', 1500).catch(() => null)
+    if (!guesser) break
+    await shot(guesser, `11-guess-r${round}-${g}`)
     await guesser.locator('.category').first().click()
-  }
-  await host.getByText('Tajne misije').waitFor()
-  for (let i = 0; i < 4; i++) {
-    const ups = pages[i].locator('.thumbs button:first-child')
-    if (!NOTHUMBS) for (let j = 0; j < (await ups.count()); j++) if (j !== i % 3) await ups.nth(j).click()
-    if (i === 0 && round === 1) await shot(host, '12-missions')
-    await pages[i].getByRole('button', { name: /Gotovo/ }).click()
+    await guesser.getByText('Koja je bila reč?').waitFor({ state: 'hidden' })
   }
   const over = await findPage('pobed', 2500).catch(() => null)
   if (over) {
@@ -121,7 +119,8 @@ for (let round = 1; round <= ROUNDS; round++) {
   }
   await host.getByText('Ova runda').waitFor()
   if (round === 1) await shot(host, '13-score')
-  await pages[3].getByRole('button', { name: /Sledeća runda/ }).click()
+  if (await pages[3].getByRole('button', { name: /Sledeća runda/ }).count()) errors.push('non-host sees next round')
+  await host.getByRole('button', { name: /Sledeća runda/ }).click()
 }
 
 const scores = await host.locator('.standings li').allTextContents()

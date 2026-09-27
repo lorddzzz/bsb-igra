@@ -5,7 +5,6 @@ export type Phase =
   | 'voting'
   | 'reveal'
   | 'guess'
-  | 'missions'
   | 'score'
   | 'over'
 
@@ -42,14 +41,15 @@ export interface Player {
 
 export interface RoundResult {
   round: number
-  impostor: string
+  impostors: string[]
   word: string
   category: string
-  caught: boolean
-  guessCorrect: boolean
+  /** Impostors who got caught. Firebase drops empty arrays, so read with `?? []`. */
+  caught?: string[]
+  /** Caught impostors who guessed the word. */
+  guessedRight?: string[]
   /** Points earned this round, with a short reason per point source. */
-  gains: Record<string, { points: number; reasons: string[] }>
-  missions: Record<string, { text: string; approved: boolean }>
+  gains: Record<string, { points: number; reasons?: string[] }>
 }
 
 /** Everything every player may see. Lives at rooms/{code}/pub. */
@@ -63,9 +63,8 @@ export interface Pub {
   category?: string
   starter?: string
   votes?: Record<string, string>
-  guess?: string
-  missionVotes?: Record<string, Record<string, boolean>>
-  missionDone?: Record<string, boolean>
+  /** Word guesses by caught impostors, by uid. */
+  guesses?: Record<string, string>
   scores?: Record<string, number>
   last?: RoundResult
   usedWords?: string[]
@@ -77,15 +76,13 @@ export interface Ticket {
   category: string
   /** null when this player is the impostor */
   word: string | null
-  mission: string
 }
 
 /** Round answers, readable only once voting is over. Lives at rooms/{code}/secret. */
 export interface Secret {
   round: number
-  impostor: string
+  impostors: string[]
   word: string
   category: string
   options: string[]
-  missions: Record<string, string>
 }
