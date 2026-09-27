@@ -1020,7 +1020,7 @@ main {
 /* Game picker */
 .game-picker {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 10px;
 }
 .game-card {
@@ -1028,7 +1028,7 @@ main {
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  padding: 16px 10px;
+  padding: 14px 6px;
   border-radius: 18px;
   background: var(--card);
   border: 1px solid var(--card-border);
@@ -1037,7 +1037,7 @@ main {
 .game-card b {
   font-family: var(--display);
   font-weight: 400;
-  font-size: 22px;
+  font-size: 18px;
   letter-spacing: 1px;
 }
 .game-card small {
@@ -1154,4 +1154,70 @@ main {
   align-items: center;
   gap: 6px 10px;
   font-size: 14px;
+}
+
+/* Talasna dužina */
+.dial {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.dial-svg {
+  width: 100%;
+  height: auto;
+  display: block;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dial-svg.live {
+  cursor: grab;
+  filter: drop-shadow(0 0 14px rgba(95, 208, 255, 0.35));
+}
+.ring-2 {
+  fill: rgba(255, 209, 95, 0.55);
+}
+.ring-3 {
+  fill: rgba(255, 95, 210, 0.7);
+}
+.ring-4 {
+  fill: rgba(125, 255, 176, 0.9);
+}
+.ring-label text {
+  font: 800 14px var(--body);
+  fill: #04060d;
+  text-anchor: middle;
+  dominant-baseline: middle;
+}
+.needle-label {
+  font: 800 13px var(--body);
+  text-anchor: middle;
+}
+.dial-ends {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 800;
+  font-size: 15px;
+}
+.dial-ends span:last-child {
+  text-align: right;
+}
+.dial-ends span:first-child {
+  color: var(--ice);
+}
+.dial-ends span:last-child {
+  color: var(--pink);
+}
+.scale-choice {
+  justify-content: space-between;
+  font-weight: 800;
+}
+.clue-banner {
+  gap: 6px;
+}
+.clue-text {
+  font-family: var(--display);
+  font-size: 30px;
+  line-height: 1.15;
 }

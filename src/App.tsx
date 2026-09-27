@@ -4,7 +4,8 @@ import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './gam
 import { BADGES, type GameId } from './game/types'
 import { Blef } from './screens/Blef'
 import { Game } from './screens/Game'
-import { BlefRules, Button, Modal, Rules, Waiting } from './ui/components'
+import { Wave } from './screens/Wave'
+import { BlefRules, Button, Modal, Rules, Waiting, WaveRules } from './ui/components'
 import * as sound from './ui/sound'
 import { keepAwake } from './ui/wakeLock'
 
@@ -15,7 +16,9 @@ const GAME_KEY = 'bsb-game'
 const GAMES: { id: GameId; name: string; icon: string; tagline: string; players: string }[] = [
   { id: 'uljez', name: 'ULJEZ', icon: '🕵️', tagline: 'Svi znaju tajnu reč. Osim jednog.', players: '3 do 5 igrača' },
   { id: 'blef', name: 'BLEF', icon: '🤥', tagline: 'Izmisli laž, pronađi istinu.', players: '3 do 5, najbolje 3 ili 4' },
+  { id: 'talas', name: 'TALAS', icon: '📡', tagline: 'Talasna dužina: pogodi šta je drugar mislio.', players: '3 do 5 igrača' },
 ]
+const GAME_IDS = GAMES.map((g) => g.id) as string[]
 const gameName = (id: GameId) => GAMES.find((g) => g.id === id)?.name ?? 'ULJEZ'
 
 function saved(key: string): string {
@@ -47,7 +50,7 @@ export default function App() {
   const [rules, setRules] = useState(false)
   const [muted, setMuted] = useState(sound.isMuted())
   // The game shown in the header and rules: the room's once inside one, else the one picked on the home screen.
-  const [picked, setPicked] = useState<GameId>(() => (saved(GAME_KEY) === 'blef' ? 'blef' : 'uljez'))
+  const [picked, setPicked] = useState<GameId>(() => (GAME_IDS.includes(saved(GAME_KEY)) ? (saved(GAME_KEY) as GameId) : 'uljez'))
   const [roomGame, setRoomGame] = useState<GameId | null>(null)
   const game = (code && roomGame) || picked
 
@@ -139,7 +142,7 @@ export default function App() {
       {useLocalBackend() && <div className="local-note">Probni režim (bez interneta)</div>}
       {rules && (
         <Modal title="Kako se igra" onClose={() => setRules(false)}>
-          {game === 'blef' ? <BlefRules /> : <Rules />}
+          {game === 'blef' ? <BlefRules /> : game === 'talas' ? <WaveRules /> : <Rules />}
         </Modal>
       )}
     </div>
@@ -275,6 +278,7 @@ function Room({
     )
   if (!view.pub.players?.[be.uid]) return <Join be={be} code={code} view={view} onLeave={onLeave} />
   if (game === 'blef') return <Blef be={be} code={code} view={view} />
+  if (game === 'talas') return <Wave be={be} code={code} view={view} />
   return <Game be={be} code={code} view={view} />
 }
 

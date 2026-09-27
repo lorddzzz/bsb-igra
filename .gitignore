@@ -24,3 +24,4 @@ dist-ssr
 *.sw?
 e2e/shots
 e2e/shots-blef
+e2e/shots-wave

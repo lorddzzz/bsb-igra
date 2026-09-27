@@ -11,11 +11,12 @@ import {
   TOTAL_QUESTIONS,
 } from '../blef/logic'
 import { useBlefActions, type BlefActions } from '../blef/room'
-import { asList, playerOrder, standings } from '../game/logic'
+import { asList, playerOrder } from '../game/logic'
 import type { RoomView } from '../game/room'
-import { MIN_PLAYERS, type Pub } from '../game/types'
-import { Badge, Button, Hint, nameOf, PlayerTag, ShareButton, Waiting } from '../ui/components'
+import type { Pub } from '../game/types'
+import { Badge, Button, Hint, nameOf, PlayerTag, Waiting } from '../ui/components'
 import * as sound from '../ui/sound'
+import { DoneRow, PartyLobby, RoundGains, ScoreTable, Winner } from './shared'
 
 interface Props {
   be: Backend
@@ -53,53 +54,18 @@ export function Blef({ be, code, view }: Props) {
 }
 
 function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
-  const order = playerOrder(pub)
-  const missing = Math.max(0, MIN_PLAYERS - order.length)
   return (
-    <section className="screen">
-      <div className="card center">
-        <small className="label">BLEF · SOBA</small>
-        <div className="room-code chrome">{code}</div>
-        <ShareButton title="Blef" code={code} />
-      </div>
-
-      <div className="card">
-        <h2>Putnici ({order.length})</h2>
-        <ul className="player-list">
-          {order.map((uid) => (
-            <li key={uid}>
-              <PlayerTag
-                player={pub.players?.[uid]}
-                you={uid === me}
-                extra={uid === pub.hostUid ? <span className="host-tag">domaćin</span> : null}
-              />
-              {isHost && uid !== me && (
-                <button className="icon-btn" onClick={() => actions.kick(uid)} aria-label="Izbaci">
-                  ✕
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="card">
-        <h2>Ukratko</h2>
-        <ol className="blef-steps">
-          <li>Stiže čudna, ali istinita činjenica sa rupom.</li>
-          <li>Svako napiše lažan odgovor koji zvuči istinito.</li>
-          <li>Pronađi pravi odgovor među lažima. {TOTAL_QUESTIONS} pitanja, poslednje nosi duple poene.</li>
-        </ol>
-      </div>
-
-      {isHost ? (
-        <Button disabled={missing > 0} onClick={actions.start}>
-          {missing > 0 ? `Treba još ${missing} ${missing === 1 ? 'igrač' : 'igrača'}` : 'Poleći! Počni igru ✈️'}
-        </Button>
-      ) : (
-        <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene igru</Waiting>
-      )}
-    </section>
+    <PartyLobby
+      {...{ pub, me, isHost, code }}
+      title="Blef"
+      steps={[
+        'Stiže čudna, ali istinita činjenica sa rupom.',
+        'Svako napiše lažan odgovor koji zvuči istinito.',
+        `Pronađi pravi odgovor među lažima. ${TOTAL_QUESTIONS} pitanja, poslednje nosi duple poene.`,
+      ]}
+      onKick={actions.kick}
+      onStart={actions.start}
+    />
   )
 }
 
@@ -126,25 +92,6 @@ function QuestionCard({ question, answer }: { question: BlefQuestion; answer?: s
   )
 }
 
-/** Who has already done this step, as a row of badges. */
-function DoneRow({ pub, done, label }: { pub: Pub; done: Record<string, unknown>; label: string }) {
-  const order = playerOrder(pub)
-  const count = order.filter((uid) => done[uid]).length
-  return (
-    <>
-      <div className="voted-row">
-        {order.map((uid) => (
-          <span key={uid} className={done[uid] ? 'voted' : 'not-voted'}>
-            <Badge id={pub.players?.[uid]?.badge} size="sm" />
-          </span>
-        ))}
-      </div>
-      <small className="muted">
-        {label} {count} od {order.length}
-      </small>
-    </>
-  )
-}
 
 function Write({ pub, me, isHost, actions }: ScreenProps) {
   const question = currentQuestion(pub)
@@ -330,24 +277,8 @@ function Truth({ pub, me, isHost, actions }: ScreenProps) {
       </div>
       <div className="after-reveal" style={{ animationDelay: `${truthDelay}s` }}>
         <QuestionCard question={question} answer={question.a} />
-        {result && (
-          <div className="card">
-            <h2>Ovo pitanje</h2>
-            <ul className="gains">
-              {order.map((uid) => {
-                const g = result.gains[uid]
-                return (
-                  <li key={uid}>
-                    <PlayerTag player={pub.players?.[uid]} you={uid === me} />
-                    <span className="reasons">{asList<string>(g?.reasons).join(', ') || '—'}</span>
-                    <b className={g?.points ? 'plus' : 'zero'}>+{g?.points ?? 0}</b>
-                  </li>
-                )
-              })}
-            </ul>
-          </div>
-        )}
-        <BlefStandings pub={pub} me={me} />
+        {result && <RoundGains pub={pub} me={me} title="Ovo pitanje" gains={result.gains} />}
+        <ScoreTable pub={pub} me={me} />
         {isHost ? (
           <Button onClick={actions.next}>{isFinalRound(pub) ? 'Proglasi pobednika 👑' : 'Sledeće pitanje ✈️'}</Button>
         ) : (
@@ -359,55 +290,13 @@ function Truth({ pub, me, isHost, actions }: ScreenProps) {
 }
 
 function GameOver({ pub, me, isHost, actions }: ScreenProps) {
-  const table = standings(pub)
-  const top = table[0]?.score ?? 0
-  const winners = table.filter((r) => r.score === top)
-  const played = useRef(false)
-  useEffect(() => {
-    if (isHost && !played.current) {
-      played.current = true
-      sound.fanfare()
-    }
-  }, [isHost])
   return (
-    <section className="screen">
-      <div className="winner">
-        <div className="crown">👑</div>
-        {winners.map((w) => (
-          <div key={w.uid} className="winner-name">
-            <Badge id={pub.players?.[w.uid]?.badge} size="lg" />
-            <span className="chrome">{nameOf(pub, w.uid)}</span>
-          </div>
-        ))}
-        <p>{winners.length > 1 ? 'dele titulu najvećeg lažova!' : 'je najveći lažov!'}</p>
-      </div>
-      <BlefStandings pub={pub} me={me} />
-      {isHost ? (
-        <Button onClick={actions.newGame}>Nova igra</Button>
-      ) : (
-        <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene novu igru</Waiting>
-      )}
-    </section>
+    <Winner
+      {...{ pub, me, isHost }}
+      one="je najveći lažov!"
+      many="dele titulu najvećeg lažova!"
+      onNewGame={actions.newGame}
+    />
   )
 }
 
-function BlefStandings({ pub, me }: { pub: Pub; me: string }) {
-  const table = standings(pub)
-  const top = Math.max(1, table[0]?.score ?? 0)
-  return (
-    <div className="card">
-      <h2>Tabela</h2>
-      <ol className="standings">
-        {table.map((r) => (
-          <li key={r.uid}>
-            <PlayerTag player={pub.players?.[r.uid]} you={r.uid === me} />
-            <span className="bar">
-              <span style={{ width: `${(r.score / top) * 100}%` }} />
-            </span>
-            <b>{r.score}</b>
-          </li>
-        ))}
-      </ol>
-    </div>
-  )
-}

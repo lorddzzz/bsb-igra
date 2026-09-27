@@ -1,0 +1,88 @@
+/** Scales for Talasna dužina: two opposites, the target sits somewhere between them. */
+export interface WaveScale {
+  id: string
+  left: string
+  right: string
+}
+
+const PAIRS: [string, string][] = [
+  ['Hladno', 'Vruće'],
+  ['Loše', 'Dobro'],
+  ['Potcenjeno', 'Precenjeno'],
+  ['Dosadno', 'Zabavno'],
+  ['Jeftino', 'Skupo'],
+  ['Ružno', 'Lepo'],
+  ['Smrdi', 'Lepo miriše'],
+  ['Mekano', 'Tvrdo'],
+  ['Malo', 'Ogromno'],
+  ['Sporo', 'Brzo'],
+  ['Bezopasno', 'Opasno'],
+  ['Lako', 'Teško'],
+  ['Zdravo', 'Nezdravo'],
+  ['Staromodno', 'Moderno'],
+  ['Tužno', 'Srećno'],
+  ['Tiho', 'Glasno'],
+  ['Retko', 'Svuda ga ima'],
+  ['Normalno', 'Čudno'],
+  ['Neukusno', 'Ukusno'],
+  ['Nekorisno', 'Korisno'],
+  ['Krivo', 'Nevino'],
+  ['Mirno', 'Haotično'],
+  ['Neromantično', 'Romantično'],
+  ['Nije seksi', 'Seksi'],
+  ['Slaba supermoć', 'Moćna supermoć'],
+  ['Loš poklon', 'Odličan poklon'],
+  ['Loš posao', 'Posao iz snova'],
+  ['Loša tema za prvi sastanak', 'Odlična tema za prvi sastanak'],
+  ['Neće trajati', 'Trajaće zauvek'],
+  ['Nepoznato', 'Svi znaju'],
+  ['Za decu', 'Za odrasle'],
+  ['Letnja stvar', 'Zimska stvar'],
+  ['Jutarnja stvar', 'Noćna stvar'],
+  ['Slatko', 'Slano'],
+  ['Loše za žurku', 'Odlično za žurku'],
+  ['Loša pesma za karaoke', 'Savršena pesma za karaoke'],
+  ['Najgori koncert', 'Najbolji koncert'],
+  ['Pesma za plakanje', 'Pesma za đuskanje'],
+  ['Kič', 'Umetnost'],
+  ['Loš film', 'Remek-delo'],
+  ['Mrzim', 'Obožavam'],
+  ['Lako se zaboravlja', 'Nikad se ne zaboravlja'],
+  ['Trošenje vremena', 'Vredi svakog minuta'],
+  ['Loša navika', 'Dobra navika'],
+  ['Precenjen grad', 'Potcenjen grad'],
+  ['Loš ljubimac', 'Savršen ljubimac'],
+  ['Skroz balkanski', 'Skroz zapadnjački'],
+  ['Mačke bi volele', 'Psi bi voleli'],
+  ['Introvert', 'Ekstrovert'],
+  ['Lenjo', 'Vredno'],
+  ['Bezbolno', 'Užasno boli'],
+  ['Nerazumljivo', 'Jasno kao dan'],
+  ['Sramota', 'Ponos'],
+  ['Kratko traje', 'Traje večno'],
+  ['Loš talenat', 'Koristan talenat'],
+  ['Loša ideja za tetovažu', 'Odlična ideja za tetovažu'],
+  ['Loša hrana za put', 'Savršena hrana za put'],
+  ['Loše ime za bend', 'Odlično ime za bend'],
+  ['Loše ime za psa', 'Odlično ime za psa'],
+  ['Stvar za dosadnjakoviće', 'Stvar za kul ljude'],
+  ['Mama bi odobrila', 'Mama ne bi odobrila'],
+  ['Fantazija', 'Realnost'],
+  ['Uvek kasni', 'Uvek na vreme'],
+  ['Juče izmišljeno', 'Staro hiljadu godina'],
+  ['Mali greh', 'Veliki greh'],
+  ['Luksuz', 'Neophodno'],
+  ['Najgori deo putovanja', 'Najbolji deo putovanja'],
+  ['Loša stvar na koncertu', 'Najbolja stvar na koncertu'],
+  ['Skroz Kevin', 'Skroz Nik'],
+]
+
+export const WAVE_SCALES: WaveScale[] = PAIRS.map(([left, right], i) => ({
+  id: `w${String(i + 1).padStart(2, '0')}`,
+  left,
+  right,
+}))
+
+export function getWaveScale(id: string | undefined): WaveScale {
+  return WAVE_SCALES.find((s) => s.id === id) ?? WAVE_SCALES[0]
+}

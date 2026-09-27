@@ -1,4 +1,5 @@
 import type { BlefState } from '../blef/types'
+import type { WaveState } from '../wave/types'
 
 export type Phase =
   | 'lobby'
@@ -13,9 +14,13 @@ export type Phase =
   | 'write'
   | 'pick'
   | 'truth'
+  // Talasna dužina
+  | 'clue'
+  | 'aim'
+  | 'result'
 
 /** Which game a room plays. Rooms from before the game picker have none and play Uljez. */
-export type GameId = 'uljez' | 'blef'
+export type GameId = 'uljez' | 'blef' | 'talas'
 
 export type Mode = 'quick' | 'normal' | 'endless'
 
@@ -91,6 +96,8 @@ export interface Pub {
   impostorStreak?: Record<string, number>
   /** Blef's own state; only in Blef rooms. */
   blef?: BlefState
+  /** Talasna dužina's own state; only in those rooms. */
+  wave?: WaveState
 }
 
 /** One player's private card for the round. Lives at rooms/{code}/tickets/{uid}. */
