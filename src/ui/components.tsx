@@ -1,0 +1,218 @@
+import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { getCategory } from '../data/words'
+import { BADGES, type Player, type Pub, type Ticket as TicketData } from '../game/types'
+
+export function badgeOf(id: string | undefined) {
+  return BADGES.find((b) => b.id === id) ?? BADGES[0]
+}
+
+export function Badge({ id, size = 'md' }: { id: string | undefined; size?: 'sm' | 'md' | 'lg' }) {
+  const b = badgeOf(id)
+  return (
+    <span className={`badge badge-${size}`} style={{ '--c': b.color } as CSSProperties} aria-label={b.name}>
+      {b.name.length <= 2 ? b.name : b.name[0]}
+    </span>
+  )
+}
+
+export function PlayerTag({ player, you, extra }: { player: Player | undefined; you?: boolean; extra?: ReactNode }) {
+  if (!player) return <span className="player-tag muted">Neko</span>
+  return (
+    <span className="player-tag">
+      <Badge id={player.badge} size="sm" />
+      <span className="player-name" style={{ color: badgeOf(player.badge).color }}>
+        {player.name}
+      </span>
+      {you && <span className="you">ti</span>}
+      {extra}
+    </span>
+  )
+}
+
+export function nameOf(pub: Pub, uid: string | undefined): string {
+  return (uid && pub.players?.[uid]?.name) || 'Neko'
+}
+
+/** One-line tip shown only in the first round, so newcomers learn by playing. */
+export function Hint({ pub, children }: { pub: Pub; children: ReactNode }) {
+  if (pub.round > 1) return null
+  return (
+    <div className="hint">
+      <span className="hint-icon">💡</span>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+export function Button({
+  children,
+  onClick,
+  variant = 'primary',
+  disabled,
+  small,
+}: {
+  children: ReactNode
+  onClick?: () => void
+  variant?: 'primary' | 'ghost' | 'pink'
+  disabled?: boolean
+  small?: boolean
+}) {
+  const [busy, setBusy] = useState(false)
+  return (
+    <button
+      className={`btn btn-${variant}${small ? ' btn-small' : ''}`}
+      disabled={disabled || busy}
+      onClick={async () => {
+        if (!onClick) return
+        setBusy(true)
+        try {
+          await onClick()
+        } finally {
+          setBusy(false)
+        }
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
+export function Waiting({ children }: { children: ReactNode }) {
+  return (
+    <div className="waiting">
+      <span className="dots" aria-hidden>
+        <i />
+        <i />
+        <i />
+      </span>
+      <span>{children}</span>
+    </div>
+  )
+}
+
+/** Boarding-pass ticket. Press and hold to see your word and mission; it hides the moment you let go. */
+export function Ticket({ ticket, player, round }: { ticket: TicketData | null; player: Player | undefined; round: number }) {
+  const [peek, setPeek] = useState(false)
+  useEffect(() => {
+    const hide = () => setPeek(false)
+    window.addEventListener('blur', hide)
+    document.addEventListener('visibilitychange', hide)
+    return () => {
+      window.removeEventListener('blur', hide)
+      document.removeEventListener('visibilitychange', hide)
+    }
+  }, [])
+  const ready = ticket && ticket.round === round
+  const category = ready ? getCategory(ticket.category) : null
+  const badge = badgeOf(player?.badge)
+
+  return (
+    <div
+      className={`ticket${peek && ready ? ' peek' : ''}`}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        setPeek(true)
+      }}
+      onPointerUp={() => setPeek(false)}
+      onPointerCancel={() => setPeek(false)}
+      onPointerLeave={() => setPeek(false)}
+      onContextMenu={(e) => e.preventDefault()}
+      role="button"
+      aria-label="Drži da vidiš svoju kartu"
+    >
+      <div className="ticket-inner">
+        <div className="ticket-face ticket-front">
+          <div className="ticket-top">
+            <span className="airline">ULJEZ AIRLINES</span>
+            <span className="flight">LET BSB-{String(round).padStart(2, '0')}</span>
+          </div>
+          <div className="ticket-mid">
+            <div className="ticket-field">
+              <small>PUTNIK</small>
+              <b>{player?.name ?? '—'}</b>
+            </div>
+            <div className="ticket-field">
+              <small>SEDIŠTE</small>
+              <b className="seat">
+                <Badge id={badge.id} size="sm" /> {badge.name}
+              </b>
+            </div>
+            <div className="ticket-field">
+              <small>KAPIJA</small>
+              <b>{category?.icon ?? '✈️'}</b>
+            </div>
+          </div>
+          <div className="perforation" />
+          <div className="ticket-hold">{ready ? '👆 DRŽI DA VIDIŠ KARTU' : 'Karta se štampa…'}</div>
+          <div className="barcode" aria-hidden />
+        </div>
+        <div className="ticket-face ticket-back">
+          {ready && (
+            <>
+              <small className="ticket-cat">
+                {category?.icon} {category?.name}
+              </small>
+              {ticket.word ? (
+                <div className="ticket-word">{ticket.word}</div>
+              ) : (
+                <div className="ticket-word impostor">
+                  TI SI ULJEZ <span>🤫</span>
+                </div>
+              )}
+              <div className="perforation" />
+              <small className="ticket-cat">TAJNA MISIJA</small>
+              <div className="ticket-mission">{ticket.mission}</div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+export function Modal({ title, onClose, children }: { title: string; onClose: () => void; children: ReactNode }) {
+  return (
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal" onClick={(e) => e.stopPropagation()}>
+        <div className="modal-head">
+          <h2>{title}</h2>
+          <button className="icon-btn" onClick={onClose} aria-label="Zatvori">
+            ✕
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+export function Rules() {
+  return (
+    <div className="rules">
+      <p>
+        <b>Cilj:</b> pronađi uljeza. A ako si ti uljez, ne daj da te provale.
+      </p>
+      <ol>
+        <li>Neko bira kategoriju. Svi dobijaju istu tajnu reč, osim uljeza, koji zna samo kategoriju.</li>
+        <li>Svako dobija i malu tajnu misiju za tu rundu.</li>
+        <li>Idete u krug dva puta i svako kaže po jednu reč kao trag.</li>
+        <li>Svi glasaju na telefonu ko je uljez.</li>
+      </ol>
+      <h3>Poeni</h3>
+      <ul className="points">
+        <li>
+          <b>+1</b> ako si glasao za uljeza
+        </li>
+        <li>
+          <b>+1</b> uljezu za svaki pogrešan glas
+        </li>
+        <li>
+          <b>+2</b> uljezu ako ga uhvate (većina glasa za njega), a on pogodi reč
+        </li>
+        <li>
+          <b>+1</b> za misiju, ako se većina ostalih složi da je urađena
+        </li>
+      </ul>
+    </div>
+  )
+}

@@ -1,0 +1,511 @@
+import { useEffect, useRef, useState } from 'react'
+import type { Backend } from '../backend'
+import { CATEGORIES, getCategory } from '../data/words'
+import {
+  catchThreshold,
+  isCaught,
+  pickerFor,
+  playerOrder,
+  standings,
+  targetFor,
+  votesAgainst,
+} from '../game/logic'
+import { useActions, type Actions, type RoomView } from '../game/room'
+import { MIN_PLAYERS, MODES, type Pub, type Secret } from '../game/types'
+import { Badge, Button, Hint, nameOf, PlayerTag, Ticket, Waiting } from '../ui/components'
+import * as sound from '../ui/sound'
+
+interface Props {
+  be: Backend
+  code: string
+  view: RoomView
+}
+
+export function Game({ be, code, view }: Props) {
+  const actions = useActions(be, code, view)
+  const pub = view.pub!
+  const me = be.uid
+  const isHost = pub.hostUid === me
+  const common = { pub, me, isHost, actions, view, code }
+
+  switch (pub.phase) {
+    case 'lobby':
+      return <Lobby {...common} />
+    case 'category':
+      return <CategoryPick {...common} />
+    case 'clues':
+      return <Clues {...common} />
+    case 'voting':
+      return <Voting {...common} />
+    case 'reveal':
+      return <Reveal {...common} />
+    case 'guess':
+      return <Guess {...common} />
+    case 'missions':
+      return <Missions {...common} />
+    case 'score':
+      return <Score {...common} />
+    case 'over':
+      return <GameOver {...common} />
+  }
+}
+
+interface ScreenProps {
+  pub: Pub
+  me: string
+  isHost: boolean
+  actions: Actions
+  view: RoomView
+  code: string
+}
+
+function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
+  const order = playerOrder(pub)
+  const missing = Math.max(0, MIN_PLAYERS - order.length)
+  const link = `${location.origin}${location.pathname}?soba=${code}`
+  const [copied, setCopied] = useState(false)
+
+  const share = async () => {
+    try {
+      if (navigator.share) await navigator.share({ title: 'Uljez', text: `Uđi u sobu ${code}`, url: link })
+      else {
+        await navigator.clipboard.writeText(link)
+        setCopied(true)
+      }
+    } catch {
+      /* share sheet closed */
+    }
+  }
+
+  return (
+    <section className="screen">
+      <div className="card center">
+        <small className="label">SOBA</small>
+        <div className="room-code chrome">{code}</div>
+        <Button variant="ghost" small onClick={share}>
+          {copied ? 'Link kopiran ✓' : '📲 Pošalji link drugarima'}
+        </Button>
+      </div>
+
+      <div className="card">
+        <h2>Putnici ({order.length})</h2>
+        <ul className="player-list">
+          {order.map((uid) => (
+            <li key={uid}>
+              <PlayerTag
+                player={pub.players?.[uid]}
+                you={uid === me}
+                extra={uid === pub.hostUid ? <span className="host-tag">domaćin</span> : null}
+              />
+              {isHost && uid !== me && (
+                <button className="icon-btn" onClick={() => actions.kick(uid)} aria-label="Izbaci">
+                  ✕
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="card">
+        <h2>Dužina igre</h2>
+        <div className="segmented">
+          {MODES.map((m) => (
+            <button
+              key={m.id}
+              className={pub.mode === m.id ? 'on' : ''}
+              disabled={!isHost}
+              onClick={() => actions.setMode(m.id)}
+            >
+              <b>{m.name}</b>
+              <small>{m.detail}</small>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {isHost ? (
+        <Button disabled={missing > 0} onClick={actions.startGame}>
+          {missing > 0 ? `Treba još ${missing} ${missing === 1 ? 'igrač' : 'igrača'}` : 'Poleći! Počni igru ✈️'}
+        </Button>
+      ) : (
+        <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene igru</Waiting>
+      )}
+    </section>
+  )
+}
+
+function CategoryPick({ pub, me, actions }: ScreenProps) {
+  const picker = pickerFor(pub)
+  return (
+    <section className="screen">
+      <RoundTitle pub={pub} />
+      <Hint pub={pub}>
+        Svi će dobiti istu tajnu reč iz ove kategorije, osim uljeza. Uljez zna samo kategoriju.
+      </Hint>
+      {picker === me ? (
+        <>
+          <h1 className="title">Ti biraš kategoriju!</h1>
+          <div className="category-grid">
+            {CATEGORIES.map((c) => (
+              <button key={c.id} className="category" onClick={() => actions.pickCategory(c.id)}>
+                <span className="cat-icon">{c.icon}</span>
+                <span>{c.name}</span>
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="card center">
+          <PlayerTag player={pub.players?.[picker]} />
+          <Waiting>bira kategoriju</Waiting>
+        </div>
+      )}
+      <MiniScores pub={pub} me={me} />
+    </section>
+  )
+}
+
+function Clues({ pub, me, actions, view }: ScreenProps) {
+  const category = pub.category ? getCategory(pub.category) : null
+  return (
+    <section className="screen">
+      <RoundTitle pub={pub} />
+      <div className="pill">
+        {category?.icon} {category?.name}
+      </div>
+      <Ticket ticket={view.ticket} player={pub.players?.[me]} round={pub.round} />
+      <Hint pub={pub}>
+        Ako znaš reč, daj trag koji pomaže ostalima, ali ne odaje reč uljezu. Ako si uljez, blefiraj! I ne zaboravi
+        misiju 🤫
+      </Hint>
+      <div className="card">
+        <p className="big-line">
+          <PlayerTag player={pub.players?.[pub.starter ?? '']} you={pub.starter === me} /> počinje.
+        </p>
+        <p className="muted">Idite u krug dva puta. Svako kaže po jednu reč.</p>
+      </div>
+      <Button onClick={actions.toVoting}>Gotovi smo, glasanje! 🗳️</Button>
+    </section>
+  )
+}
+
+function Voting({ pub, me, isHost, actions, view }: ScreenProps) {
+  const order = playerOrder(pub)
+  const votes = pub.votes ?? {}
+  const myVote = votes[me]
+  const count = order.filter((uid) => votes[uid]).length
+  return (
+    <section className="screen">
+      <RoundTitle pub={pub} />
+      <h1 className="title">Ko je uljez?</h1>
+      <Hint pub={pub}>Glasaju svi, i uljez, da ne bi upadao u oči. Možeš da promeniš glas dok svi ne glasaju.</Hint>
+      <div className="vote-list">
+        {order
+          .filter((uid) => uid !== me)
+          .map((uid) => (
+            <button
+              key={uid}
+              className={`vote${myVote === uid ? ' on' : ''}`}
+              onClick={() => actions.vote(uid)}
+            >
+              <PlayerTag player={pub.players?.[uid]} />
+              {myVote === uid && <span className="check">✓</span>}
+            </button>
+          ))}
+      </div>
+      <div className="card center">
+        <div className="voted-row">
+          {order.map((uid) => (
+            <span key={uid} className={votes[uid] ? 'voted' : 'not-voted'}>
+              <Badge id={pub.players?.[uid]?.badge} size="sm" />
+            </span>
+          ))}
+        </div>
+        <small className="muted">
+          Glasalo {count} od {order.length}
+        </small>
+        {isHost && count > 0 && count < order.length && (
+          <button className="link-btn" onClick={actions.closeVoting}>
+            Ne čekaj ostale
+          </button>
+        )}
+      </div>
+      <Ticket ticket={view.ticket} player={pub.players?.[me]} round={pub.round} />
+    </section>
+  )
+}
+
+/** Drum roll on the host phone, then the big reveal. */
+function Reveal({ pub, me, isHost, actions, view }: ScreenProps) {
+  const secret = view.secret?.round === pub.round ? view.secret : null
+  const [shown, setShown] = useState(false)
+  const played = useRef(false)
+
+  const ready = Boolean(secret)
+  useEffect(() => {
+    if (!secret || played.current) return
+    played.current = true
+    if (isHost) sound.drumRoll()
+    const t = setTimeout(() => {
+      setShown(true)
+      if (isHost) (isCaught(pub, secret.impostor) ? sound.cheer : sound.scratch)()
+    }, 2400)
+    return () => clearTimeout(t)
+    // runs once, when the round's answers arrive
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready])
+
+  if (!secret || !shown)
+    return (
+      <section className="screen">
+        <RoundTitle pub={pub} />
+        <div className="drumroll">
+          <div className="spotlight" />
+          <h1 className="title chrome">Uljez je…</h1>
+          <div className="drum">🥁</div>
+        </div>
+      </section>
+    )
+
+  const caught = isCaught(pub, secret.impostor)
+  const impostor = pub.players?.[secret.impostor]
+  return (
+    <section className="screen">
+      <RoundTitle pub={pub} />
+      <div className={`reveal-card ${caught ? 'caught' : 'escaped'}`}>
+        <Badge id={impostor?.badge} size="lg" />
+        <div className="reveal-name">{impostor?.name ?? 'Neko'}</div>
+        <div className="reveal-verdict">{caught ? 'UHVAĆEN! 🎉' : 'POBEGAO! 😈'}</div>
+        {!caught && (
+          <div className="reveal-word">
+            Reč je bila <b>{secret.word}</b>
+          </div>
+        )}
+      </div>
+      <VoteSummary pub={pub} secret={secret} me={me} />
+      {caught && (
+        <p className="muted center">
+          {secret.impostor === me
+            ? 'Ali nije gotovo: pogodi reč i ukradi 2 poena!'
+            : `${impostor?.name ?? 'Uljez'} sada može da pogađa reč za 2 poena.`}
+        </p>
+      )}
+      <Button onClick={actions.afterReveal}>Dalje</Button>
+    </section>
+  )
+}
+
+function VoteSummary({ pub, secret, me }: { pub: Pub; secret: Secret; me: string }) {
+  const order = playerOrder(pub)
+  const votes = pub.votes ?? {}
+  return (
+    <div className="card">
+      <h2>Glasovi</h2>
+      <ul className="vote-summary">
+        {order.map((uid) =>
+          votes[uid] ? (
+            <li key={uid} className={uid !== secret.impostor && votes[uid] === secret.impostor ? 'right' : ''}>
+              <PlayerTag player={pub.players?.[uid]} you={uid === me} />
+              <span className="arrow">→</span>
+              <PlayerTag player={pub.players?.[votes[uid]]} />
+            </li>
+          ) : null,
+        )}
+      </ul>
+      <small className="muted">
+        {votesAgainst(pub, secret.impostor)} od {order.length - 1} glasova za uljeza (treba{' '}
+        {catchThreshold(order.length)} da bi bio uhvaćen)
+      </small>
+    </div>
+  )
+}
+
+function Guess({ pub, me, actions, view }: ScreenProps) {
+  const secret = view.secret?.round === pub.round ? view.secret : null
+  if (!secret) return <Waiting>Učitavanje</Waiting>
+  const impostor = secret.impostor
+  const category = getCategory(secret.category)
+  return (
+    <section className="screen">
+      <RoundTitle pub={pub} />
+      {impostor === me ? (
+        <>
+          <h1 className="title">Koja je bila reč?</h1>
+          <p className="muted center">
+            {category.icon} {category.name}. Pogodi i dobijaš +2.
+          </p>
+          <div className="category-grid">
+            {secret.options.map((w) => (
+              <button key={w} className="category" onClick={() => actions.guess(w)}>
+                {w}
+              </button>
+            ))}
+          </div>
+        </>
+      ) : (
+        <div className="card center">
+          <PlayerTag player={pub.players?.[impostor]} />
+          <Waiting>pogađa reč za 2 poena</Waiting>
+        </div>
+      )}
+    </section>
+  )
+}
+
+function Missions({ pub, me, isHost, actions, view }: ScreenProps) {
+  const secret = view.secret?.round === pub.round ? view.secret : null
+  if (!secret) return <Waiting>Učitavanje</Waiting>
+  const order = playerOrder(pub)
+  const mine = pub.missionVotes?.[me] ?? {}
+  const done = pub.missionDone ?? {}
+  const waitingOn = order.filter((uid) => !done[uid])
+  const caught = isCaught(pub, secret.impostor)
+
+  return (
+    <section className="screen">
+      <RoundTitle pub={pub} />
+      <div className="card center">
+        {caught && (
+          <p className="big-line">
+            {pub.guess === secret.word
+              ? `${nameOf(pub, secret.impostor)} je pogodio reč! +2 🔥`
+              : `${nameOf(pub, secret.impostor)} nije pogodio reč.`}
+          </p>
+        )}
+        <small className="label">REČ JE BILA</small>
+        <div className="reveal-word-big chrome">{secret.word}</div>
+      </div>
+
+      <h1 className="title">Tajne misije</h1>
+      <Hint pub={pub}>Da li je uspelo? Palac gore ako jeste. Misija vredi +1 ako se većina ostalih složi.</Hint>
+      <div className="mission-list">
+        {order.map((uid) => (
+          <div key={uid} className="card mission">
+            <PlayerTag player={pub.players?.[uid]} you={uid === me} />
+            <p>{secret.missions[uid]}</p>
+            {uid !== me && !done[me] && (
+              <div className="thumbs">
+                <button className={mine[uid] === true ? 'on up' : ''} onClick={() => actions.missionVote(uid, true)}>
+                  👍
+                </button>
+                <button
+                  className={mine[uid] === false ? 'on down' : ''}
+                  onClick={() => actions.missionVote(uid, false)}
+                >
+                  👎
+                </button>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+      {!done[me] ? (
+        <Button onClick={actions.missionDone}>Gotovo ✓</Button>
+      ) : (
+        <div className="card center">
+          <Waiting>Čekamo: {waitingOn.map((uid) => nameOf(pub, uid)).join(', ')}</Waiting>
+          {isHost && waitingOn.length > 0 && (
+            <button className="link-btn" onClick={actions.finishRound}>
+              Ne čekaj ostale
+            </button>
+          )}
+        </div>
+      )}
+    </section>
+  )
+}
+
+function Score({ pub, me, actions }: ScreenProps) {
+  const last = pub.last
+  const next = pickerFor({ ...pub, round: pub.round + 1 })
+  return (
+    <section className="screen">
+      <RoundTitle pub={pub} />
+      {last && (
+        <div className="card">
+          <h2>Ova runda</h2>
+          <ul className="gains">
+            {playerOrder(pub).map((uid) => {
+              const g = last.gains[uid]
+              return (
+                <li key={uid}>
+                  <PlayerTag player={pub.players?.[uid]} you={uid === me} />
+                  <span className="reasons">{g?.reasons.join(', ') || '—'}</span>
+                  <b className={g?.points ? 'plus' : 'zero'}>+{g?.points ?? 0}</b>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      )}
+      <Standings pub={pub} me={me} />
+      <Button onClick={actions.nextRound}>Sledeća runda ✈️</Button>
+      <p className="muted center">Sledeći bira: {nameOf(pub, next)}</p>
+    </section>
+  )
+}
+
+function GameOver({ pub, me, isHost, actions }: ScreenProps) {
+  const table = standings(pub)
+  const top = table[0]?.score ?? 0
+  const winners = table.filter((r) => r.score === top)
+  const played = useRef(false)
+  useEffect(() => {
+    if (isHost && !played.current) {
+      played.current = true
+      sound.fanfare()
+    }
+  }, [isHost])
+  return (
+    <section className="screen">
+      <div className="winner">
+        <div className="crown">👑</div>
+        {winners.map((w) => (
+          <div key={w.uid} className="winner-name">
+            <Badge id={pub.players?.[w.uid]?.badge} size="lg" />
+            <span className="chrome">{nameOf(pub, w.uid)}</span>
+          </div>
+        ))}
+        <p>{winners.length > 1 ? 'dele pobedu!' : 'je pobednik!'}</p>
+      </div>
+      <Standings pub={pub} me={me} />
+      {isHost ? (
+        <Button onClick={actions.newGame}>Nova igra</Button>
+      ) : (
+        <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene novu igru</Waiting>
+      )}
+    </section>
+  )
+}
+
+function Standings({ pub, me }: { pub: Pub; me: string }) {
+  const target = targetFor(pub)
+  return (
+    <div className="card">
+      <h2>Tabela {target ? <small className="muted">do {target}</small> : null}</h2>
+      <ol className="standings">
+        {standings(pub).map((r) => (
+          <li key={r.uid}>
+            <PlayerTag player={pub.players?.[r.uid]} you={r.uid === me} />
+            <span className="bar">
+              <span
+                style={{ width: `${Math.min(100, (r.score / (target ?? Math.max(10, r.score))) * 100)}%` }}
+              />
+            </span>
+            <b>{r.score}</b>
+          </li>
+        ))}
+      </ol>
+    </div>
+  )
+}
+
+function MiniScores({ pub, me }: { pub: Pub; me: string }) {
+  if (pub.round <= 1) return null
+  return <Standings pub={pub} me={me} />
+}
+
+function RoundTitle({ pub }: { pub: Pub }) {
+  return <div className="round-title">RUNDA {pub.round}</div>
+}
