@@ -4,8 +4,9 @@ import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './gam
 import { BADGES, type GameId } from './game/types'
 import { Blef } from './screens/Blef'
 import { Game } from './screens/Game'
+import { Kviz } from './screens/Kviz'
 import { Wave } from './screens/Wave'
-import { BlefRules, Button, Modal, Rules, Waiting, WaveRules } from './ui/components'
+import { BlefRules, Button, KvizRules, Modal, Rules, Waiting, WaveRules } from './ui/components'
 import * as sound from './ui/sound'
 import { keepAwake } from './ui/wakeLock'
 
@@ -17,6 +18,7 @@ const GAMES: { id: GameId; name: string; icon: string; tagline: string; players:
   { id: 'uljez', name: 'ULJEZ', icon: '🕵️', tagline: 'Svi znaju tajnu reč. Osim jednog.', players: '3 do 5 igrača' },
   { id: 'blef', name: 'BLEF', icon: '🤥', tagline: 'Izmisli laž, pronađi istinu.', players: '3 do 5, najbolje 3 ili 4' },
   { id: 'talas', name: 'TALAS', icon: '📡', tagline: 'Talasna dužina: pogodi šta je drugar mislio.', players: '3 do 5 igrača' },
+  { id: 'kviz', name: 'KVIZ', icon: '⏱️', tagline: 'Isto pitanje, isti sat, 4 odgovora. Brzo!', players: '3 do 5 igrača' },
 ]
 const GAME_IDS = GAMES.map((g) => g.id) as string[]
 const gameName = (id: GameId) => GAMES.find((g) => g.id === id)?.name ?? 'ULJEZ'
@@ -142,7 +144,7 @@ export default function App() {
       {useLocalBackend() && <div className="local-note">Probni režim (bez interneta)</div>}
       {rules && (
         <Modal title="Kako se igra" onClose={() => setRules(false)}>
-          {game === 'blef' ? <BlefRules /> : game === 'talas' ? <WaveRules /> : <Rules />}
+          {game === 'blef' ? <BlefRules /> : game === 'talas' ? <WaveRules /> : game === 'kviz' ? <KvizRules /> : <Rules />}
         </Modal>
       )}
     </div>
@@ -279,6 +281,7 @@ function Room({
   if (!view.pub.players?.[be.uid]) return <Join be={be} code={code} view={view} onLeave={onLeave} />
   if (game === 'blef') return <Blef be={be} code={code} view={view} />
   if (game === 'talas') return <Wave be={be} code={code} view={view} />
+  if (game === 'kviz') return <Kviz be={be} code={code} view={view} />
   return <Game be={be} code={code} view={view} />
 }
 

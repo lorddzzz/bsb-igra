@@ -283,3 +283,26 @@ export function WaveRules() {
     </div>
   )
 }
+
+export function KvizRules() {
+  return (
+    <div className="rules">
+      <p>
+        <b>Cilj:</b> znaj najviše, i to brzo.
+      </p>
+      <ol>
+        <li>Svi dobijaju isto pitanje u isto vreme, sa 4 ponuđena odgovora.</li>
+        <li>Imate 10 sekundi. Jedan dodir zaključava odgovor.</li>
+        <li>Posle svakog pitanja vidi se tačan odgovor i ko je šta izabrao, pa odmah sledeće.</li>
+        <li>Igra ima 15 pitanja: najviše o svetu, malo muzike i malo Backstreet Boysa.</li>
+      </ol>
+      <h3>Poeni</h3>
+      <ul className="points">
+        <li>
+          <b>+1</b> za tačan odgovor
+        </li>
+        <li>brzina ne donosi poene, samo da stigneš na vreme</li>
+      </ul>
+    </div>
+  )
+}

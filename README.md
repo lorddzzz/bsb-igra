@@ -17,5 +17,6 @@ npm install
 npm run dev            # open http://localhost:5173/?local in several tabs to play without Firebase
 npm test               # scoring and round setup tests
 npx vite --port 5173 & node e2e/play.mjs          # 4 simulated phones play two rounds, screenshots in e2e/shots
+node e2e/kviz.mjs                                 # 4 phones play a full Kviz (trivia) game; also blef.mjs, wave.mjs
 firebase emulators:start --only auth,database     # then MODE=emu node e2e/play.mjs to test against the rules
 ```

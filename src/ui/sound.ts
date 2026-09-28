@@ -151,3 +151,19 @@ export function fanfare() {
     o.stop(at + 1)
   })
 }
+
+/** Clock tick for the last seconds of a Kviz question; the final one is higher. */
+export function tick(final = false) {
+  const c = ready()
+  if (!c) return
+  const at = c.currentTime
+  const o = c.createOscillator()
+  o.type = 'square'
+  o.frequency.value = final ? 1320 : 880
+  const g = c.createGain()
+  g.gain.setValueAtTime(0.12, at)
+  g.gain.exponentialRampToValueAtTime(0.001, at + 0.12)
+  o.connect(g).connect(c.destination)
+  o.start(at)
+  o.stop(at + 0.13)
+}

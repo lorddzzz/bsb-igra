@@ -1,4 +1,5 @@
 import type { BlefState } from '../blef/types'
+import type { KvizState } from '../kviz/types'
 import type { WaveState } from '../wave/types'
 
 export type Phase =
@@ -18,9 +19,12 @@ export type Phase =
   | 'clue'
   | 'aim'
   | 'result'
+  // Kviz
+  | 'question'
+  | 'answer'
 
 /** Which game a room plays. Rooms from before the game picker have none and play Uljez. */
-export type GameId = 'uljez' | 'blef' | 'talas'
+export type GameId = 'uljez' | 'blef' | 'talas' | 'kviz'
 
 export type Mode = 'quick' | 'normal' | 'endless'
 
@@ -98,6 +102,8 @@ export interface Pub {
   blef?: BlefState
   /** Talasna dužina's own state; only in those rooms. */
   wave?: WaveState
+  /** Kviz's own state; only in Kviz rooms. */
+  kviz?: KvizState
 }
 
 /** One player's private card for the round. Lives at rooms/{code}/tickets/{uid}. */
