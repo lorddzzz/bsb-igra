@@ -294,7 +294,8 @@ export function KvizRules() {
         <li>Svi dobijaju isto pitanje u isto vreme, sa 4 ponuđena odgovora.</li>
         <li>Imate 10 sekundi. Jedan dodir zaključava odgovor.</li>
         <li>Posle svakog pitanja vidi se tačan odgovor i ko je šta izabrao, pa odmah sledeće.</li>
-        <li>Igra ima 15 pitanja: najviše o svetu, malo muzike i malo Backstreet Boysa.</li>
+        <li>Igra ima 15 pitanja iz četiri oblasti: Backstreet Boys, Evropa, srpska istorija i Srbija danas.</li>
+        <li>Većina pitanja je laka, nekoliko je teže, a jedno ili dva su baš teška 🔥.</li>
       </ol>
       <h3>Poeni</h3>
       <ul className="points">

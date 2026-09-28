@@ -8,10 +8,10 @@ import {
   ANSWER_SECONDS,
   currentQuestion,
   kvizOf,
-  leadSeconds,
   optionsOf,
   QUESTIONS_PER_GAME,
   REVEAL_SECONDS,
+  timeLeft,
   totalQuestions,
 } from '../kviz/logic'
 import { useKvizActions, type KvizActions } from '../kviz/room'
@@ -49,7 +49,7 @@ export function Kviz({ be, code, view }: Props) {
           steps={[
             `Svi dobijaju isto pitanje u isto vreme, sa 4 ponuđena odgovora.`,
             `Imate samo ${ANSWER_SECONDS} sekundi. Jedan dodir, bez predomišljanja!`,
-            `Tačan odgovor je 1 poen, brzina se ne računa. Igra ima ${QUESTIONS_PER_GAME} pitanja.`,
+            `Tačan odgovor je 1 poen, brzina se ne računa. Igra ima ${QUESTIONS_PER_GAME} pitanja: Backstreet Boys, Evropa, srpska istorija i Srbija danas.`,
           ]}
           onKick={actions.kick}
           onStart={actions.start}
@@ -67,12 +67,16 @@ export function Kviz({ be, code, view }: Props) {
 }
 
 function RoundTitle({ pub }: { pub: Pub }) {
+  const q = currentQuestion(pub)
   return (
     <div className="kv-top">
       <span className="round-title">
         PITANJE {pub.round} / {totalQuestions(pub)}
       </span>
-      <span className="pill">{TOPIC_LABELS[currentQuestion(pub).topic]}</span>
+      <span className="pill">
+        {TOPIC_LABELS[q.topic]}
+        {q.level === 3 && <span className="kv-hard"> · teško 🔥</span>}
+      </span>
     </div>
   )
 }
@@ -82,10 +86,11 @@ function Question({ pub, me, isHost, actions }: ScreenProps) {
   const { texts } = optionsOf(pub)
   const answers = kvizOf(pub).answers ?? {}
   const mine = answers[me]
-  const lead = leadSeconds(pub.round) * 1000
-  const left = Math.max(0, ANSWER_SECONDS * 1000 - (actions.elapsed - lead))
+  const total = timeLeft(pub, actions.now)
+  const leading = total > ANSWER_SECONDS * 1000
+  const left = Math.min(total, ANSWER_SECONDS * 1000)
   const seconds = Math.ceil(left / 1000)
-  const leading = actions.elapsed < lead
+  const leadIn = Math.ceil((total - ANSWER_SECONDS * 1000) / 1000)
   const over = left <= 0
 
   // Stage-speaker tick for the last three seconds, on the host phone only.
@@ -102,8 +107,8 @@ function Question({ pub, me, isHost, actions }: ScreenProps) {
         <RoundTitle pub={pub} />
         <div className="kv-lead">
           <small className="label">SPREMI SE</small>
-          <div key={Math.ceil((lead - actions.elapsed) / 1000)} className="kv-lead-num chrome">
-            {Math.ceil((lead - actions.elapsed) / 1000)}
+          <div key={leadIn} className="kv-lead-num chrome">
+            {leadIn}
           </div>
         </div>
       </section>
@@ -152,6 +157,7 @@ function Answer({ pub, me, isHost, actions }: ScreenProps) {
   const order = playerOrder(pub)
   const right = order.filter((uid) => picks[uid] === correct).length
   const last = pub.round >= totalQuestions(pub)
+  const revealLeft = (kvizOf(pub).nextAt ?? 0) - actions.now
 
   const played = useRef(false)
   useEffect(() => {
@@ -188,12 +194,12 @@ function Answer({ pub, me, isHost, actions }: ScreenProps) {
       </div>
       <div className="kv-next">
         <span className="kv-bar">
-          <span style={{ '--p': Math.max(0, 1 - actions.elapsed / (REVEAL_SECONDS * 1000)) } as CSSProperties} />
+          <span style={{ '--p': Math.min(1, Math.max(0, revealLeft / (REVEAL_SECONDS * 1000))) } as CSSProperties} />
         </span>
         <small className="muted">{last ? 'Još samo tabela…' : 'Sledeće pitanje stiže'}</small>
       </div>
       <ScoreTable pub={pub} me={me} />
-      {!isHost && actions.elapsed > (REVEAL_SECONDS + 2) * 1000 && (
+      {!isHost && revealLeft < -2000 && (
         <p className="muted center">Čekamo telefon od {nameOf(pub, pub.hostUid)}…</p>
       )}
     </section>

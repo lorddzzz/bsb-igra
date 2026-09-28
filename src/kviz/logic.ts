@@ -1,19 +1,21 @@
-import { KVIZ_QUESTIONS, type KvizQuestion } from '../data/kvizQuestions'
+import { KVIZ_QUESTIONS, KVIZ_TOPICS, type KvizLevel, type KvizQuestion, type KvizTopic } from '../data/kvizQuestions'
 import { asList, playerOrder, shuffle, type Rng } from '../game/logic'
 import type { Pub } from '../game/types'
 import type { KvizResult, KvizState } from './types'
 
 export const QUESTIONS_PER_GAME = 15
+/** Every topic gets at least this many questions per game; the rest go to random topics. */
+export const MIN_PER_TOPIC = 2
+/** Questions per game by difficulty: mostly easy, a few harder, one or two really hard. */
+export const LEVELS: Record<KvizLevel, number> = { 1: 10, 2: 3, 3: 2 }
 /** Seconds to answer each question. */
 export const ANSWER_SECONDS = 10
 /** How long the right answer stays up before the next question starts on its own. */
 export const REVEAL_SECONDS = 4
 /** A countdown before the first question, so nobody misses it while reading the lobby. */
 export const LEAD_SECONDS = 3
-/** Extra time the host waits past zero, so a tap in the last moment still reaches the database. */
-export const GRACE_MS = 1000
-/** How many questions of each topic a game has; the rest are 'svet'. */
-export const QUOTAS: Partial<Record<KvizQuestion['topic'], number>> = { bsb: 2, muzika: 3 }
+/** Extra time past zero before the host closes, so a tap in the last moment still reaches the database. */
+export const GRACE_MS = 800
 
 export function kvizOf(pub: Pub): KvizState {
   return pub.kviz ?? {}
@@ -40,36 +42,44 @@ export function optionsOf(pub: Pub): { texts: string[]; correct: number } {
   return { texts: shown.map((i) => all[i]), correct: shown.indexOf(0) }
 }
 
-/** Seconds on the clock for this question: the first one also gets the lead-in countdown. */
-export function leadSeconds(round: number): number {
-  return round === 1 ? LEAD_SECONDS : 0
+/** Milliseconds left to answer, by the shared (server) clock. Above ANSWER_SECONDS means the lead-in. */
+export function timeLeft(pub: Pub, now: number): number {
+  return Math.max(0, (kvizOf(pub).endsAt ?? 0) - now)
 }
 
 /**
- * This game's questions: QUOTAS of music and Backstreet Boys, the rest world facts, none asked
- * in this room before (a topic starts over once it runs out). Shuffled so topics come in any order.
+ * This game's questions: at least MIN_PER_TOPIC from every topic, the rest from random topics,
+ * with LEVELS easy/medium/hard. None asked in this room before; a topic and level starts over
+ * once it runs out.
  */
-export function drawQueue(seen: string[], rng: Rng, count = QUESTIONS_PER_GAME): { queue: string[]; seen: string[] } {
-  const topics = [...new Set(KVIZ_QUESTIONS.map((q) => q.topic))]
-  const picked: string[] = []
+export function drawQueue(seen: string[], rng: Rng): { queue: string[]; seen: string[] } {
+  const count = Object.values(LEVELS).reduce((s, n) => s + n, 0)
+  const topics: KvizTopic[] = KVIZ_TOPICS.flatMap((t) => Array(MIN_PER_TOPIC).fill(t))
+  while (topics.length < count) topics.push(KVIZ_TOPICS[Math.floor(rng() * KVIZ_TOPICS.length)])
+  const levels = shuffle(
+    (Object.entries(LEVELS) as [string, number][]).flatMap(([l, n]) => Array(n).fill(Number(l) as KvizLevel)),
+    rng,
+  )
   let nextSeen = [...seen]
-  for (const topic of topics) {
-    const want = topic === 'svet' ? count - Object.values(QUOTAS).reduce((s, n) => s + (n ?? 0), 0) : (QUOTAS[topic] ?? 0)
-    const all = KVIZ_QUESTIONS.filter((q) => q.topic === topic).map((q) => q.id)
-    let pool = all.filter((id) => !nextSeen.includes(id))
-    if (pool.length < want) {
-      nextSeen = nextSeen.filter((id) => !all.includes(id))
-      pool = all
+  const queue: string[] = []
+  shuffle(topics, rng).forEach((topic, i) => {
+    let cell = KVIZ_QUESTIONS.filter((q) => q.topic === topic && q.level === levels[i] && !queue.includes(q.id))
+    if (!cell.length) cell = KVIZ_QUESTIONS.filter((q) => q.topic === topic && !queue.includes(q.id))
+    let pool = cell.filter((q) => !nextSeen.includes(q.id))
+    if (!pool.length) {
+      const ids = cell.map((q) => q.id)
+      nextSeen = nextSeen.filter((id) => !ids.includes(id))
+      pool = cell
     }
-    const take = shuffle(pool, rng).slice(0, want)
-    picked.push(...take)
-    nextSeen.push(...take)
-  }
-  return { queue: shuffle(picked, rng), seen: nextSeen }
+    const id = pool[Math.floor(rng() * pool.length)].id
+    queue.push(id)
+    nextSeen.push(id)
+  })
+  return { queue, seen: nextSeen }
 }
 
-function newQuestion(kviz: KvizState, rng: Rng): KvizState {
-  return { ...kviz, order: shuffle([0, 1, 2, 3], rng), answers: undefined, result: undefined }
+function newQuestion(kviz: KvizState, rng: Rng, endsAt: number): KvizState {
+  return { ...kviz, order: shuffle([0, 1, 2, 3], rng), endsAt, nextAt: undefined, answers: undefined, result: undefined }
 }
 
 export function allAnswered(pub: Pub): boolean {
@@ -91,27 +101,30 @@ export function scoreKviz(pub: Pub): KvizResult {
   return { round: pub.round, correct, picks, gains }
 }
 
-export function applyKviz(pub: Pub, result: KvizResult): Pub {
+/** `now` is the server clock; the reveal lasts REVEAL_SECONDS from here. */
+export function applyKviz(pub: Pub, result: KvizResult, now: number): Pub {
   const scores = { ...(pub.scores ?? {}) }
   for (const [uid, g] of Object.entries(result.gains)) scores[uid] = (scores[uid] ?? 0) + g.points
-  return { ...pub, scores, phase: 'answer', kviz: { ...kvizOf(pub), result } }
+  return { ...pub, scores, phase: 'answer', kviz: { ...kvizOf(pub), result, nextAt: now + REVEAL_SECONDS * 1000 } }
 }
 
-export function startKviz(pub: Pub, rng: Rng): Pub {
+export function startKviz(pub: Pub, rng: Rng, now: number): Pub {
   const order = playerOrder(pub)
   const { queue, seen } = drawQueue(asList<string>(kvizOf(pub).seen), rng)
+  const endsAt = now + (LEAD_SECONDS + ANSWER_SECONDS) * 1000
   return {
     ...pub,
     phase: 'question',
     round: 1,
     scores: Object.fromEntries(order.map((uid) => [uid, 0])),
-    kviz: newQuestion({ game: rng().toString(36).slice(2, 10), total: queue.length, seen, queue }, rng),
+    kviz: newQuestion({ game: rng().toString(36).slice(2, 10), total: queue.length, seen, queue }, rng, endsAt),
   }
 }
 
-export function nextQuestion(pub: Pub, rng: Rng): Pub {
+export function nextQuestion(pub: Pub, rng: Rng, now: number): Pub {
   if (pub.round >= totalQuestions(pub)) return { ...pub, phase: 'over' }
-  return { ...pub, phase: 'question', round: pub.round + 1, kviz: newQuestion(kvizOf(pub), rng) }
+  const endsAt = now + ANSWER_SECONDS * 1000
+  return { ...pub, phase: 'question', round: pub.round + 1, kviz: newQuestion(kvizOf(pub), rng, endsAt) }
 }
 
 export function resetKvizLobby(pub: Pub): Pub {

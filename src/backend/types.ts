@@ -9,6 +9,11 @@ export interface Backend {
   update(path: string, patch: Record<string, unknown>): Promise<void>
   /** Atomic read-modify-write. Return undefined from `fn` to abort. Resolves true when committed. */
   transaction<T>(path: string, fn: (current: T | null) => T | null | undefined): Promise<boolean>
+  /**
+   * The database server's clock in ms, estimated on this phone. Phones' own clocks can be off by
+   * seconds; this one is the same on every phone to within network jitter.
+   */
+  serverNow(): number
   /** Marks this player online, and offline again when the connection drops. */
   presence(path: string): void
 }

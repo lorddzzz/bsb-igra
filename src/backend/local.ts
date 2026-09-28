@@ -73,6 +73,7 @@ export function createLocalBackend(): Backend {
 
   return {
     uid,
+    serverNow: () => Date.now(),
     listen(path, cb) {
       let last = '\u0000'
       const fire = () => {

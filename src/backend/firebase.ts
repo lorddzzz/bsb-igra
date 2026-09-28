@@ -39,8 +39,15 @@ export async function createFirebaseBackend(
     })
   })
 
+  // Firebase measures how far this phone's clock is from the server's and keeps it updated.
+  let offset = 0
+  onValue(ref(db, '.info/serverTimeOffset'), (snap) => {
+    offset = Number(snap.val()) || 0
+  })
+
   return {
     uid,
+    serverNow: () => Date.now() + offset,
     listen(path, cb, onError) {
       return onValue(ref(db, path), (snap) => cb(snap.val()), (err) => onError?.(err))
     },
