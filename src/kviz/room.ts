@@ -2,16 +2,19 @@ import { useEffect, useMemo, useState } from 'react'
 import type { Backend } from '../backend'
 import { roomPath } from '../game/room'
 import type { Phase, Pub } from '../game/types'
+import type { CardId } from './cards'
 import {
   allAnswered,
+  allDone,
   applyKviz,
   GRACE_MS,
   kvizOf,
+  myTimeLeft,
   nextQuestion,
+  playCard,
   resetKvizLobby,
   scoreKviz,
   startKviz,
-  timeLeft,
 } from './logic'
 
 /** If the host's phone goes quiet (locked screen, lost signal), any other phone moves on this much later. */
@@ -50,8 +53,10 @@ export function useKvizActions(be: Backend, code: string, pub: Pub) {
       answer: (option: number) =>
         pub.phase === 'question' &&
         kvizOf(pub).answers?.[be.uid] === undefined &&
-        timeLeft(pub, be.serverNow()) > 0 &&
+        myTimeLeft(pub, be.uid, be.serverNow()) > 0 &&
         be.set(`${pubPath}/kviz/answers/${be.uid}`, option),
+      attack: (card: CardId, victim: string) =>
+        be.transaction<Pub>(pubPath, (p) => (p ? playCard(p, be.uid, card, victim, be.serverNow()) : p)),
       close: () => step('question', pub.round, (p) => applyKviz(p, scoreKviz(p), be.serverNow())),
       next: () => step('answer', pub.round, (p) => nextQuestion(p, Math.random, be.serverNow())),
       newGame: () => isHost && step('over', pub.round, (p) => resetKvizLobby(p)),
@@ -66,7 +71,7 @@ export function useKvizActions(be: Backend, code: string, pub: Pub) {
   const backup = isHost ? 0 : BACKUP_MS
   useEffect(() => {
     let move: (() => Promise<boolean>) | null = null
-    if (pub.phase === 'question' && (allAnswered(pub) || now >= endsAt + GRACE_MS + backup)) move = actions.close
+    if (pub.phase === 'question' && (allAnswered(pub) || allDone(pub, now - backup) || now >= endsAt + GRACE_MS + backup)) move = actions.close
     if (pub.phase === 'answer' && now >= nextAt + backup) move = actions.next
     if (!move || fired.has(key)) return
     fired.add(key)

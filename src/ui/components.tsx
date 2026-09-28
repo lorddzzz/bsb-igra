@@ -1,5 +1,6 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { getCategory } from '../data/words'
+import { CARDS, SPECIALS } from '../kviz/cards'
 import { BADGES, type Player, type Pub, type Ticket as TicketData } from '../game/types'
 
 export function badgeOf(id: string | undefined) {
@@ -297,6 +298,27 @@ export function KvizRules() {
         <li>Igra ima 15 pitanja iz četiri oblasti: Backstreet Boys, Evropa, srpska istorija i Srbija danas.</li>
         <li>Većina pitanja je laka, nekoliko je teže, a jedno ili dva su baš teška 🔥.</li>
       </ol>
+      <h3>Džokeri za napad</h3>
+      <ul>
+        <li>Svako počinje sa 2 nasumična džokera. Posle 5. i 10. pitanja poslednji na tabeli dobija još jedan.</li>
+        <li>Tokom pitanja dodirni džoker pa drugara koji još nije odgovorio. Napad ga pogađa odmah.</li>
+        <li>Najviše jedan džoker po pitanju, i svako može da nosi samo jedan napad u isto vreme.</li>
+      </ul>
+      <ul className="points">
+        {CARDS.map((c) => (
+          <li key={c.id}>
+            {c.icon} <b>{c.name}</b>: {c.effect}
+          </li>
+        ))}
+      </ul>
+      <h3>Specijalne runde</h3>
+      <ul className="points">
+        {Object.values(SPECIALS).map((sp) => (
+          <li key={sp.name}>
+            {sp.icon} <b>{sp.name}</b>: {sp.text}
+          </li>
+        ))}
+      </ul>
       <h3>Poeni</h3>
       <ul className="points">
         <li>

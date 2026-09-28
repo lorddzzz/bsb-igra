@@ -3,6 +3,21 @@ import { KVIZ_QUESTIONS, KVIZ_TOPICS } from '../data/kvizQuestions'
 import type { Pub } from '../game/types'
 import {
   allAnswered,
+  allDone,
+  attackOn,
+  BONUS_AFTER,
+  deadlineFor,
+  drawSpecials,
+  FREEZE_MS,
+  handOf,
+  MUNJA_SECONDS,
+  myTimeLeft,
+  playCard,
+  questionStart,
+  SPECIAL_ROUNDS,
+  SPLASH_SECONDS,
+  START_CARDS,
+  targets,
   ANSWER_SECONDS,
   applyKviz,
   currentQuestion,
@@ -115,7 +130,7 @@ describe('a game', () => {
     const wrong = (correct + 1) % 4
     p = { ...p, kviz: { ...p.kviz, answers: { a: correct, b: wrong } } }
     expect(allAnswered(p)).toBe(false)
-    const result = scoreKviz(p)
+    const result = scoreKviz({ ...p, kviz: { ...p.kviz, specials: {} } })
     expect(result.gains.a.points).toBe(1)
     expect(result.gains.b.points).toBe(0)
     expect(result.gains.c.points).toBe(0)
@@ -125,7 +140,7 @@ describe('a game', () => {
     expect(p.scores).toEqual({ a: 1, b: 0, c: 0 })
     expect(p.kviz?.nextAt).toBe(20_000 + REVEAL_SECONDS * 1000)
 
-    p = nextQuestion(p, rng, 30_000)
+    p = nextQuestion({ ...p, kviz: { ...p.kviz, specials: {} } }, rng, 30_000)
     expect(p.phase).toBe('question')
     expect(p.round).toBe(2)
     expect(p.kviz?.endsAt).toBe(30_000 + ANSWER_SECONDS * 1000)
@@ -148,5 +163,124 @@ describe('a game', () => {
   it('counts everyone answered', () => {
     const p = startKviz(lobby(), seeded(9), 0)
     expect(allAnswered({ ...p, kviz: { ...p.kviz, answers: { a: 0, b: 1, c: 2 } } })).toBe(true)
+  })
+})
+
+/** A game on question 2 with no special round, questions visible from t=0 to t=10s. */
+function playing(extra: Partial<NonNullable<Pub['kviz']>> = {}): Pub {
+  const p = startKviz(lobby(), seeded(21), 0)
+  return {
+    ...p,
+    round: 2,
+    kviz: {
+      ...p.kviz,
+      specials: {},
+      answerMs: 10_000,
+      endsAt: 10_000,
+      attacks: undefined,
+      answers: undefined,
+      hands: { a: ['magla', 'zamrzni'], b: ['mrak'], c: [] },
+      ...extra,
+    },
+  }
+}
+
+describe('attack cards', () => {
+  it('deals START_CARDS to everyone and SPECIAL_ROUNDS special rounds after the first question', () => {
+    const p = startKviz(lobby(), seeded(4), 0)
+    for (const uid of ['a', 'b', 'c']) expect(handOf(p, uid)).toHaveLength(START_CARDS)
+    const specials = p.kviz!.specials!
+    expect(Object.keys(specials)).toHaveLength(SPECIAL_ROUNDS)
+    expect(new Set(Object.values(specials)).size).toBe(SPECIAL_ROUNDS)
+    expect(specials.r1).toBeUndefined()
+    for (let seed = 1; seed < 30; seed++) expect(drawSpecials(15, seeded(seed)).r1).toBeUndefined()
+  })
+
+  it('hits a friend who has not answered, uses up the card, one card per question', () => {
+    let p = playing()
+    expect(targets(p, 'a', 1000)).toEqual(['b', 'c'])
+    p = playCard(p, 'a', 'magla', 'b', 1000)!
+    expect(attackOn(p, 'b')).toEqual({ card: 'magla', from: 'a', at: 1000 })
+    expect(handOf(p, 'a')).toEqual(['zamrzni'])
+    // one card per question
+    expect(playCard(p, 'a', 'zamrzni', 'c', 1200)).toBeUndefined()
+    // b is already hit
+    expect(targets(p, 'c', 1200)).toEqual(['a'])
+    // not a card you hold, not yourself, not someone who answered
+    expect(playCard(p, 'c', 'mrak', 'a', 1200)).toBeUndefined()
+    expect(playCard(p, 'b', 'mrak', 'b', 1200)).toBeUndefined()
+    const answered = { ...p, kviz: { ...p.kviz, answers: { a: 1 } } }
+    expect(playCard(answered, 'b', 'mrak', 'a', 1200)).toBeUndefined()
+    expect(playCard({ ...p, phase: 'answer' }, 'b', 'mrak', 'a', 1200)).toBeUndefined()
+  })
+
+  it('cannot attack during the lead-in or in the last second', () => {
+    const p = playing({ endsAt: 13_000 })
+    expect(questionStart(p)).toBe(3000)
+    expect(playCard(p, 'a', 'magla', 'b', 2000)).toBeUndefined()
+    expect(playCard(p, 'a', 'magla', 'b', 12_500)).toBeUndefined()
+  })
+
+  it('Zamrzni takes 5 s off, but leaves a moment to react', () => {
+    const early = playCard(playing(), 'a', 'zamrzni', 'b', 1000)!
+    expect(deadlineFor(early, 'b')).toBe(10_000 - FREEZE_MS)
+    expect(deadlineFor(early, 'c')).toBe(10_000)
+    expect(myTimeLeft(early, 'b', 5000)).toBe(0)
+    const late = playCard(playing(), 'a', 'zamrzni', 'b', 7000)!
+    expect(deadlineFor(late, 'b')).toBe(8500)
+    // a frozen player who ran out counts as done
+    const frozen = { ...early, kviz: { ...early.kviz, answers: { a: 0, c: 1 } } }
+    expect(allDone(frozen, 4000)).toBe(false)
+    expect(allDone(frozen, 6000)).toBe(true)
+  })
+
+  it('gives the last placed a card after questions 5 and 10', () => {
+    const p = playing()
+    const at5 = { ...p, round: BONUS_AFTER[0], scores: { a: 3, b: 1, c: 1 } }
+    const out = applyKviz(at5, scoreKviz(at5), 0, seeded(2))
+    expect(out.kviz!.result!.bonus).toEqual(['b', 'c'])
+    expect(handOf(out, 'b')).toHaveLength(2)
+    expect(handOf(out, 'c')).toHaveLength(1)
+    expect(handOf(out, 'a')).toHaveLength(2)
+    const at4 = { ...p, round: 4, scores: { a: 3, b: 1, c: 1 } }
+    expect(applyKviz(at4, scoreKviz(at4), 0).kviz!.result!.bonus).toBeUndefined()
+  })
+})
+
+describe('special rounds', () => {
+  const withSpecial = (special: 'dupli' | 'munja' | 'haos' | 'pljacka') => {
+    const p = playing()
+    return { ...p, kviz: { ...p.kviz, specials: { r3: special } } }
+  }
+
+  it('Munja gives 5 seconds after a splash', () => {
+    const p = nextQuestion(withSpecial('munja'), seeded(1), 0)
+    expect(p.kviz!.answerMs).toBe(MUNJA_SECONDS * 1000)
+    expect(p.kviz!.endsAt).toBe((SPLASH_SECONDS + MUNJA_SECONDS) * 1000)
+  })
+
+  it('Haos hits everyone with a random attack when the question appears', () => {
+    const p = nextQuestion(withSpecial('haos'), seeded(1), 0)
+    for (const uid of ['a', 'b', 'c']) {
+      expect(attackOn(p, uid)?.from).toBe('haos')
+      expect(attackOn(p, uid)?.at).toBe(SPLASH_SECONDS * 1000)
+    }
+    expect(targets(p, 'a', 5000)).toEqual([])
+  })
+
+  it('Dupli poeni doubles a right answer', () => {
+    const p = { ...withSpecial('dupli'), round: 3 }
+    const { correct } = optionsOf(p)
+    const r = scoreKviz({ ...p, kviz: { ...p.kviz, answers: { a: correct } } })
+    expect(r.gains.a.points).toBe(2)
+  })
+
+  it('Pljačka: right answers take a point from the leader, never below zero', () => {
+    const p = { ...withSpecial('pljacka'), round: 3, scores: { a: 1, b: 0, c: 0 } }
+    const { correct } = optionsOf(p)
+    const r = scoreKviz({ ...p, kviz: { ...p.kviz, answers: { a: correct, b: correct, c: correct } } })
+    expect(r.gains.a.points).toBe(0) // +1 right, -1 robbed
+    expect(r.gains.b.points).toBe(2) // +1 right, +1 stolen
+    expect(r.gains.c.points).toBe(1) // leader had nothing left
   })
 })

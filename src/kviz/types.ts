@@ -1,3 +1,14 @@
+import type { CardId, SpecialId } from './cards'
+
+/** An attack on one player during the current question. */
+export interface Attack {
+  card: CardId
+  /** Who played it; 'haos' for the Haos round's random attacks. */
+  from: string
+  /** When it hit, on the server clock (ms). */
+  at: number
+}
+
 export interface KvizResult {
   round: number
   /** Which shown option (0 to 3) was right. */
@@ -6,6 +17,8 @@ export interface KvizResult {
   picks?: Record<string, number>
   /** Points earned this round, with a short reason per point source. */
   gains: Record<string, { points: number; reasons?: string[] }>
+  /** Last-placed players who got a bonus card after this question. */
+  bonus?: string[]
 }
 
 /** Lives at rooms/{code}/pub/kviz. */
@@ -27,6 +40,14 @@ export interface KvizState {
   endsAt?: number
   /** When the reveal is over and the next question starts, server clock (ms). */
   nextAt?: number
+  /** How long this question gives to answer (ms); shorter in a Munja round. */
+  answerMs?: number
+  /** Special rounds of this game, by key `r{round}`. */
+  specials?: Record<string, SpecialId>
+  /** Each player's attack cards. */
+  hands?: Record<string, CardId[]>
+  /** Attacks on the current question, by victim. At most one per victim. */
+  attacks?: Record<string, Attack>
   /** Each player's pick, as shown option index. */
   answers?: Record<string, number>
   result?: KvizResult

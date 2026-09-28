@@ -50,13 +50,36 @@ await host.locator('.kv-lead').waitFor()
 await shot(host, '03-lead')
 
 const total = 15
+let splashShot = false
+let attacked = false
 for (let round = 1; round <= total; round++) {
   await host.getByText(`PITANJE ${round} / ${total}`).first().waitFor()
+  if (!splashShot && (await host.locator('.kv-splash').isVisible().catch(() => false))) {
+    splashShot = true
+    await shot(host, `10-special-r${round}`)
+  }
   for (const p of pages) await p.locator('button.kv-option').first().waitFor({ timeout: 6000 })
   if (round === 1) await shot(pages[1], '04-question')
   const t0 = Date.now()
+  // Somewhere after question 2, Dusan answers and then attacks Jova, who is still thinking.
+  let victimWait = false
+  if (!attacked && round >= 3 && !(await pages[3].locator('.kv-hit').count())) {
+    await pages[0].locator('button.kv-option').nth(round % 4).click()
+    const card = pages[0].locator('button.kv-card:not([disabled])').first()
+    if (await card.count()) {
+      await card.click()
+      await shot(pages[0], '11-pick-victim')
+      await pages[0].locator('.kv-victim', { hasText: 'Jova' }).click()
+      await pages[3].locator('.kv-hit').waitFor({ timeout: 3000 })
+      await new Promise((r) => setTimeout(r, 1200))
+      await shot(pages[3], '12-attacked')
+      attacked = true
+      victimWait = true
+    }
+  }
   for (let i = 0; i < pages.length; i++) {
     if (round === 2 && i === 3) continue
+    if (victimWait && i === 0) continue
     const pick = (round + i) % 4
     await pages[i].locator('button.kv-option').nth(pick).click()
     if (round === 1 && i === 0) await shot(host, '05-answered')
@@ -68,7 +91,7 @@ for (let round = 1; round <= total; round++) {
   await host.locator('.kv-verdict').waitFor({ timeout: 15000 })
   const waited = Date.now() - t0
   if (round === 2 && waited < 8000) errors.push(`question 2 closed after ${waited} ms without everyone answering`)
-  if (round !== 2 && waited > 5000) errors.push(`question ${round} took ${waited} ms although everyone answered`)
+  if (round !== 2 && !victimWait && waited > 9000) errors.push(`question ${round} took ${waited} ms although everyone answered`)
   if (round === 1) await shot(pages[1], '07-answer')
   if (round === 2) {
     await pages[3].locator('.kv-verdict').waitFor()
@@ -88,6 +111,8 @@ for (let round = 1; round <= total; round++) {
 await host.locator('.winner').waitFor({ timeout: 15000 })
 await shot(host, '09-game-over')
 if (await pages[1].getByRole('button', { name: 'Nova igra' }).count()) errors.push('non-host sees new game')
+if (!attacked) errors.push('never managed to play an attack card')
+if (!splashShot) errors.push('never saw a special round splash')
 console.log('code', code, 'standings', await host.locator('.standings li').allTextContents())
 
 // A second game in the same room must start its own clock and bring new questions.
