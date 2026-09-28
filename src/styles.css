@@ -152,6 +152,18 @@ h3 {
   display: grid;
   place-items: center;
 }
+.icon-btn.off {
+  position: relative;
+  opacity: 0.4;
+}
+.icon-btn.off::after {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 2px;
+  background: currentColor;
+  transform: rotate(-45deg);
+}
 
 main {
   position: relative;

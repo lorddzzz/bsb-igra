@@ -8,6 +8,7 @@ import { Kviz } from './screens/Kviz'
 import { Wave } from './screens/Wave'
 import { BlefRules, Button, KvizRules, Modal, Rules, Waiting, WaveRules } from './ui/components'
 import * as sound from './ui/sound'
+import { useStageSounds } from './ui/stageSounds'
 import { keepAwake } from './ui/wakeLock'
 
 const ROOM_KEY = 'uljez-room'
@@ -51,6 +52,7 @@ export default function App() {
   const [code, setCode] = useState<string>(() => roomFromUrl() || saved(ROOM_KEY))
   const [rules, setRules] = useState(false)
   const [muted, setMuted] = useState(sound.isMuted())
+  const [musicOff, setMusicOff] = useState(sound.isMusicOff())
   // The game shown in the header and rules: the room's once inside one, else the one picked on the home screen.
   const [picked, setPicked] = useState<GameId>(() => (GAME_IDS.includes(saved(GAME_KEY)) ? (saved(GAME_KEY) as GameId) : 'uljez'))
   const [roomGame, setRoomGame] = useState<GameId | null>(null)
@@ -95,6 +97,18 @@ export default function App() {
         <span className="logo chrome">{gameName(game)}</span>
         {code && <span className="code-chip">{code}</span>}
         <span className="spacer" />
+        {!muted && (
+          <button
+            className={`icon-btn${musicOff ? ' off' : ''}`}
+            aria-label={musicOff ? 'Uključi muziku' : 'Isključi muziku'}
+            onClick={() => {
+              sound.setMusicOff(!musicOff)
+              setMusicOff(!musicOff)
+            }}
+          >
+            🎵
+          </button>
+        )}
         <button
           className="icon-btn"
           aria-label={muted ? 'Uključi zvuk' : 'Isključi zvuk'}
@@ -269,6 +283,7 @@ function Room({
 }) {
   const view = useRoom(be, code)
   const game = view.pub?.game ?? 'uljez'
+  useStageSounds(view.pub?.players?.[be.uid] ? view.pub : null, be.uid)
   useEffect(() => onGame(game), [game, onGame])
   if (view.loading) return <Waiting>Učitavanje sobe</Waiting>
   if (!view.pub)

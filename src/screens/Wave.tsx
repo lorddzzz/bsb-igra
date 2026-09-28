@@ -7,6 +7,7 @@ import type { Pub } from '../game/types'
 import { badgeOf, Button, Hint, nameOf, PlayerTag, Waiting } from '../ui/components'
 import { Dial, type Needle } from '../ui/Dial'
 import * as sound from '../ui/sound'
+import { useYourTurn } from '../ui/stageSounds'
 import { clueGiver, guessers, MAX_CLUE_LENGTH, totalRounds, TURNS_EACH, waveOf } from '../wave/logic'
 import { useWaveActions, type WaveActions } from '../wave/room'
 import { DoneRow, PartyLobby, RoundGains, ScoreTable, Winner } from './shared'
@@ -88,6 +89,11 @@ function Clue({ pub, me, actions }: ScreenProps) {
   const giver = clueGiver(pub)
   const { choices, scale, target } = waveOf(pub)
   const [clue, setClue] = useState('')
+  useYourTurn(giver === me, pub.round)
+  const send = () => {
+    sound.lock()
+    return actions.giveClue(clue)
+  }
 
   if (giver !== me)
     return (
@@ -115,7 +121,10 @@ function Clue({ pub, me, actions }: ScreenProps) {
           {asList<string>(choices).map((id) => {
             const s = getWaveScale(id)
             return (
-              <button key={id} className="vote scale-choice" onClick={() => actions.chooseScale(id)}>
+              <button key={id} className="vote scale-choice" onClick={() => {
+                  sound.pop()
+                  void actions.chooseScale(id)
+                }}>
                 <span>{s.left}</span>
                 <span className="muted">↔</span>
                 <span>{s.right}</span>
@@ -142,12 +151,12 @@ function Clue({ pub, me, actions }: ScreenProps) {
           value={clue}
           maxLength={MAX_CLUE_LENGTH}
           onChange={(e) => setClue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && clue.trim() && void actions.giveClue(clue)}
+          onKeyDown={(e) => e.key === 'Enter' && clue.trim() && void send()}
           placeholder="npr. supa"
           autoComplete="off"
           enterKeyHint="send"
         />
-        <Button disabled={!clue.trim()} onClick={() => actions.giveClue(clue)}>
+        <Button disabled={!clue.trim()} onClick={send}>
           Pošalji trag 📡
         </Button>
       </div>
@@ -182,7 +191,12 @@ function Aim({ pub, me, isHost, actions }: ScreenProps) {
         <>
           <Hint pub={pub}>Prevuci iglu tamo gde misliš da je meta. Pun pogodak je 4 poena.</Hint>
           <Dial left={s.left} right={s.right} value={value} onChange={setValue} />
-          <Button onClick={() => actions.aim(value)}>Zaključaj 🎯</Button>
+          <Button
+            onClick={() => {
+              sound.lock()
+              return actions.aim(value)
+            }}
+          >Zaključaj 🎯</Button>
         </>
       )}
       <div className="card center">
@@ -211,7 +225,7 @@ function Result({ pub, me, isHost, actions }: ScreenProps) {
   useEffect(() => {
     if (!isHost || played.current) return
     played.current = true
-    ;(best >= 3 ? sound.cheer : best === 0 ? sound.scratch : () => {})()
+    ;(best >= 3 ? sound.cheer : best === 0 ? sound.scratch : sound.nice)()
   }, [isHost, best])
   const last = pub.round >= totalRounds(pub)
 

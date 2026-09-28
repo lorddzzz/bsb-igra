@@ -17,6 +17,7 @@ import { useActions, type Actions, type RoomView } from '../game/room'
 import { MAX_VOTES, MIN_PLAYERS, MODES, type Pub, type Secret } from '../game/types'
 import { Badge, Button, Hint, nameOf, PlayerTag, Ticket, Waiting } from '../ui/components'
 import * as sound from '../ui/sound'
+import { useYourTurn } from '../ui/stageSounds'
 
 interface Props {
   be: Backend
@@ -141,6 +142,7 @@ function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
 
 function CategoryPick({ pub, me, actions }: ScreenProps) {
   const picker = pickerFor(pub)
+  useYourTurn(picker === me, pub.round)
   return (
     <section className="screen">
       <RoundTitle pub={pub} />
@@ -152,7 +154,10 @@ function CategoryPick({ pub, me, actions }: ScreenProps) {
           <h1 className="title">Ti biraš kategoriju!</h1>
           <div className="category-grid">
             {categoryChoices(pub).map((c) => (
-              <button key={c.id} className="category" onClick={() => actions.pickCategory(c.id)}>
+              <button key={c.id} className="category" onClick={() => {
+                  sound.lock()
+                  void actions.pickCategory(c.id)
+                }}>
                 <span className="cat-icon">{c.icon}</span>
                 <span>{c.name}</span>
               </button>
@@ -220,7 +225,10 @@ function Voting({ pub, me, isHost, actions, view }: ScreenProps) {
               key={uid}
               className={`vote${mine.includes(uid) ? ' on' : ''}`}
               disabled={Boolean(locked[me]) || (full && !mine.includes(uid))}
-              onClick={() => actions.vote(uid)}
+              onClick={() => {
+                sound.pop()
+                void actions.vote(uid)
+              }}
             >
               <PlayerTag player={pub.players?.[uid]} />
               {mine.includes(uid) && <span className="check">✓</span>}
@@ -228,7 +236,13 @@ function Voting({ pub, me, isHost, actions, view }: ScreenProps) {
           ))}
       </div>
       {!locked[me] && (
-        <Button disabled={!mine.length} onClick={actions.lockVote}>
+        <Button
+          disabled={!mine.length}
+          onClick={() => {
+            sound.lock()
+            return actions.lockVote()
+          }}
+        >
           {mine.length ? `Potvrdi glas (${mine.length} od ${MAX_VOTES}) 🗳️` : 'Izaberi 1 ili 2 osobe'}
         </Button>
       )}
@@ -361,9 +375,10 @@ function VoteSummary({ pub, secret, me }: { pub: Pub; secret: Secret; me: string
 
 function Guess({ pub, me, actions, view }: ScreenProps) {
   const secret = view.secret?.round === pub.round ? view.secret : null
+  const guessing = secret ? caughtImpostors(pub, secret).filter((uid) => !pub.guesses?.[uid]) : []
+  useYourTurn(guessing.includes(me), pub.round)
   if (!secret) return <Waiting>Učitavanje</Waiting>
   const category = getCategory(secret.category)
-  const guessing = caughtImpostors(pub, secret).filter((uid) => !pub.guesses?.[uid])
   return (
     <section className="screen">
       <RoundTitle pub={pub} />
@@ -375,7 +390,10 @@ function Guess({ pub, me, actions, view }: ScreenProps) {
           </p>
           <div className="category-grid">
             {secret.options.map((w) => (
-              <button key={w} className="category" onClick={() => actions.guess(w)}>
+              <button key={w} className="category" onClick={() => {
+                  sound.lock()
+                  void actions.guess(w)
+                }}>
                 {w}
               </button>
             ))}

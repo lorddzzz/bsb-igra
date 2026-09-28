@@ -128,6 +128,20 @@ function Question({ pub, me, isHost, actions }: ScreenProps) {
     sound.tick(allSeconds === 1)
   }, [isHost, leading, allSeconds])
 
+  // New question: a swoosh, or a siren for a special round, from the host phone.
+  const announced = useRef(0)
+  useEffect(() => {
+    if (!isHost || !leading || announced.current === pub.round) return
+    announced.current = pub.round
+    ;(special ? sound.special : sound.whoosh)()
+  }, [isHost, leading, pub.round, special])
+
+  // A card just hit me.
+  const hitAt = attack?.at
+  useEffect(() => {
+    if (hitAt) sound.zap()
+  }, [hitAt])
+
   if (leading) {
     const leadIn = Math.ceil((total - length) / 1000)
     return (
@@ -191,7 +205,10 @@ function Question({ pub, me, isHost, actions }: ScreenProps) {
               key={i}
               className={`kv-option${mine === i ? ' on' : ''}${late ? ' fx-late' : ''}`}
               disabled={mine !== undefined || over || late}
-              onClick={() => actions.answer(i)}
+              onClick={() => {
+                sound.lock()
+                void actions.answer(i)
+              }}
             >
               <span className="kv-letter">{LETTERS[i]}</span>
               <span>{late ? '…' : texts[i]}</span>
@@ -270,7 +287,10 @@ function Hand({ pub, me, now, actions }: { pub: Pub; me: string; now: number; ac
               key={`${id}-${i}`}
               className={`kv-card${picked === id ? ' on' : ''}`}
               disabled={used || !victims.length}
-              onClick={() => setPicked(picked === id ? null : id)}
+              onClick={() => {
+                sound.pop()
+                setPicked(picked === id ? null : id)
+              }}
             >
               <span className="kv-card-icon">{c.icon}</span>
               <b>{c.name}</b>
@@ -287,6 +307,7 @@ function Hand({ pub, me, now, actions }: { pub: Pub; me: string; now: number; ac
                 key={uid}
                 className="kv-victim"
                 onClick={() => {
+                  sound.throwCard()
                   void actions.attack(picked, uid)
                   setPicked(null)
                 }}
@@ -346,13 +367,15 @@ function Answer({ pub, me, isHost, actions }: ScreenProps) {
   const last = pub.round >= totalQuestions(pub)
   const revealLeft = (kvizOf(pub).nextAt ?? 0) - actions.now
 
+  // Host: cheer when everyone got it, scratch when nobody did. Otherwise each phone dings or buzzes for its own answer.
   const played = useRef(false)
   useEffect(() => {
-    if (!isHost || played.current) return
+    if (played.current) return
     played.current = true
-    if (right === order.length) sound.cheer()
-    else if (right === 0) sound.scratch()
-  }, [isHost, right, order.length])
+    if (isHost && right === order.length) sound.cheer()
+    else if (isHost && right === 0) sound.scratch()
+    else (mine === correct ? sound.correct : sound.wrong)()
+  }, [isHost, right, order.length, mine, correct])
 
   const bonus = asList<string>(result?.bonus)
   const thieves = order.filter((uid) => asList<string>(result?.gains[uid]?.reasons).includes('Pljačka'))

@@ -107,6 +107,7 @@ function Write({ pub, me, isHost, actions }: ScreenProps) {
       return
     }
     setError('')
+    sound.lock()
     await actions.writeLie(text)
   }
 
@@ -178,7 +179,10 @@ function Pick({ pub, me, isHost, actions }: ScreenProps) {
               key={o.id}
               className={`vote answer${on ? ' on' : ''}${own ? ' own' : ''}`}
               disabled={own || Boolean(picked)}
-              onClick={() => setChoice(o.id)}
+              onClick={() => {
+                sound.pop()
+                setChoice(o.id)
+              }}
             >
               <span>{o.text}</span>
               {own ? <small className="muted">tvoja laž</small> : on && <span className="check">✓</span>}
@@ -187,7 +191,13 @@ function Pick({ pub, me, isHost, actions }: ScreenProps) {
         })}
       </div>
       {!picked && (
-        <Button disabled={!choice} onClick={() => actions.pick(choice)}>
+        <Button
+          disabled={!choice}
+          onClick={() => {
+            sound.lock()
+            return actions.pick(choice)
+          }}
+        >
           {choice ? 'To je istina! ✅' : 'Izaberi odgovor'}
         </Button>
       )}
@@ -220,11 +230,13 @@ function Truth({ pub, me, isHost, actions }: ScreenProps) {
   const kindOrder = { lie: 0, house: 1, truth: 2 }
   const options = [...optionsOf(pub)].sort((a, b) => kindOrder[a.kind] - kindOrder[b.kind])
   const truthDelay = options.length * 0.9
+  // Host: the crowd cheers the truth. Everyone else: a ding or a buzz for their own pick.
+  const foundTruth = options.some((o) => o.kind === 'truth' && picks[me] === o.id)
   useEffect(() => {
-    if (!shown || !isHost) return
-    const t = setTimeout(() => sound.cheer(), truthDelay * 1000)
+    if (!shown) return
+    const t = setTimeout(() => (isHost ? sound.cheer : foundTruth ? sound.correct : sound.wrong)(), truthDelay * 1000)
     return () => clearTimeout(t)
-  }, [shown, isHost, truthDelay])
+  }, [shown, isHost, truthDelay, foundTruth])
 
   if (!shown)
     return (
