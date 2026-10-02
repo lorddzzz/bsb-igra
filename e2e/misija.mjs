@@ -91,13 +91,14 @@ async function game(no, specials, sabotage) {
   await host.getByRole('radio', { name: String(specials) }).click()
   if (no === 1) await shot(host, '03-lobby')
   await host.getByRole('button', { name: /Počni igru/ }).click()
-  // The narrator's opening; headless Chromium has no Serbian voice, so the host reads it from the screen.
+  // The narrator's opening. Without a Serbian or Croatian voice the host reads it from the screen with Dalje;
+  // where the browser has one (CI's Chromium does), it is spoken and the start button comes at the end.
   await host.locator('.narrator-line').waitFor()
   if (no === 1) {
     await shot(host, '03b-narrator')
     await shot(pages[1], '03c-narrator-player')
     while (await host.getByRole('button', { name: /Dalje/ }).count()) await host.getByRole('button', { name: /Dalje/ }).click()
-    await host.getByRole('button', { name: /Počni prvu misiju/ }).click()
+    await host.getByRole('button', { name: /Počni prvu misiju/ }).click({ timeout: 120000 })
   } else await host.getByRole('button', { name: 'Preskoči uvod' }).click()
   for (let mission = 1; mission <= 5; mission++) {
     await host.getByText(`MISIJA ${mission} / 5`).first().waitFor()
