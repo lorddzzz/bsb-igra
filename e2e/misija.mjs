@@ -86,9 +86,30 @@ async function findPage(text, timeout = 8000) {
   throw new Error(`No page shows "${text}"`)
 }
 
-async function propose(n, size) {
+/** Each seat's secret role, in join order (the order of the badges on the leader's screen). */
+async function roles() {
+  return host.evaluate(() => {
+    const db = JSON.parse(localStorage.getItem('uljez-local-db') ?? '{}')
+    const room = Object.values(db.rooms ?? {}).find((r) => r.pub?.game === 'misija')
+    const order = Object.entries(room.pub.players).sort((a, b) => a[1].joinedAt - b[1].joinedAt).map(([uid]) => uid)
+    return order.map((uid) => room.secret.misija.roles[uid])
+  })
+}
+const SPIES = ['spijun', 'imitator', 'senka', 'fan']
+
+/**
+ * The leader picks a team. Roles are dealt at random, so a fixed pick could leave every spy at home and
+ * the crew would win a game meant for the spies: `withSpy` puts a spy on the team, `crewOnly` keeps them off.
+ */
+async function propose(n, size, want = null) {
   const leader = await findPage('Ti si vođa!')
-  for (let i = 0; i < size; i++) await leader.locator('.badge-pick').nth((n + i) % names.length).click()
+  let seats = Array.from({ length: names.length }, (_, i) => (n + i) % names.length)
+  if (want) {
+    const r = await roles()
+    const isSpy = (i) => SPIES.includes(r[i])
+    seats = want === 'withSpy' ? [...seats.filter(isSpy), ...seats.filter((i) => !isSpy(i))] : seats.filter((i) => !isSpy(i))
+  }
+  for (const i of seats.slice(0, size)) await leader.locator('.badge-pick').nth(i).click()
   return leader
 }
 
@@ -155,11 +176,12 @@ async function game(no, specials, sabotage) {
         await voteAll(false)
         await host.getByText(`Odbijeno: ${r + 1}/5`).waitFor()
       }
-      const l = await propose(4, size)
+      const l = await propose(4, size, 'withSpy')
       await shot(l, '11-forced')
       await l.getByRole('button', { name: /Šalji tim na misiju/ }).click()
     } else {
-      const l = await propose(mission, size)
+      // game 1: the crew wins; game 2: the spies sabotage every mission
+      const l = await propose(mission, size, no === 1 ? 'crewOnly' : 'withSpy')
       await l.getByRole('button', { name: /Predloži tim/ }).click()
       await host.getByRole('button', { name: /Za/ }).waitFor()
       await voteAll(true)
