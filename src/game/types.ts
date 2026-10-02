@@ -1,5 +1,6 @@
 import type { BlefState } from '../blef/types'
 import type { KvizState } from '../kviz/types'
+import type { MisijaState } from '../misija/types'
 import type { WaveState } from '../wave/types'
 
 export type Phase =
@@ -22,9 +23,13 @@ export type Phase =
   // Kviz
   | 'question'
   | 'answer'
+  // Misija
+  | 'team'
+  | 'vote'
+  | 'mission'
 
 /** Which game a room plays. Rooms from before the game picker have none and play Uljez. */
-export type GameId = 'uljez' | 'blef' | 'talas' | 'kviz'
+export type GameId = 'uljez' | 'blef' | 'talas' | 'kviz' | 'misija'
 
 export type Mode = 'quick' | 'normal' | 'endless'
 
@@ -38,6 +43,8 @@ export interface Badge {
   id: string
   name: string
   color: string
+  /** Shown instead of the name's initials; the extra badges for big groups have one. */
+  icon?: string
 }
 
 export const BADGES: Badge[] = [
@@ -48,10 +55,26 @@ export const BADGES: Badge[] = [
   { id: 'nick', name: 'Nick', color: '#b89bff' },
 ]
 
+/** Extra badges for big-group games, so 8 to 12 players all look different. */
+export const EXTRA_BADGES: Badge[] = [
+  { id: 'mic', name: 'Mikrofon', color: '#ff9a4d', icon: '🎤' },
+  { id: 'gitara', name: 'Gitara', color: '#ff5f6d', icon: '🎸' },
+  { id: 'disk', name: 'Disk', color: '#3fe0c5', icon: '💿' },
+  { id: 'dens', name: 'Dens', color: '#e8eef7', icon: '🕺' },
+  { id: 'zvezda', name: 'Zvezda', color: '#c8ff5f', icon: '⭐' },
+  { id: 'vatra', name: 'Vatra', color: '#ffa3c4', icon: '🔥' },
+  { id: 'mesec', name: 'Mesec', color: '#4d8bff', icon: '🌙' },
+]
+export const ALL_BADGES: Badge[] = [...BADGES, ...EXTRA_BADGES]
+
+/** The badges players can pick from in a game: big-group games get the extra ones. */
+export function badgesFor(game: GameId | undefined): Badge[] {
+  return game === 'misija' ? ALL_BADGES : BADGES
+}
+
 export const MIN_PLAYERS = 3
 /** How many people each player may vote for, since a round can have two impostors. */
 export const MAX_VOTES = 2
-export const MAX_PLAYERS = BADGES.length
 
 export interface Player {
   name: string
@@ -104,6 +127,8 @@ export interface Pub {
   wave?: WaveState
   /** Kviz's own state; only in Kviz rooms. */
   kviz?: KvizState
+  /** Misija's own state; only in Misija rooms. */
+  misija?: MisijaState
 }
 
 /** One player's private card for the round. Lives at rooms/{code}/tickets/{uid}. */

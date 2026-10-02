@@ -14,6 +14,8 @@ export function PartyLobby({
   steps,
   onKick,
   onStart,
+  min = MIN_PLAYERS,
+  children,
 }: {
   pub: Pub
   me: string
@@ -23,9 +25,13 @@ export function PartyLobby({
   steps: ReactNode[]
   onKick: (uid: string) => void
   onStart: () => void
+  /** Fewest players the game can start with. */
+  min?: number
+  /** Game settings, shown above the start button. */
+  children?: ReactNode
 }) {
   const order = playerOrder(pub)
-  const missing = Math.max(0, MIN_PLAYERS - order.length)
+  const missing = Math.max(0, min - order.length)
   return (
     <section className="screen">
       <div className="card center">
@@ -62,6 +68,8 @@ export function PartyLobby({
           ))}
         </ol>
       </div>
+
+      {children}
 
       {isHost ? (
         <Button disabled={missing > 0} onClick={onStart}>

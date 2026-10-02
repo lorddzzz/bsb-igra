@@ -16,7 +16,7 @@ import {
   scoreRound,
   setupRound,
 } from './logic'
-import { MAX_PLAYERS, MAX_VOTES, type GameId, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
+import { badgesFor, MAX_VOTES, type GameId, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
 
 // 'missions' is from the previous version, kept so a room an old phone moved there can recover.
 const SECRET_PHASES: string[] = ['reveal', 'guess', 'missions', 'score', 'over']
@@ -52,7 +52,7 @@ export async function joinRoom(be: Backend, code: string, name: string, badge: s
       error = 'started'
       return undefined
     }
-    if (!me && Object.keys(players).length >= MAX_PLAYERS) {
+    if (!me && Object.keys(players).length >= badgesFor(pub.game).length) {
       error = 'full'
       return undefined
     }

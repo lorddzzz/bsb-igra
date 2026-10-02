@@ -1,17 +1,22 @@
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { getCategory } from '../data/words'
 import { CARDS, SPECIALS } from '../kviz/cards'
-import { BADGES, type Player, type Pub, type Ticket as TicketData } from '../game/types'
+import { ALL_BADGES, type Badge as BadgeData, type Player, type Pub, type Ticket as TicketData } from '../game/types'
 
 export function badgeOf(id: string | undefined) {
-  return BADGES.find((b) => b.id === id) ?? BADGES[0]
+  return ALL_BADGES.find((b) => b.id === id) ?? ALL_BADGES[0]
+}
+
+/** What goes inside a badge circle: the icon, or the member's initials. */
+export function badgeMark(b: BadgeData): string {
+  return b.icon ?? (b.name.length <= 2 ? b.name : b.name[0])
 }
 
 export function Badge({ id, size = 'md' }: { id: string | undefined; size?: 'sm' | 'md' | 'lg' }) {
   const b = badgeOf(id)
   return (
     <span className={`badge badge-${size}`} style={{ '--c': b.color } as CSSProperties} aria-label={b.name}>
-      {b.name.length <= 2 ? b.name : b.name[0]}
+      {badgeMark(b)}
     </span>
   )
 }
