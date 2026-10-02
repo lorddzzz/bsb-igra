@@ -3,13 +3,14 @@
 // Usage: npx vite --port 5173 & node e2e/kviz.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
+import { launchOptions, phoneContext, report, shooter } from './phone.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-kviz'
 mkdirSync(OUT, { recursive: true })
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME ?? '/opt/pw-browsers/chromium' })
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
+const browser = await chromium.launch(launchOptions)
+const ctx = await browser.newContext(phoneContext)
 const names = [
   ['Dusan', 'Nick'],
   ['Marko', 'AJ'],
@@ -18,7 +19,7 @@ const names = [
 ]
 const pages = []
 const errors = []
-const shot = (p, name) => p.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
+const shot = shooter(OUT)
 
 for (let i = 0; i < names.length; i++) {
   const p = await ctx.newPage()
@@ -90,7 +91,12 @@ for (let round = 1; round <= total; round++) {
   }
   await host.locator('.kv-verdict').waitFor({ timeout: 15000 })
   const waited = Date.now() - t0
-  if (round === 2 && waited < 8000) errors.push(`question 2 closed after ${waited} ms without everyone answering`)
+  // a Munja round only gives 5 seconds, so it may close sooner
+  const munja = await host.evaluate((r) => {
+    const db = JSON.parse(localStorage.getItem('uljez-local-db') ?? '{}')
+    return Object.values(db.rooms ?? {}).some((room) => room.pub?.kviz?.specials?.[`r${r}`] === 'munja')
+  }, round)
+  if (round === 2 && !munja && waited < 8000) errors.push(`question 2 closed after ${waited} ms without everyone answering`)
   if (round !== 2 && !victimWait && waited > 9000) errors.push(`question ${round} took ${waited} ms although everyone answered`)
   if (round === 1) await shot(pages[1], '07-answer')
   if (round === 2) {
@@ -123,4 +129,7 @@ await host.locator('button.kv-option').first().waitFor({ timeout: 6000 })
 console.log('second game started with a fresh lead-in')
 
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors')
+// fonts come from Google; a sandbox without internet can't load them, which is not the game's fault
+if (errors.some((e) => !e.includes('Failed to load resource'))) process.exitCode = 1
+report()
 await browser.close()

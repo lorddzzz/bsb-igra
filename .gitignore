@@ -22,7 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-e2e/shots
-e2e/shots-blef
-e2e/shots-wave
-e2e/shots-kviz
+e2e/shots*
+coverage
+*-debug.log

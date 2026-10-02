@@ -2,13 +2,14 @@
 // Usage: npx vite --port 5173 & node e2e/wave.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
+import { launchOptions, phoneContext, report, shooter } from './phone.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-wave'
 mkdirSync(OUT, { recursive: true })
 
-const browser = await chromium.launch({ executablePath: process.env.CHROME ?? '/opt/pw-browsers/chromium' })
-const ctx = await browser.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2 })
+const browser = await chromium.launch(launchOptions)
+const ctx = await browser.newContext(phoneContext)
 const names = [
   ['Dusan', 'Nick'],
   ['Marko', 'AJ'],
@@ -17,7 +18,7 @@ const names = [
 const clues = ['supa', 'ponedeljak', 'Larger Than Life', 'mačka', 'Beograd', 'karaoke']
 const pages = []
 const errors = []
-const shot = (p, name) => p.screenshot({ path: `${OUT}/${name}.png`, fullPage: true })
+const shot = shooter(OUT)
 
 for (let i = 0; i < 3; i++) {
   const p = await ctx.newPage()
@@ -91,4 +92,7 @@ await host.locator('.winner').waitFor()
 await shot(host, '07-game-over')
 console.log('code', code, 'standings', await host.locator('.standings li').allTextContents())
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors')
+// fonts come from Google; a sandbox without internet can't load them, which is not the game's fault
+if (errors.some((e) => !e.includes('Failed to load resource'))) process.exitCode = 1
+report()
 await browser.close()

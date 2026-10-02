@@ -24,6 +24,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - run: npm run lint
+      # unit + isolation tests: every game played by bots, every screen rendered in every state
       - run: npm test
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3

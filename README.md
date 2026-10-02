@@ -15,8 +15,19 @@ A party word game for 3 to 5 friends on their phones. Everyone gets the same sec
 ```sh
 npm install
 npm run dev            # open http://localhost:5173/?local in several tabs to play without Firebase
-npm test               # scoring and round setup tests
-npx vite --port 5173 & node e2e/play.mjs          # 4 simulated phones play two rounds, screenshots in e2e/shots
-node e2e/kviz.mjs                                 # 4 phones play a full Kviz (trivia) game; also blef.mjs, wave.mjs
-firebase emulators:start --only auth,database     # then MODE=emu node e2e/play.mjs to test against the rules
 ```
+
+## Testing
+
+Three layers, from fast to slow:
+
+| Command | What it checks | Time |
+| --- | --- | --- |
+| `npm test` | **Unit**: every rule of every game; bots play hundreds of whole games through the real logic with Firebase's data shape between steps (`src/test/sims.ts`); all words and questions are well formed and in latinica. **Isolation**: room actions with several fake phones on one in-memory database (`src/test/memoryBackend.ts`), every screen rendered in every state a bot game reaches, the app shell. | ~10 s |
+| `npm run test:rules` | The database rules on the Firebase emulator: tickets private, answers hidden until the reveal. Needs Java. | ~20 s |
+| `npm run e2e` | **End to end**: every game played start to finish in Chromium on simulated phones against the production build, plus an exploratory run (refresh mid-round, leave and rejoin, latecomer, double taps). Screenshots land in `e2e/shots-all`; a usability probe flags sideways scrolling, cut-off text and small buttons. `WIDTH=375 HEIGHT=667 npm run e2e` plays on an iPhone SE sized screen. | ~8 min |
+| `npm run test:coverage` | Unit and isolation tests with a coverage report in `coverage/`. | ~15 s |
+
+`npm test` and `npm run lint` run before every deploy; the browser suite and the rules test run next to it in `.github/workflows/checks.yml`.
+
+`firebase emulators:start --only auth,database`, then `MODE=emu node e2e/play.mjs`, plays Uljez against the real rules.
