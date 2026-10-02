@@ -402,6 +402,11 @@ function stopMusic() {
 }
 
 /** Lowers the music while a big moment plays. */
+/** Turns the music down for a while, e.g. under the narrator. */
+export function duckMusic(seconds: number) {
+  duck(seconds)
+}
+
 function duck(seconds: number) {
   if (!music || !ctx) return
   const g = music.gain.gain

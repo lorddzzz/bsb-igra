@@ -166,7 +166,7 @@ export function startMisija(pub: Pub, rng: Rng): { pub: Pub; tickets: Record<str
   return {
     pub: {
       ...pub,
-      phase: 'team',
+      phase: 'intro',
       round: 1,
       misija: {
         specials: m.specials ?? 0,
@@ -180,6 +180,60 @@ export function startMisija(pub: Pub, rng: Rng): { pub: Pub; tickets: Record<str
     tickets: ticketsFor(roles, game),
     secret: { game, roles },
   }
+}
+
+/** One line of the narrator's opening, then a quiet pause (seconds) for players to do what it says. */
+export interface IntroLine {
+  text: string
+  pause: number
+}
+
+/**
+ * The narrator's opening before the first mission, read out by the host phone: the classic
+ * eyes-closed round where the roles in play find each other. Only mentions roles that are in the game.
+ */
+export function introScript(specials: number, firstLeader: string): IntroLine[] {
+  const has = (role: Role) => SPECIAL_ORDER.indexOf(role) < specials
+  const lines: IntroLine[] = [
+    { text: 'Dobro došli u Misiju.', pause: 1 },
+    { text: 'Držite svoju kartu i pogledajte tajnu ulogu. Nikome je ne pokazujte.', pause: 7 },
+    { text: 'Sada svi spustite telefone i zatvorite oči.', pause: 4 },
+  ]
+  lines.push({
+    text: has('fan')
+      ? 'Špijuni, otvorite oči i pogledajte se. Fan ostaje zatvorenih očiju.'
+      : 'Špijuni, otvorite oči i pogledajte se.',
+    pause: 6,
+  })
+  lines.push({ text: 'Špijuni, zatvorite oči.', pause: 3 })
+  if (has('menadzer')) {
+    lines.push({
+      text: has('senka')
+        ? 'Špijuni, podignite palac. Senka, ti ne podižeš palac.'
+        : has('fan')
+          ? 'Špijuni i Fan, podignite palac.'
+          : 'Špijuni, podignite palac.',
+      pause: 3,
+    })
+    lines.push({ text: 'Menadžeru, otvori oči i zapamti ko su špijuni.', pause: 6 })
+    lines.push({ text: 'Menadžeru, zatvori oči. Špijuni, spustite palac.', pause: 3 })
+  }
+  if (has('telohranitelj')) {
+    lines.push({
+      text: has('imitator') ? 'Menadžeru i Imitatore, podignite palac.' : 'Menadžeru, podigni palac.',
+      pause: 3,
+    })
+    lines.push({
+      text: has('imitator')
+        ? 'Telohranitelju, otvori oči. Jedan od njih je pravi Menadžer, drugi je Imitator.'
+        : 'Telohranitelju, otvori oči i zapamti ko je Menadžer.',
+      pause: 6,
+    })
+    lines.push({ text: 'Telohranitelju, zatvori oči. Spustite palac.', pause: 3 })
+  }
+  lines.push({ text: 'Svi otvorite oči.', pause: 2 })
+  lines.push({ text: `Misija počinje! Prvi vođa je ${firstLeader}.`, pause: 0 })
+  return lines
 }
 
 /** The leader's proposal: straight to the mission on the forced 5th proposal, else to a vote. */

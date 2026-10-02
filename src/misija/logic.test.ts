@@ -8,6 +8,7 @@ import {
   closeVote,
   dealRoles,
   failsNeeded,
+  introScript,
   leader,
   maxSpecials,
   mKey,
@@ -88,7 +89,7 @@ describe('roles', () => {
 describe('a round', () => {
   it('starts with secret roles and a leader', () => {
     const s = startMisija(pub({ phase: 'lobby', round: 0, misija: { specials: 2, tally: { ekipa: 1 } } }), seeded(7))
-    expect(s.pub.phase).toBe('team')
+    expect(s.pub.phase).toBe('intro')
     expect(s.pub.misija?.tally).toEqual({ ekipa: 1 })
     expect(Object.keys(s.tickets)).toHaveLength(8)
     expect(s.secret.roles).toBeDefined()
@@ -166,5 +167,25 @@ describe('the end', () => {
   it('keeps the settings and the room tally for a new game', () => {
     const p = pub({ phase: 'over', misija: { specials: 3, tally: { ekipa: 2 }, game: 'x', results: { m1: ok } } })
     expect(resetMisijaLobby(p).misija).toEqual({ specials: 3, tally: { ekipa: 2 } })
+  })
+})
+
+describe('the narrator', () => {
+  it('only calls the roles in play', () => {
+    const plain = introScript(0, 'Ana').map((l) => l.text).join(' ')
+    expect(plain).toContain('Špijuni, otvorite oči')
+    expect(plain).not.toContain('Menadž')
+    expect(plain).toContain('Prvi vođa je Ana.')
+    const two = introScript(2, 'Ana').map((l) => l.text).join(' ')
+    expect(two).toContain('Telohranitelju, otvori oči i zapamti ko je Menadžer.')
+    expect(two).not.toContain('Imitator')
+    const all = introScript(5, 'Ana').map((l) => l.text).join(' ')
+    expect(all).toContain('Senka, ti ne podižeš palac.')
+    expect(all).toContain('Fan ostaje zatvorenih očiju.')
+    expect(all).toContain('Menadžeru i Imitatore')
+  })
+
+  it('starts the game with the narrator', () => {
+    expect(startMisija(pub({ phase: 'lobby', round: 0 }), seeded(1)).pub.phase).toBe('intro')
   })
 })

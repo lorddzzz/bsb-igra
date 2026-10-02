@@ -25,6 +25,7 @@ export type Phase =
   | 'question'
   | 'answer'
   // Misija
+  | 'intro'
   | 'team'
   | 'vote'
   | 'mission'

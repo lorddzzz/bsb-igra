@@ -6,6 +6,7 @@ import type { Pub } from '../game/types'
 import {
   failsNeeded,
   FORCED_AFTER,
+  introScript,
   isForced,
   leader,
   maxSpecials,
@@ -17,6 +18,7 @@ import {
   SPECIAL_ORDER,
   sideOf,
   spyCount,
+  specialsIn,
   teamOf,
   teamSize,
   track,
@@ -27,6 +29,7 @@ import { misijaSecret, misijaTicket, useMisijaActions, type MisijaActions } from
 import type { MisijaSecret, MisijaTicket, Role, Side } from '../misija/types'
 import { Badge, badgeOf, Button, Hint, nameOf, PlayerTag, Waiting } from '../ui/components'
 import * as sound from '../ui/sound'
+import * as speech from '../ui/speech'
 import { useYourTurn } from '../ui/stageSounds'
 import { DoneRow, PartyLobby } from './shared'
 
@@ -64,6 +67,8 @@ export function Misija({ be, code, view }: Props) {
   switch (pub.phase) {
     case 'lobby':
       return <Lobby {...common} />
+    case 'intro':
+      return <Intro {...common} />
     case 'team':
       return <TeamPick {...common} />
     case 'vote':
@@ -99,7 +104,10 @@ function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
         'Tim tajno igra Uspeh ili Sabotažu. Ko prvi skupi 3 misije, pobeđuje.',
       ]}
       onKick={actions.kick}
-      onStart={actions.start}
+      onStart={() => {
+        speech.prime()
+        return actions.start()
+      }}
     >
       <div className="card">
         <h2>Specijalne uloge</h2>
@@ -138,6 +146,97 @@ function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
         )}
       </div>
     </PartyLobby>
+  )
+}
+
+/**
+ * The narrator's opening, before the first team pick. The host phone reads it out loud with the
+ * phone's Serbian (or Croatian) voice; without one, the host reads the lines from the screen.
+ */
+function Intro({ pub, me, isHost, actions, ticket }: ScreenProps) {
+  const lines = introScript(specialsIn(pub), nameOf(pub, leader(pub)))
+  const [at, setAt] = useState(0)
+  const [voiced, setVoiced] = useState<boolean | null>(null)
+  const [run, setRun] = useState(0)
+
+  useEffect(() => {
+    if (!isHost) return
+    let gone = false
+    void speech.voicesReady().then(() => !gone && setVoiced(speech.canSpeak()))
+    return () => {
+      gone = true
+    }
+  }, [isHost])
+
+  // Read the whole script, waiting after each line for the players to do what it says.
+  useEffect(() => {
+    if (!isHost || !voiced) return
+    let gone = false
+    const wait = (s: number) => new Promise((r) => setTimeout(r, s * 1000))
+    void (async () => {
+      await wait(2.5) // let the boarding call finish
+      for (let i = 0; i < lines.length && !gone; i++) {
+        setAt(i)
+        sound.duckMusic(lines[i].pause + 6)
+        await speech.say(lines[i].text)
+        if (!gone) await wait(lines[i].pause)
+      }
+      if (!gone) void actions.endIntro()
+    })()
+    return () => {
+      gone = true
+      speech.stop()
+    }
+    // the script is fixed for the game; `run` restarts it
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isHost, voiced, run])
+
+  if (!isHost)
+    return (
+      <section className="screen">
+        <h1 className="title">Slušajte naratora 🎙️</h1>
+        <Hint pub={pub}>Kad narator kaže, drži kartu da vidiš svoju ulogu. Posle spusti telefon i radi šta kaže.</Hint>
+        <RoleCard pub={pub} me={me} ticket={ticket} />
+        <Waiting>Uvod u igru</Waiting>
+      </section>
+    )
+
+  const last = at >= lines.length - 1
+  return (
+    <section className="screen">
+      <h1 className="title">{voiced === null ? 'Narator 🎙️' : voiced ? 'Narator čita 🎙️' : 'Ti si narator 🎙️'}</h1>
+      {voiced === false && (
+        <p className="muted center">Ovaj telefon ne može da čita naglas (nema srpski ili hrvatski glas, ili je zvuk isključen). Pročitaj ti, red po red.</p>
+      )}
+      <div className="card center narrator">
+        <small className="label">
+          {at + 1} / {lines.length}
+        </small>
+        <div className="narrator-line">{lines[at].text}</div>
+      </div>
+      {voiced === false &&
+        (last ? (
+          <Button onClick={actions.endIntro}>Počni prvu misiju 🚀</Button>
+        ) : (
+          <Button onClick={() => setAt(at + 1)}>Dalje ▶</Button>
+        ))}
+      {voiced && (
+        <button
+          className="link-btn"
+          onClick={() => {
+            speech.stop()
+            speech.prime()
+            setRun(run + 1)
+          }}
+        >
+          Ne čuje se? Pusti ponovo
+        </button>
+      )}
+      <RoleCard pub={pub} me={me} ticket={ticket} />
+      <button className="link-btn" onClick={actions.endIntro}>
+        Preskoči uvod
+      </button>
+    </section>
   )
 }
 
@@ -488,16 +587,21 @@ function Reveal({ pub, isHost, actions }: ScreenProps) {
   const result = m.results?.[mKey(missionNo(pub))]
   const [shown, setShown] = useState(false)
   const played = useRef(false)
+  // Keyed on the result's arrival, not the object: every room update brings a new copy of it,
+  // and re-running would cancel the timer.
+  const ok = result ? result.ok : null
+  // The ref only keeps the sounds from playing twice; the timer is re-armed whenever the effect re-runs.
   useEffect(() => {
-    if (!result || played.current) return
+    if (ok === null) return
+    const first = !played.current
     played.current = true
-    if (isHost) sound.drumRoll()
+    if (isHost && first) sound.drumRoll()
     const t = setTimeout(() => {
       setShown(true)
-      if (isHost) (result.ok ? sound.cheer : sound.scratch)()
+      if (isHost && first) (ok ? sound.cheer : sound.scratch)()
     }, 2400)
     return () => clearTimeout(t)
-  }, [result, isHost])
+  }, [ok, isHost])
 
   if (!result || !shown)
     return (

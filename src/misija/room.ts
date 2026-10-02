@@ -64,6 +64,7 @@ export function useMisijaActions(be: Backend, code: string, view: RoomView) {
         await be.update(roomPath(code), patch)
         await step('lobby', pub.round, () => s.pub)
       },
+      endIntro: () => isHost && step('intro', pub.round, (p) => ({ ...p, phase: 'team' })),
       /** The leader's picks go to the database as they tap, so everyone can watch the team form. */
       toggle: (uid: string) => {
         if (pub.phase !== 'team' || leader(pub) !== be.uid) return

@@ -1982,3 +1982,13 @@ button.kv-option:active:not(:disabled) {
   font-size: 28px;
   color: var(--ice);
 }
+.narrator {
+  min-height: 180px;
+  justify-content: center;
+}
+.narrator-line {
+  font-family: var(--display);
+  font-size: 24px;
+  line-height: 1.3;
+  text-shadow: 0 0 14px rgba(143, 227, 255, 0.45);
+}
