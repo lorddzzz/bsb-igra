@@ -3,13 +3,13 @@
 // Usage: npx vite --port 5173 & node e2e/explore.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, phoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-explore'
 mkdirSync(OUT, { recursive: true })
 const browser = await chromium.launch(launchOptions)
-const ctx = await browser.newContext(phoneContext)
+const ctx = await newPhoneContext(browser)
 const shot = shooter(OUT)
 const errors = []
 const checks = []

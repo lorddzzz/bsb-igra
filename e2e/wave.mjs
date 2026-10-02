@@ -2,14 +2,14 @@
 // Usage: npx vite --port 5173 & node e2e/wave.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, phoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-wave'
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
-const ctx = await browser.newContext(phoneContext)
+const ctx = await newPhoneContext(browser)
 const names = [
   ['Dusan', 'Nick'],
   ['Marko', 'AJ'],

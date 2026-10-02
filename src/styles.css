@@ -128,8 +128,14 @@ h3 {
   font-family: var(--display);
   font-size: 20px;
   letter-spacing: 2px;
+  /* gives way before the buttons do: the name shrinks to an ellipsis rather than pushing ⏏ off screen */
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .code-chip {
+  flex-shrink: 0;
   font-family: var(--display);
   font-size: 13px;
   letter-spacing: 2px;
@@ -144,12 +150,16 @@ h3 {
 /* Narrow phones (iPhone SE, mini): a long game name squeezed the round buttons into ovals. */
 @media (max-width: 400px) {
   .top {
-    gap: 6px;
+    gap: 5px;
     padding: 10px 12px;
   }
   .logo {
-    font-size: 17px;
+    font-size: 16px;
     letter-spacing: 1px;
+  }
+  .code-chip {
+    letter-spacing: 1px;
+    padding: 3px 6px;
   }
 }
 @media (max-width: 360px) {

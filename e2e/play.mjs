@@ -2,7 +2,7 @@
 // Usage: npx vite --port 5173 & node e2e/play.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, phoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots'
@@ -15,8 +15,7 @@ const NOTHUMBS = Boolean(process.env.NOTHUMBS)
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
-const ctxOpts = { ...phoneContext, ignoreHTTPSErrors: true }
-const shared = await browser.newContext(ctxOpts)
+const shared = await newPhoneContext(browser, { ignoreHTTPSErrors: true })
 const names = [
   ['Dusan', 'Nick'],
   ['Marko', 'AJ'],
@@ -34,7 +33,7 @@ async function join(p, [name, badge]) {
 }
 
 for (let i = 0; i < 4; i++) {
-  const p = await (MODE === 'local' ? shared : await browser.newContext(ctxOpts)).newPage()
+  const p = await (MODE === 'local' ? shared : await newPhoneContext(browser, { ignoreHTTPSErrors: true })).newPage()
   p.on('pageerror', (e) => errors.push(`page ${i}: ${e.message}`))
   p.on('console', (m) => m.type() === 'error' && errors.push(`console ${i}: ${m.text()}`))
   pages.push(p)

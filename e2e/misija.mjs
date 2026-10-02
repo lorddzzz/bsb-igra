@@ -4,14 +4,37 @@
 // Usage: npx vite --port 5173 & node e2e/misija.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, phoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-misija'
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
-const ctx = await browser.newContext(phoneContext)
+const ctx = await newPhoneContext(browser)
+// A stand-in for the phone's text-to-speech, so both narrator paths run the same everywhere (CI's Chromium
+// has a real voice, the sandbox has none). With localStorage 'e2e-voice' = '1' there is a Croatian voice
+// that "speaks" each line in a moment and records it in window.__spoken; otherwise there is no voice.
+await ctx.addInitScript(() => {
+  const spoken = (window.__spoken = [])
+  const voice = { lang: 'hr-HR', name: 'Test glas', default: true, localService: true, voiceURI: 'test' }
+  window.SpeechSynthesisUtterance = class {
+    constructor(text) {
+      this.text = text
+    }
+  }
+  const synth = {
+    getVoices: () => (localStorage.getItem('e2e-voice') === '1' ? [voice] : []),
+    speak: (u) => setTimeout(() => {
+      if (u.text.trim()) spoken.push(u.text)
+      u.onend?.()
+    }, 30),
+    cancel: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+  }
+  Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true })
+})
 const names = [
   ['Dusan', 'Nick'],
   ['Marko', 'AJ'],
@@ -90,16 +113,26 @@ async function playMission(sabotage) {
 async function game(no, specials, sabotage) {
   await host.getByRole('radio', { name: String(specials) }).click()
   if (no === 1) await shot(host, '03-lobby')
+  // The narrator's opening. Game 1: the host phone has a voice and reads the script out loud, then the game
+  // moves on by itself. Game 2: no voice, so the host reads from the screen, then skips the rest.
+  await host.evaluate((voiced) => localStorage.setItem('e2e-voice', voiced ? '1' : '0'), no === 1)
   await host.getByRole('button', { name: /Počni igru/ }).click()
-  // The narrator's opening. Without a Serbian or Croatian voice the host reads it from the screen with Dalje;
-  // where the browser has one (CI's Chromium does), it is spoken and the start button comes at the end.
   await host.locator('.narrator-line').waitFor()
   if (no === 1) {
+    await host.getByText('Narator čita').waitFor()
     await shot(host, '03b-narrator')
     await shot(pages[1], '03c-narrator-player')
-    while (await host.getByRole('button', { name: /Dalje/ }).count()) await host.getByRole('button', { name: /Dalje/ }).click()
-    await host.getByRole('button', { name: /Počni prvu misiju/ }).click({ timeout: 120000 })
-  } else await host.getByRole('button', { name: 'Preskoči uvod' }).click()
+    // the script waits a few seconds after each line for players to do what it says
+    await host.getByText('MISIJA 1 / 5').first().waitFor({ timeout: 180000 })
+    const spoken = await host.evaluate(() => window.__spoken)
+    if (spoken.length < 10 || !spoken.at(-1).startsWith('Misija počinje! Prvi vođa je'))
+      errors.push(`narrator read ${spoken.length} lines, last: ${spoken.at(-1)}`)
+  } else {
+    await host.getByText('Ti si narator').waitFor()
+    await host.getByRole('button', { name: /Dalje/ }).click()
+    await host.getByText('2 /', { exact: false }).first().waitFor()
+    await host.getByRole('button', { name: 'Preskoči uvod' }).click()
+  }
   for (let mission = 1; mission <= 5; mission++) {
     await host.getByText(`MISIJA ${mission} / 5`).first().waitFor()
     const size = [3, 4, 4, 5, 5][mission - 1]
