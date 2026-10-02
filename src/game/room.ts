@@ -44,8 +44,11 @@ export type JoinError = 'no-room' | 'badge-taken' | 'full' | 'started'
 
 export async function joinRoom(be: Backend, code: string, name: string, badge: string): Promise<JoinError | null> {
   let error: JoinError | null = null
+  // Firebase may first try a transaction against an empty cache; only the last try counts.
+  let found = false
   const ok = await be.transaction<Pub>(`${roomPath(code)}/pub`, (pub) => {
     error = null
+    found = Boolean(pub)
     if (!pub) return pub
     const players = { ...(pub.players ?? {}) }
     const me = players[be.uid]
@@ -65,6 +68,8 @@ export async function joinRoom(be: Backend, code: string, name: string, badge: s
     players[be.uid] = { name: name.trim().slice(0, 16), badge, joinedAt: me?.joinedAt ?? Date.now() }
     return { ...pub, players }
   })
+  // Returning null for a room that isn't there commits nothing, but still counts as committed.
+  if (ok && !found) return 'no-room'
   if (!ok && !error) return (await roomExists(be, code)) ? 'started' : 'no-room'
   return error
 }

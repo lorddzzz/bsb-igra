@@ -8,12 +8,12 @@ const params = new URLSearchParams(location.search)
 /** ?emu talks to the local Firebase emulators (for testing the database rules). */
 const EMULATOR = params.has('emu')
 
-export function useLocalBackend(): boolean {
+export function isLocalBackend(): boolean {
   return !EMULATOR && (!firebaseConfig || params.has('local'))
 }
 
 export async function connect(): Promise<Backend> {
-  if (useLocalBackend()) {
+  if (isLocalBackend()) {
     const { createLocalBackend } = await import('./local')
     return createLocalBackend()
   }

@@ -275,16 +275,19 @@ function Reveal({ pub, me, isHost, actions, view }: ScreenProps) {
   const played = useRef(false)
 
   const ready = Boolean(secret)
+  // The ref only keeps the sounds from playing twice; the timer is re-armed whenever the effect re-runs,
+  // otherwise a re-run (a refresh landing here with the answers already loaded) left the drum rolling forever.
   useEffect(() => {
-    if (!secret || played.current) return
+    if (!secret) return
+    const first = !played.current
     played.current = true
-    if (isHost) sound.drumRoll()
+    if (isHost && first) sound.drumRoll()
     const t = setTimeout(() => {
       setShown(true)
-      if (isHost) (caughtImpostors(pub, secret).length ? sound.cheer : sound.scratch)()
+      if (isHost && first) (caughtImpostors(pub, secret).length ? sound.cheer : sound.scratch)()
     }, 2400)
     return () => clearTimeout(t)
-    // runs once, when the round's answers arrive
+    // runs when the round's answers arrive
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ready])
 

@@ -1,5 +1,5 @@
 import { Component, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
-import { connect, useLocalBackend, type Backend } from './backend'
+import { connect, isLocalBackend, type Backend } from './backend'
 import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './game/room'
 import { badgesFor, type GameId } from './game/types'
 import { Blef } from './screens/Blef'
@@ -159,7 +159,7 @@ export default function App() {
         </Crashed>
       </main>
 
-      {useLocalBackend() && <div className="local-note">Probni režim (bez interneta)</div>}
+      {isLocalBackend() && <div className="local-note">Probni režim (bez interneta)</div>}
       {rules && (
         <Modal title="Kako se igra" onClose={() => setRules(false)}>
           {game === 'blef' ? <BlefRules /> : game === 'talas' ? <WaveRules /> : game === 'kviz' ? <KvizRules /> : game === 'licitacija' ? <LicRules /> : game === 'misija' ? <MisijaRules /> : <Rules />}
