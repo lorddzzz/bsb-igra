@@ -1,12 +1,14 @@
 import { Component, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { connect, useLocalBackend, type Backend } from './backend'
 import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './game/room'
-import { BADGES, type GameId } from './game/types'
+import { badgesFor, type GameId } from './game/types'
 import { Blef } from './screens/Blef'
 import { Game } from './screens/Game'
 import { Kviz } from './screens/Kviz'
+import { Lic } from './screens/Lic'
+import { Misija, MisijaRules } from './screens/Misija'
 import { Wave } from './screens/Wave'
-import { BlefRules, Button, KvizRules, Modal, Rules, Waiting, WaveRules } from './ui/components'
+import { badgeMark, BlefRules, Button, KvizRules, LicRules, Modal, Rules, Waiting, WaveRules } from './ui/components'
 import * as sound from './ui/sound'
 import { useStageSounds } from './ui/stageSounds'
 import { keepAwake } from './ui/wakeLock'
@@ -20,6 +22,8 @@ const GAMES: { id: GameId; name: string; icon: string; tagline: string; players:
   { id: 'blef', name: 'BLEF', icon: '🤥', tagline: 'Izmisli laž, pronađi istinu.', players: '3 do 5, najbolje 3 ili 4' },
   { id: 'talas', name: 'TALAS', icon: '📡', tagline: 'Talasna dužina: pogodi šta je drugar mislio.', players: '3 do 5 igrača' },
   { id: 'kviz', name: 'KVIZ', icon: '⏱️', tagline: 'Isto pitanje, isti sat, 4 odgovora. Brzo!', players: '3 do 5 igrača' },
+  { id: 'licitacija', name: 'LICITACIJA', icon: '🎟️', tagline: 'Ti protiv drugara. Tajna ponuda, ko da više?', players: 'tačno 2 igrača' },
+  { id: 'misija', name: 'MISIJA', icon: '🦹', tagline: 'Velika ekipa, skriveni špijuni. Kome veruješ?', players: '5 do 12, najbolje 8+' },
 ]
 const GAME_IDS = GAMES.map((g) => g.id) as string[]
 const gameName = (id: GameId) => GAMES.find((g) => g.id === id)?.name ?? 'ULJEZ'
@@ -158,7 +162,7 @@ export default function App() {
       {useLocalBackend() && <div className="local-note">Probni režim (bez interneta)</div>}
       {rules && (
         <Modal title="Kako se igra" onClose={() => setRules(false)}>
-          {game === 'blef' ? <BlefRules /> : game === 'talas' ? <WaveRules /> : game === 'kviz' ? <KvizRules /> : <Rules />}
+          {game === 'blef' ? <BlefRules /> : game === 'talas' ? <WaveRules /> : game === 'kviz' ? <KvizRules /> : game === 'licitacija' ? <LicRules /> : game === 'misija' ? <MisijaRules /> : <Rules />}
         </Modal>
       )}
     </div>
@@ -205,7 +209,7 @@ function Home({
     <section className="screen home">
       <div className="hero">
         <div className="hero-sub">BACKSTREET EDITION · 2026</div>
-        <h1 className="hero-title chrome">{current.name}</h1>
+        <h1 className={`hero-title chrome${current.name.length > 6 ? ' long' : ''}`}>{current.name}</h1>
         <p className="muted">{current.tagline}</p>
       </div>
       <div className="game-picker" role="radiogroup" aria-label="Izaberi igru">
@@ -297,6 +301,8 @@ function Room({
   if (game === 'blef') return <Blef be={be} code={code} view={view} />
   if (game === 'talas') return <Wave be={be} code={code} view={view} />
   if (game === 'kviz') return <Kviz be={be} code={code} view={view} />
+  if (game === 'licitacija') return <Lic be={be} code={code} view={view} />
+  if (game === 'misija') return <Misija be={be} code={code} view={view} />
   return <Game be={be} code={code} view={view} />
 }
 
@@ -323,7 +329,7 @@ function Join({ be, code, view, onLeave }: { be: Backend; code: string; view: Re
       <div className="card">
         <h2>Ko si iz benda?</h2>
         <div className="badge-grid">
-          {BADGES.map((b) => (
+          {badgesFor(view.pub?.game).map((b) => (
             <button
               key={b.id}
               className={`badge-pick${badge === b.id ? ' on' : ''}`}
@@ -332,7 +338,7 @@ function Join({ be, code, view, onLeave }: { be: Backend; code: string; view: Re
               onClick={() => setBadge(b.id)}
             >
               <span className="badge badge-md" style={{ '--c': b.color } as CSSProperties}>
-                {b.name.length <= 2 ? b.name : b.name[0]}
+                {badgeMark(b)}
               </span>
               <span>{b.name}</span>
               {taken.has(b.id) && <small>zauzet</small>}

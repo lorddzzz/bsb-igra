@@ -16,6 +16,7 @@ import {
   scoreRound,
   setupRound,
 } from './logic'
+import { LIC_PLAYERS } from '../lic/logic'
 import { badgesFor, MAX_VOTES, type GameId, type Mode, type Phase, type Pub, type Secret, type Ticket } from './types'
 
 // 'missions' is from the previous version, kept so a room an old phone moved there can recover.
@@ -52,7 +53,8 @@ export async function joinRoom(be: Backend, code: string, name: string, badge: s
       error = 'started'
       return undefined
     }
-    if (!me && Object.keys(players).length >= badgesFor(pub.game).length) {
+    const max = pub.game === 'licitacija' ? LIC_PLAYERS : badgesFor(pub.game).length
+    if (!me && Object.keys(players).length >= max) {
       error = 'full'
       return undefined
     }

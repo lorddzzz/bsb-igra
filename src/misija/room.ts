@@ -78,7 +78,7 @@ export function useMisijaActions(be: Backend, code: string, view: RoomView) {
       /** My mission card: the card itself is secret, only that I played is public. */
       play: async (success: boolean) => {
         const m = misijaOf(pub)
-        if (pub.phase !== 'mission' || !m.team?.[be.uid]) return
+        if (pub.phase !== 'mission' || !m.team?.[be.uid] || m.played?.[be.uid]) return
         await be.set(`${roomPath(code)}/secret/misija/plays/${mKey(missionNo(pub))}/${be.uid}`, success)
         await be.set(`${pubPath}/misija/played/${be.uid}`, true)
       },

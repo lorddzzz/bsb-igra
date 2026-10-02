@@ -21,6 +21,7 @@ import {
   teamSize,
   track,
   TO_WIN,
+  wins,
 } from '../misija/logic'
 import { misijaSecret, misijaTicket, useMisijaActions, type MisijaActions } from '../misija/room'
 import type { MisijaSecret, MisijaTicket, Role, Side } from '../misija/types'
@@ -91,7 +92,7 @@ function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
       isHost={isHost}
       code={code}
       title="Misija"
-      min={MIN_MISIJA_PLAYERS}
+      minPlayers={MIN_MISIJA_PLAYERS}
       steps={[
         `Svako dobija tajnu ulogu. Oko trećine vas su špijuni${n >= MIN_MISIJA_PLAYERS ? ` (sada ${spyCount(n)})` : ''}.`,
         'Vođa bira tim za misiju, svi glasaju da li tim ide.',
@@ -424,7 +425,8 @@ function Mission({ pub, me, actions, ticket }: ScreenProps) {
   const m = misijaOf(pub)
   const team = teamOf(m.team)
   const onTeam = team.includes(me)
-  const played = m.played?.[me]
+  const [sent, setSent] = useState(false)
+  const played = m.played?.[me] || sent
   const [note, setNote] = useState('')
   const need = failsNeeded(playerOrder(pub).length, missionNo(pub))
   useYourTurn(onTeam, pub.round)
@@ -446,6 +448,7 @@ function Mission({ pub, me, actions, ticket }: ScreenProps) {
               className="vote-big yes"
               onClick={() => {
                 sound.lock()
+                setSent(true)
                 void actions.play(true)
               }}
             >
@@ -459,6 +462,7 @@ function Mission({ pub, me, actions, ticket }: ScreenProps) {
                   return
                 }
                 sound.lock()
+                setSent(true)
                 void actions.play(false)
               }}
             >
@@ -509,9 +513,8 @@ function Reveal({ pub, isHost, actions }: ScreenProps) {
 
   const size = teamOf(result.team).length
   const cards = Array.from({ length: size }, (_, i) => i >= size - result.fails)
-  const w = { ok: 0, bad: 0 }
-  for (const r of track(pub)) if (r) r.ok ? w.ok++ : w.bad++
-  const end = w.ok >= TO_WIN || w.bad >= TO_WIN
+  const w = wins(pub)
+  const end = w.ekipa >= TO_WIN || w.spijuni >= TO_WIN
 
   return (
     <section className="screen">
@@ -610,11 +613,11 @@ function Over({ pub, me, isHost, actions, secret }: ScreenProps) {
       <div className="winner">
         <div className="crown">{winner === 'ekipa' ? '🎤' : '🦹'}</div>
         <div className="winner-name">
-          <span className="chrome">{winner === 'ekipa' ? 'EKIPA' : 'ŠPIJUNI'} POBEĐUJU!</span>
+          <span className="chrome">{winner === 'ekipa' ? 'EKIPA POBEĐUJE!' : 'ŠPIJUNI POBEĐUJU!'}</span>
         </div>
         {m.shot && (
           <p>
-            Špijuni su gađali {nameOf(pub, m.shot)}: {shotRight ? 'pogodak, to je Menadžer! 🎯' : 'promašaj! 😅'}
+            Špijuni su gađali: {nameOf(pub, m.shot)}. {shotRight ? 'Pogodak, to je Menadžer! 🎯' : 'Promašaj! 😅'}
           </p>
         )}
         {roles[me] && (
@@ -630,10 +633,11 @@ function Over({ pub, me, isHost, actions, secret }: ScreenProps) {
             {[...winners, ...order.filter((u) => !winners.includes(u))].map((uid) => {
               const r = roles[uid] ? ROLES[roles[uid]] : null
               return (
-                <li key={uid} className={winners.includes(uid) ? 'won' : ''}>
+                <li key={uid}>
                   <PlayerTag player={pub.players?.[uid]} you={uid === me} />
                   <span className={`reasons side-${r?.side}`}>
                     {r ? `${r.icon} ${r.name}` : '?'}
+                    {winners.includes(uid) && ' 🏆'}
                   </span>
                 </li>
               )

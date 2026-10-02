@@ -10,7 +10,7 @@ export function useYourTurn(mine: boolean, key: unknown) {
 }
 
 /** Screens that bring their own big sound (drum roll, verdict, fanfare), so no swoosh on arrival. */
-const OWN_SOUND = new Set(['reveal', 'truth', 'result', 'answer', 'over', 'question'])
+const OWN_SOUND = new Set(['reveal', 'truth', 'result', 'answer', 'over', 'question', 'duel', 'set'])
 
 /**
  * Room-wide sounds from the host phone, the "stage speaker": background music while in a room,
