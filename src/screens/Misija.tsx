@@ -351,7 +351,7 @@ function RoleCard({ pub, me, ticket }: { pub: Pub; me: string; ticket: MisijaTic
 
 function seesLabel(role: Role): string {
   if (role === 'menadzer') return 'ŠPIJUNI'
-  if (role === 'telohranitelj') return 'JEDAN OD OVIH JE MENADŽER'
+  if (role === 'telohranitelj') return 'JEDAN OD OVIH JE VIDOVNJAK'
   return 'TVOJI SAUČESNICI'
 }
 

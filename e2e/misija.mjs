@@ -43,7 +43,7 @@ const names = [
   ['Jova', 'Medved'],
   ['Mila', 'Sova'],
   ['Sale', 'Ris'],
-  ['Iva', 'Zvezda'],
+  ['Iva', 'Jelen'],
 ]
 const pages = []
 const errors = []
