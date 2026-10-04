@@ -2,11 +2,14 @@ import { Component, useEffect, useState, type CSSProperties, type ReactNode } fr
 import { connect, isLocalBackend, type Backend } from './backend'
 import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './game/room'
 import { badgesFor, type GameId } from './game/types'
+import { useRecordGame } from './history/record'
+import { GAMES } from './games'
 import { Blef } from './screens/Blef'
 import { Game } from './screens/Game'
 import { Kviz } from './screens/Kviz'
 import { Lic } from './screens/Lic'
 import { Misija, MisijaRules } from './screens/Misija'
+import { Tabela } from './screens/Tabela'
 import { Wave } from './screens/Wave'
 import { badgeMark, BlefRules, Button, KvizRules, LicRules, Modal, Rules, Waiting, WaveRules } from './ui/components'
 import * as sound from './ui/sound'
@@ -18,14 +21,6 @@ const ROOM_KEY = 'uljez-room'
 const NAME_KEY = 'uljez-name'
 const GAME_KEY = 'druzina-game'
 
-const GAMES: { id: GameId; name: string; icon: string; tagline: string; players: string }[] = [
-  { id: 'uljez', name: 'ULJEZ', icon: '🕵️', tagline: 'Svi znaju tajnu reč. Osim uljeza.', players: '3 do 12 igrača' },
-  { id: 'blef', name: 'BLEF', icon: '🤥', tagline: 'Izmisli laž, pronađi istinu.', players: '3 do 5, najbolje 3 ili 4' },
-  { id: 'talas', name: 'TALAS', icon: '📡', tagline: 'Talasna dužina: pogodi šta je drugar mislio.', players: '3 do 5 igrača' },
-  { id: 'kviz', name: 'KVIZ', icon: '⏱️', tagline: 'Isto pitanje, isti sat, 4 odgovora. Brzo!', players: '3 do 5 igrača' },
-  { id: 'licitacija', name: 'LICITACIJA', icon: '🎟️', tagline: 'Ti protiv drugara. Tajna ponuda, ko da više?', players: 'tačno 2 igrača' },
-  { id: 'misija', name: 'MISIJA', icon: '🦹', tagline: 'Velika ekipa, skriveni špijuni. Kome veruješ?', players: '5 do 12, najbolje 8+' },
-]
 const GAME_IDS = GAMES.map((g) => g.id) as string[]
 const gameName = (id: GameId) => GAMES.find((g) => g.id === id)?.name ?? 'ULJEZ'
 
@@ -61,6 +56,7 @@ export default function App() {
   // The game shown in the header and rules: the room's once inside one, else the one picked on the home screen.
   const [picked, setPicked] = useState<GameId>(() => (GAME_IDS.includes(saved(GAME_KEY)) ? (saved(GAME_KEY) as GameId) : 'uljez'))
   const [roomGame, setRoomGame] = useState<GameId | null>(null)
+  const [board, setBoard] = useState(false)
   const game = (code && roomGame) || picked
   const update = useUpdateAvailable()
 
@@ -148,6 +144,8 @@ export default function App() {
           <Waiting>Povezivanje</Waiting>
         ) : code ? (
           <Room be={be} code={code} onLeave={leave} onGame={setRoomGame} />
+        ) : board ? (
+          <Tabela be={be} onBack={() => setBoard(false)} />
         ) : (
           <Home
             be={be}
@@ -157,6 +155,7 @@ export default function App() {
               setPicked(g)
             }}
             onEnter={enter}
+            onBoard={() => setBoard(true)}
           />
         )}
         </Crashed>
@@ -217,11 +216,13 @@ function Home({
   game,
   onPick,
   onEnter,
+  onBoard,
 }: {
   be: Backend
   game: GameId
   onPick: (game: GameId) => void
   onEnter: (code: string) => void
+  onBoard: () => void
 }) {
   const [code, setCode] = useState('')
   const [error, setError] = useState('')
@@ -285,6 +286,9 @@ function Home({
         </div>
         {error && <p className="error">{error}</p>}
       </div>
+      <button className="board-btn" onClick={onBoard}>
+        <span aria-hidden>🏆</span> Tabela svih vremena
+      </button>
       <p className="version-note">verzija {BUILD_ID}</p>
     </section>
   )
@@ -311,6 +315,7 @@ function Room({
   const view = useRoom(be, code)
   const game = view.pub?.game ?? 'uljez'
   useStageSounds(view.pub?.players?.[be.uid] ? view.pub : null, be.uid)
+  useRecordGame(be, code, view.pub)
   useEffect(() => onGame(game), [game, onGame])
   if (view.loading) return <Waiting>Učitavanje sobe</Waiting>
   if (!view.pub)

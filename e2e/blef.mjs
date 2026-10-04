@@ -78,6 +78,18 @@ await host.locator('.winner').waitFor()
 await shot(host, '06-game-over')
 const scores = await host.locator('.standings li').allTextContents()
 console.log('code', code, 'standings', scores)
+
+// the finished game lands on the all-time scoreboard, reached from the home screen
+await host.getByRole('button', { name: 'Izađi iz sobe' }).click()
+await host.getByRole('button', { name: /Tabela svih vremena/ }).click()
+await host.getByText('Šampioni').waitFor()
+const rows = await host.locator('.tabela-list li').count()
+if (rows !== scores.length) errors.push(`scoreboard shows ${rows} players, expected ${scores.length}`)
+await shot(host, '07-tabela')
+await host.getByRole('radio', { name: /BLEF/ }).click()
+await shot(host, '08-tabela-blef')
+await host.getByRole('button', { name: 'Nazad' }).click()
+await host.getByRole('button', { name: 'Napravi sobu' }).waitFor()
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors')
 // fonts come from Google; a sandbox without internet can't load them, which is not the game's fault
 if (errors.some((e) => !e.includes('Failed to load resource'))) process.exitCode = 1

@@ -1,5 +1,5 @@
 import { KVIZ_QUESTIONS, KVIZ_TOPICS, type KvizLevel, type KvizQuestion, type KvizTopic } from '../data/kvizQuestions'
-import { asList, playerOrder, shuffle, type Rng } from '../game/logic'
+import { addStats, asList, playerOrder, shuffle, type Rng } from '../game/logic'
 import type { Pub } from '../game/types'
 import { CARDS, type CardId, type SpecialId } from './cards'
 import type { Attack, KvizResult, KvizState } from './types'
@@ -258,7 +258,12 @@ export function lastPlaced(pub: Pub): string[] {
 /** `now` is the server clock; the reveal lasts REVEAL_SECONDS from here. */
 export function applyKviz(pub: Pub, result: KvizResult, now: number, rng: Rng = Math.random): Pub {
   const scores = { ...(pub.scores ?? {}) }
-  for (const [uid, g] of Object.entries(result.gains)) scores[uid] = (scores[uid] ?? 0) + g.points
+  const add: Record<string, Record<string, number>> = {}
+  for (const [uid, g] of Object.entries(result.gains)) {
+    scores[uid] = (scores[uid] ?? 0) + g.points
+    const reasons = asList<string>(g.reasons)
+    add[uid] = { right: reasons.some((r) => r.startsWith('Tačno')) ? 1 : 0, robs: reasons.includes('Pljačka') ? 1 : 0 }
+  }
   let kviz: KvizState = { ...kvizOf(pub), result, nextAt: now + REVEAL_SECONDS * 1000 }
   // After questions 5 and 10, whoever is last gets a new card to fight back with.
   if (BONUS_AFTER.includes(pub.round) && pub.round < totalQuestions(pub)) {
@@ -267,7 +272,7 @@ export function applyKviz(pub: Pub, result: KvizResult, now: number, rng: Rng = 
     for (const uid of bonus) hands[uid] = [...handOf(pub, uid), ...drawCards(1, rng)]
     kviz = { ...kviz, hands, result: { ...result, bonus } }
   }
-  return { ...pub, scores, phase: 'answer', kviz }
+  return { ...pub, scores, stats: addStats(pub.stats, add), phase: 'answer', kviz }
 }
 
 export function startKviz(pub: Pub, rng: Rng, now: number): Pub {
@@ -285,6 +290,7 @@ export function startKviz(pub: Pub, rng: Rng, now: number): Pub {
     ...pub,
     phase: 'question',
     round: 1,
+    stats: undefined,
     scores: Object.fromEntries(order.map((uid) => [uid, 0])),
     kviz: newQuestion(pub, kviz, 1, rng, now),
   }

@@ -9,12 +9,14 @@ Six party games for friends on their phones, in a comic-book hero HQ look. One s
 - **Licitacija**: secret bidding for two.
 - **Misija**: Avalon-style hidden roles for 5 to 12.
 
+Every finished game is saved to an all-time scoreboard ("Tabela svih vremena" on the home screen): wins and points per player name across gatherings, plus fun titles such as most escapes as impostor. Names are matched ignoring case, spaces and accents (`src/history/`).
+
 **Play:** https://lorddzzz.github.io/bsb-igra/
 
 ## How it works
 
 - React + TypeScript (Vite), hosted on GitHub Pages, deployed by `.github/workflows/deploy.yml` on every push to `main`.
-- Phones sync through Firebase Realtime Database with anonymous sign-in. `database.rules.json` keeps each ticket private to its owner and hides the round's answer until voting is over.
+- Phones sync through Firebase Realtime Database with anonymous sign-in. `database.rules.json` keeps each ticket private to its owner and hides the round's answer until voting is over. Finished games go to `history/{id}`, which anyone signed in can read and add to but never change.
 - Words and categories: `src/data/words.ts`, quiz questions `src/data/kvizQuestions.ts`, Blef facts `src/data/blefQuestions.ts`. Scoring and rules: `src/<game>/logic.ts`.
 
 ## Development

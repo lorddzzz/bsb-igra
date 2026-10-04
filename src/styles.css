@@ -2167,3 +2167,101 @@ button.kv-option:active:not(:disabled) {
   color: var(--muted);
   opacity: 0.7;
 }
+
+/* All-time scoreboard */
+.board-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 3px solid var(--ink);
+  background: var(--card);
+  box-shadow: var(--shadow-sm);
+  color: var(--pow);
+  font-family: var(--display);
+  font-size: 19px;
+  letter-spacing: 1px;
+}
+.tabela-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.tabela-filter button {
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 2px solid var(--ink);
+  background: var(--card);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 700;
+}
+.tabela-filter button.on {
+  background: var(--pow);
+  color: var(--ink);
+}
+.tabela-list,
+.tabela-titles,
+.tabela-recent {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.tabela-list li {
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+}
+.tabela-rank {
+  font-family: var(--display);
+  font-size: 18px;
+  color: var(--muted);
+  text-align: center;
+}
+.tabela-num {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  text-align: right;
+}
+.tabela-num b {
+  font-family: var(--display);
+  font-size: 22px;
+  color: var(--pow);
+  line-height: 1;
+}
+.tabela-num small,
+.tabela-titles small,
+.tabela-recent small {
+  color: var(--muted);
+  font-size: 12px;
+}
+.tabela-titles li,
+.tabela-recent li {
+  display: grid;
+  grid-template-columns: 32px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.tabela-titles li > span:last-child,
+.tabela-recent li > span:last-child {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.tabela-recent li > span:last-child {
+  display: block;
+}
+.tabela-recent li small:last-child {
+  display: block;
+}
+.tabela-title-icon {
+  font-size: 24px;
+  text-align: center;
+}

@@ -67,7 +67,19 @@ describe('rooms', () => {
     await assertSucceeds(get(ref(db('bob'), `${room}/online`)))
   })
 
-  it('refuse anything outside rooms', async () => {
+  it('keep finished games for the all-time scoreboard, written once and never changed', async () => {
+    const game = { game: 'uljez', at: 1, room: 'ABCD', players: [{ name: 'Ana', won: true, points: 5 }] }
+    await assertFails(set(ref(db(null), 'history/ABCD-x'), game))
+    await assertSucceeds(set(ref(db('ana'), 'history/ABCD-x'), game))
+    await assertFails(set(ref(db('bob'), 'history/ABCD-x'), { ...game, at: 2 }))
+    await assertFails(set(ref(db('bob'), 'history/ABCD-x'), null))
+    await assertFails(set(ref(db('bob'), 'history/ABCD-y'), { game: 'uljez' }))
+    await assertSucceeds(get(ref(db('bob'), 'history')))
+    await assertFails(get(ref(db(null), 'history')))
+    await assertFails(set(ref(db('bob'), 'history'), null))
+  })
+
+  it('refuse anything outside rooms and history', async () => {
     await assertFails(get(ref(db('ana'), '/')))
     await assertFails(set(ref(db('ana'), 'other/x'), 1))
   })

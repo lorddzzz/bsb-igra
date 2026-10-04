@@ -1,5 +1,5 @@
 import { WAVE_SCALES } from '../data/waveScales'
-import { asList, playerOrder, shuffle, type Rng } from '../game/logic'
+import { addStats, asList, playerOrder, shuffle, type Rng } from '../game/logic'
 import type { Pub } from '../game/types'
 import type { WaveResult, WaveState } from './types'
 
@@ -92,8 +92,12 @@ export function scoreWave(pub: Pub): WaveResult {
 
 export function applyWave(pub: Pub, result: WaveResult): Pub {
   const scores = { ...(pub.scores ?? {}) }
-  for (const [uid, g] of Object.entries(result.gains)) scores[uid] = (scores[uid] ?? 0) + g.points
-  return { ...pub, scores, phase: 'result', wave: { ...waveOf(pub), result } }
+  const add: Record<string, Record<string, number>> = {}
+  for (const [uid, g] of Object.entries(result.gains)) {
+    scores[uid] = (scores[uid] ?? 0) + g.points
+    add[uid] = { bull: asList<string>(g.reasons).includes('Pun pogodak!') ? 1 : 0 }
+  }
+  return { ...pub, scores, stats: addStats(pub.stats, add), phase: 'result', wave: { ...waveOf(pub), result } }
 }
 
 export function startWave(pub: Pub, rng: Rng): Pub {
@@ -107,6 +111,7 @@ export function startWave(pub: Pub, rng: Rng): Pub {
     ...pub,
     phase: 'clue',
     round: 1,
+    stats: undefined,
     scores: Object.fromEntries(order.map((uid) => [uid, 0])),
     wave: drawRound(wave, rng),
   }

@@ -1,5 +1,5 @@
 import { BLEF_QUESTIONS, getBlefQuestion, type BlefQuestion } from '../data/blefQuestions'
-import { asList, playerOrder, shuffle, type Rng } from '../game/logic'
+import { addStats, asList, playerOrder, shuffle, type Rng } from '../game/logic'
 import type { Pub } from '../game/types'
 import type { BlefOption, BlefResult, BlefState } from './types'
 
@@ -147,8 +147,14 @@ export function scoreBlef(pub: Pub): BlefResult {
 
 export function applyBlef(pub: Pub, result: BlefResult): Pub {
   const scores = { ...(pub.scores ?? {}) }
-  for (const [uid, g] of Object.entries(result.gains)) scores[uid] = (scores[uid] ?? 0) + g.points
-  return { ...pub, scores, phase: 'truth', blef: { ...blefOf(pub), result } }
+  const add: Record<string, Record<string, number>> = {}
+  for (const [uid, g] of Object.entries(result.gains)) {
+    scores[uid] = (scores[uid] ?? 0) + g.points
+    const reasons = asList<string>(g.reasons)
+    const fooled = reasons.map((r) => /^Prevario (\d+)/.exec(r)).find(Boolean)
+    add[uid] = { truth: reasons.includes('Pronašao istinu') ? 1 : 0, fooled: fooled ? Number(fooled[1]) : 0 }
+  }
+  return { ...pub, scores, stats: addStats(pub.stats, add), phase: 'truth', blef: { ...blefOf(pub), result } }
 }
 
 export function startBlef(pub: Pub, rng: Rng): Pub {
@@ -159,6 +165,7 @@ export function startBlef(pub: Pub, rng: Rng): Pub {
     ...pub,
     phase: 'write',
     round: 1,
+    stats: undefined,
     scores: Object.fromEntries(playerOrder(pub).map((uid) => [uid, 0])),
     // once every question has been asked, start the history over
     blef: { questions, seen: fresh.length === questions.length ? [...seen, ...questions] : questions },

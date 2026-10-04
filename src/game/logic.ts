@@ -265,6 +265,20 @@ export function scoreRound(pub: Pub, secret: Secret): RoundResult {
   }
 }
 
+/** Adds to the running counts for the all-time scoreboard. Zero counts are left out. */
+export function addStats(
+  stats: Pub['stats'],
+  add: Record<string, Record<string, number>>,
+): Record<string, Record<string, number>> {
+  const out: Record<string, Record<string, number>> = { ...(stats ?? {}) }
+  for (const [uid, counts] of Object.entries(add))
+    for (const [key, n] of Object.entries(counts)) {
+      if (!n) continue
+      out[uid] = { ...(out[uid] ?? {}), [key]: (out[uid]?.[key] ?? 0) + n }
+    }
+  return out
+}
+
 /** Applies a scored round to the public state and moves to the score (or game over) screen. */
 export function applyRound(pub: Pub, result: RoundResult): Pub {
   const scores = { ...(pub.scores ?? {}) }
@@ -275,10 +289,23 @@ export function applyRound(pub: Pub, result: RoundResult): Pub {
   const impostorStreak = Object.fromEntries(
     playerOrder(pub).map((uid) => [uid, impostors.includes(uid) ? (pub.impostorStreak?.[uid] ?? 0) + 1 : 0]),
   )
+  const caught = asList<string>(result.caught)
+  const add: Record<string, Record<string, number>> = {}
+  for (const uid of playerOrder(pub))
+    add[uid] = impostors.includes(uid)
+      ? {
+          imp: 1,
+          caught: caught.includes(uid) ? 1 : 0,
+          escaped: caught.includes(uid) ? 0 : 1,
+          word: asList<string>(result.guessedRight).includes(uid) ? 1 : 0,
+        }
+      : // a non-impostor's points are their votes on an impostor
+        { spot: result.gains[uid]?.points ?? 0 }
   return {
     ...pub,
     scores,
     impostorStreak,
+    stats: addStats(pub.stats, add),
     last: result,
     usedWords: [...asList<string>(pub.usedWords), result.word],
     phase: over ? 'over' : 'score',
@@ -314,6 +341,7 @@ export function resetToLobby(pub: Pub): Pub {
     last: undefined,
     usedWords: undefined,
     impostorStreak: undefined,
+    stats: undefined,
   }
 }
 

@@ -127,6 +127,11 @@ export interface Pub {
   usedWords?: string[]
   /** How many rounds in a row each player has been an impostor. */
   impostorStreak?: Record<string, number>
+  /**
+   * Running counts for the all-time scoreboard, per player then stat (times caught as impostor, people
+   * fooled, right answers...). Cleared when a game starts.
+   */
+  stats?: Record<string, Record<string, number>>
   /** Blef's own state; only in Blef rooms. */
   blef?: BlefState
   /** Talasna dužina's own state; only in those rooms. */

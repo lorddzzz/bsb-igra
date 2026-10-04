@@ -1,5 +1,11 @@
 {
   "rules": {
+    "history": {
+      ".read": "auth != null",
+      "$game": {
+        ".write": "auth != null && !data.exists() && newData.hasChildren(['game', 'players', 'at'])"
+      }
+    },
     "rooms": {
       "$code": {
         "pub": {
