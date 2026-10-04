@@ -13,18 +13,19 @@ export function useYourTurn(mine: boolean, key: unknown) {
 const OWN_SOUND = new Set(['reveal', 'truth', 'result', 'answer', 'over', 'question', 'duel', 'set'])
 
 /**
- * Room-wide sounds from the host phone, the "stage speaker": background music while in a room,
+ * Room-wide sounds from the host phone, the "stage speaker": the game's own music while in a room,
  * a chime when someone checks in, the boarding call when a game starts and a swoosh between screens.
  */
 export function useStageSounds(pub: Pub | null | undefined, me: string) {
   const isHost = Boolean(pub && pub.hostUid === me)
   const phase = pub?.phase
   const players = Object.keys(pub?.players ?? {}).length
+  const game = pub?.game ?? 'uljez'
 
   useEffect(() => {
-    sound.setMusic(isHost)
-    return () => sound.setMusic(false)
-  }, [isHost])
+    sound.setMusic(isHost ? game : null)
+    return () => sound.setMusic(null)
+  }, [isHost, game])
 
   const seen = useRef({ phase, players })
   useEffect(() => {
