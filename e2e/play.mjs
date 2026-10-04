@@ -10,6 +10,8 @@ const ROUNDS = Number(process.env.ROUNDS ?? 2)
 // 'local' syncs tabs through localStorage (one shared browser context);
 // 'emu' uses the Firebase emulators, so each phone gets its own context and login.
 const MODE = process.env.MODE ?? 'local'
+// PLAYERS=12 plays with a big group (3 to 12).
+const PLAYERS = Number(process.env.PLAYERS ?? 4)
 // NOTHUMBS=1 approves no missions, so some players score 0 in a round.
 const NOTHUMBS = Boolean(process.env.NOTHUMBS)
 mkdirSync(OUT, { recursive: true })
@@ -21,7 +23,15 @@ const names = [
   ['Marko', 'Vuk'],
   ['Luka', 'Soko'],
   ['Ivan', 'Medved'],
-]
+  ['Mila', 'Lisica'],
+  ['Sara', 'Sova'],
+  ['Nina', 'Ris'],
+  ['Pera', 'Jelen'],
+  ['Zoki', 'Ajkula'],
+  ['Laza', 'Škorpija'],
+  ['Vesna', 'Vila'],
+  ['Bane', 'Perun'],
+].slice(0, PLAYERS)
 const pages = []
 const errors = []
 const shot = shooter(OUT)
@@ -32,7 +42,7 @@ async function join(p, [name, badge]) {
   await p.getByRole('button', { name: /Uđi u sobu/ }).click()
 }
 
-for (let i = 0; i < 4; i++) {
+for (let i = 0; i < PLAYERS; i++) {
   const p = await (MODE === 'local' ? shared : await newPhoneContext(browser, { ignoreHTTPSErrors: true })).newPage()
   p.on('pageerror', (e) => errors.push(`page ${i}: ${e.message}`))
   p.on('console', (m) => m.type() === 'error' && errors.push(`console ${i}: ${m.text()}`))
@@ -48,11 +58,11 @@ await host.getByPlaceholder('npr. Marko').waitFor()
 await shot(host, '02-checkin')
 await join(host, names[0])
 const code = (await host.locator('.code-chip').textContent()).trim()
-for (let i = 1; i < 4; i++) {
+for (let i = 1; i < PLAYERS; i++) {
   await pages[i].goto(`${BASE}?${MODE}&soba=${code}`)
   await join(pages[i], names[i])
 }
-await host.getByText('Družina (4)').waitFor()
+await host.getByText(`Družina (${PLAYERS})`).waitFor()
 await shot(host, '03-lobby')
 await host.getByRole('button', { name: /Počni igru/ }).click()
 
@@ -94,10 +104,10 @@ for (let round = 1; round <= ROUNDS; round++) {
   await host.getByRole('button', { name: /glasanje/ }).click()
   await host.getByText('Ko je uljez?').waitFor()
   // everyone votes for the next player in the list
-  for (let i = 0; i < 4; i++) {
+  for (let i = 0; i < PLAYERS; i++) {
     await pages[i].locator('.vote').nth(round % 3 === 0 ? 1 : 0).click()
     // every other round, hedge with a second vote
-    if (round % 2 === 0) await pages[i].locator('.vote').nth(2).click()
+    if (round % 2 === 0) await pages[i].locator('.vote').nth(Math.min(2, PLAYERS - 2)).click()
     await pages[i].getByRole('button', { name: /Potvrdi glas/ }).click()
     if (i === 0 && round === 1) await shot(host, '08-voting')
   }
@@ -107,8 +117,8 @@ for (let round = 1; round <= ROUNDS; round++) {
   if (round === 1) await shot(host, '10-reveal')
   if (await pages[2].getByRole('button', { name: 'Dalje' }).count()) errors.push('non-host sees Dalje')
   await host.getByRole('button', { name: 'Dalje' }).click()
-  // every caught impostor guesses (there can be two)
-  for (let g = 0; g < 2; g++) {
+  // every caught impostor guesses (there can be several)
+  for (let g = 0; g < PLAYERS / 2; g++) {
     const guesser = await findPage('Koja je bila reč?', 1500).catch(() => null)
     if (!guesser) break
     await shot(guesser, `11-guess-r${round}-${g}`)
@@ -122,7 +132,7 @@ for (let round = 1; round <= ROUNDS; round++) {
   }
   await host.getByText('Ova runda').waitFor()
   if (round === 1) await shot(host, '13-score')
-  if (await pages[3].getByRole('button', { name: /Sledeća runda/ }).count()) errors.push('non-host sees next round')
+  if (await pages[PLAYERS - 1].getByRole('button', { name: /Sledeća runda/ }).count()) errors.push('non-host sees next round')
   await host.getByRole('button', { name: /Sledeća runda/ }).click()
 }
 

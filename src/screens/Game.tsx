@@ -4,6 +4,7 @@ import { getCategory } from '../data/words'
 import {
   asList,
   catchThreshold,
+  maxImpostors,
   categoryChoices,
   caughtImpostors,
   pickerFor,
@@ -185,8 +186,8 @@ function Clues({ pub, me, isHost, actions, view }: ScreenProps) {
       </div>
       <Ticket ticket={view.ticket} player={pub.players?.[me]} round={pub.round} />
       <Hint pub={pub}>
-        Ako znaš reč, daj trag koji pomaže ostalima, ali ne odaje reč uljezu. Ako si uljez, blefiraj! Ove runde
-        može biti 1 ili 2 uljeza 🤫
+        Ako znaš reč, daj trag koji pomaže ostalima, ali ne odaje reč uljezu. Ako si uljez, blefiraj!{' '}
+        {impostorHint(playerOrder(pub).length)} 🤫
       </Hint>
       <div className="card">
         <p className="big-line">
@@ -304,11 +305,11 @@ function Reveal({ pub, me, isHost, actions, view }: ScreenProps) {
     )
 
   const caught = caughtImpostors(pub, secret)
-  const two = secret.impostors.length > 1
+  const many = secret.impostors.length
   return (
     <section className="screen">
       <RoundTitle pub={pub} />
-      {two && <h1 className="title chrome">Bila su DVA uljeza!</h1>}
+      {many > 1 && <h1 className="title chrome">{manyImpostorsTitle(many)}</h1>}
       {secret.impostors.map((uid) => {
         const got = caught.includes(uid)
         const impostor = pub.players?.[uid]
@@ -343,6 +344,19 @@ function Reveal({ pub, me, isHost, actions, view }: ScreenProps) {
       )}
     </section>
   )
+}
+
+const COUNT_WORDS = ['', 'JEDAN', 'DVA', 'TRI', 'ČETIRI', 'PET', 'ŠEST']
+
+/** "Bila su DVA uljeza!", "Bilo je PET uljeza!" */
+function manyImpostorsTitle(count: number): string {
+  const word = COUNT_WORDS[count] ?? String(count)
+  return count <= 4 ? `Bila su ${word} uljeza!` : `Bilo je ${word} uljeza!`
+}
+
+function impostorHint(playerCount: number): string {
+  const max = maxImpostors(playerCount)
+  return max === 1 ? 'Ove runde je jedan uljez.' : `Ove runde može biti od 1 do ${max} uljeza.`
 }
 
 function VoteSummary({ pub, secret, me }: { pub: Pub; secret: Secret; me: string }) {

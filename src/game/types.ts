@@ -75,11 +75,11 @@ export const ALL_BADGES: Badge[] = [...BADGES, ...EXTRA_BADGES]
 
 /** The badges players can pick from in a game: big-group games get the extra ones. */
 export function badgesFor(game: GameId | undefined): Badge[] {
-  return game === 'misija' ? ALL_BADGES : BADGES
+  return game === 'misija' || game === 'uljez' || !game ? ALL_BADGES : BADGES
 }
 
 export const MIN_PLAYERS = 3
-/** How many people each player may vote for, since a round can have two impostors. */
+/** How many people each player may vote for, since a round can have more than one impostor. */
 export const MAX_VOTES = 2
 
 export interface Player {

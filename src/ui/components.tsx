@@ -197,7 +197,7 @@ export function Rules() {
       </p>
       <ol>
         <li>Neko bira kategoriju. Svi dobijaju istu tajnu reč, osim uljeza, koji zna samo kategoriju.</li>
-        <li>Svake runde ima 1 ili 2 uljeza (2 samo kad vas je bar četvoro). Niko ne zna koliko.</li>
+        <li>Uljeza je obično oko petine igrača, ponekad više, a retko čak pola (troje uvek ima jednog). Niko ne zna koliko ih je.</li>
         <li>Idete u krug dva puta i svako kaže po jednu reč kao trag.</li>
         <li>Svi glasaju na telefonu ko je uljez. Možeš da glasaš za jednu ili dve osobe.</li>
       </ol>
@@ -207,7 +207,7 @@ export function Rules() {
           <b>+1</b> za svaki tvoj glas koji pogodi uljeza
         </li>
         <li>
-          uljez: <b>+2</b> ako ga ne uhvate, plus <b>+1</b> za svaki promašen glas
+          uljez: <b>+2</b> ako ga ne uhvate, plus <b>+1</b> za svaki promašen glas (najviše +4)
         </li>
         <li>
           <b>+2</b> uljezu ako ga uhvate (većina glasa za njega), a on pogodi reč
