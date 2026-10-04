@@ -5,7 +5,7 @@
  */
 export interface BlefQuestion {
   id: string
-  topic: 'svet' | 'muzika' | 'bsb'
+  topic: 'svet' | 'muzika' | 'heroji' | 'gejming' | 'film' | 'zavicaj'
   /** The fact, with ___ where the answer goes. */
   q: string
   a: string
@@ -94,23 +94,26 @@ export const BLEF_QUESTIONS: BlefQuestion[] = [
   { id: 'm14', topic: 'muzika', q: 'Kada je Srbija 2007. pobedila na Evroviziji sa „Molitvom”, takmičenje je održano u ___.', a: 'Helsinkiju', alt: ['helsinki', 'finskoj', 'finska'], fakes: ['Kijevu', 'Atini'] },
   { id: 'm15', topic: 'muzika', q: 'Hit „I Want It That Way” napisali su autori iz ___, pa stihovi nemaju mnogo smisla.', a: 'Švedske', alt: ['svedske', 'švedska', 'svedska', 'šveđani'], fakes: ['Irske', 'Kanade'] },
 
-  // Backstreet Boys
-  { id: 'b01', topic: 'bsb', q: 'Ime Backstreet Boys potiče od jednog ___ u Orlandu.', a: 'buvljaka', alt: ['buvljak', 'buvlja pijaca', 'buvlje pijace', 'pijace', 'pijaca', 'marketa', 'tržnice'], fakes: ['kafića', 'parkinga'] },
-  { id: 'b02', topic: 'bsb', q: 'Kevin i Brajan iz Backstreet Boysa su ___.', a: 'rođaci', alt: ['rodjaci', 'rodjak', 'rođak', 'braća od tetke', 'braca od tetke', 'kuzeni', 'bratići'], fakes: ['komšije', 'polubraća'] },
-  { id: 'b03', topic: 'bsb', q: 'Nik Karter je imao samo ___ godina kada je grupa osnovana.', a: '13', alt: ['trinaest', '12', 'dvanaest'], fakes: ['10', '17'] },
-  { id: 'b04', topic: 'bsb', q: 'Brajan je 1998, usred velike slave, imao operaciju ___.', a: 'srca', alt: ['srce', 'na srcu'], fakes: ['kolena', 'grla'] },
-  { id: 'b05', topic: 'bsb', q: 'Pre nego što su postali slavni u Americi, Backstreet Boys su prvo bili veliki hit u ___.', a: 'Nemačkoj', alt: ['nemackoj', 'evropi', 'njemačkoj', 'nemačka', 'kanadi'], fakes: ['Japanu', 'Brazilu'] },
-  { id: 'b06', topic: 'bsb', q: 'Backstreet Boys su 2013. dobili svoju zvezdu na ___.', a: 'Holivudskoj stazi slavnih', alt: ['stazi slavnih', 'holivudu', 'walk of fame', 'hollywood walk of fame', 'holivudskoj stazi', 'aleji slavnih'], fakes: ['Tajms skveru', 'Diznilendu'] },
-  { id: 'b07', topic: 'bsb', q: 'U spotu za „Everybody (Backstreet’s Back)” dečaci provode noć u ___.', a: 'ukletoj kući', alt: ['ukletoj kuci', 'kući', 'kuci', 'ukletoj vili', 'vili', 'zamku', 'kući strave'], fakes: ['zatvoru', 'bolnici'] },
-  { id: 'b08', topic: 'bsb', q: 'Spot za „Larger Than Life” smešten je u ___.', a: 'svemir', alt: ['svemiru', 'svemirski brod', 'svemirskom brodu', 'budućnost', 'budućnosti', 'kosmos'], fakes: ['podmornicu', 'džunglu'] },
-  { id: 'b09', topic: 'bsb', q: 'Menadžer koji je sastavio Backstreet Boys kasnije je završio u zatvoru zbog ___.', a: 'prevare', alt: ['prevara', 'piramidalne šeme', 'ponzi šeme', 'pronevere', 'utaje', 'krađe novca'], fakes: ['šverca gitara', 'krađe automobila'] },
-  { id: 'b10', topic: 'bsb', q: 'Kevin je napustio grupu 2006. i vratio se posle ___ godina.', a: '6', alt: ['šest', 'sest', '6 godina'], fakes: ['2', '10'] },
-  { id: 'b11', topic: 'bsb', q: 'Album „DNA” iz 2019. bio je prvi Backstreet Boys album na 1. mestu američke top liste posle ___ godina.', a: '19', alt: ['devetnaest', '19 godina'], fakes: ['5', '30'] },
-  { id: 'b12', topic: 'bsb', q: 'Od 2017. do 2019. Backstreet Boys su imali stalni šou u ___.', a: 'Las Vegasu', alt: ['vegasu', 'las vegas', 'vegas'], fakes: ['Diznilendu', 'Majamiju'] },
-  { id: 'b13', topic: 'bsb', q: 'Ej Džej je imao alter ego po imenu Džoni ___.', a: 'No Name', alt: ['noname', 'no-name', 'bez imena', 'nejm'], fakes: ['Rokenrol', 'Kečap'] },
-  { id: 'b14', topic: 'bsb', q: 'Backstreet Boys su prodali više od ___ miliona ploča, više od bilo kog drugog dečačkog benda.', a: '100', alt: ['sto', '100 miliona'], fakes: ['20', '500'] },
-  { id: 'b15', topic: 'bsb', q: 'Backstreet Boys su 2022. izbacili album pesama za ___.', a: 'Božić', alt: ['bozic', 'božić', 'praznike', 'novu godinu'], fakes: ['Noć veštica', 'Dan zaljubljenih'] },
-  { id: 'b16', topic: 'bsb', q: 'Hauijevo pravo ime je ___.', a: 'Hauard', alt: ['howard', 'hauard dorou', 'howard dorough'], fakes: ['Harold', 'Hjubert'] },
+  // Heroji i fantastika
+  { id: 'h01', topic: 'heroji', q: 'Tolkin je prvu rečenicu „Hobita” napisao na praznoj strani ___ koji je ocenjivao.', a: 'ispitnog rada', alt: ['ispitnog zadatka', 'ispita', 'studentskog rada', 'rada', 'testa', 'ispitnog testa'], fakes: ['računa iz kafane', 'ljubavnog pisma'] },
+  { id: 'h02', topic: 'heroji', q: 'Dž. K. Rouling je ime Hogvortsa, kaže, nesvesno uzela od jedne vrste ___.', a: 'ljiljana', alt: ['ljiljan', 'cveta', 'cveća', 'biljke', 'cvet'], fakes: ['sira', 'pastrmke'] },
+  { id: 'h03', topic: 'heroji', q: 'Pikaču je prvobitno trebalo da ima i drugi stadijum evolucije po imenu ___.', a: 'Gorošu', alt: ['gorochu', 'gorocu', 'goroču'], fakes: ['Pikazam', 'Rajču Prajm'] },
+  { id: 'h04', topic: 'heroji', q: 'Robert Dauni Džunior je na snimanju filmova o Ajron Menu po celom setu krio ___, pa je jeo i usred scena.', a: 'hranu', alt: ['grickalice', 'užinu', 'uzinu', 'hrana', 'klopu', 'jelo', 'sendviče', 'sendvice'], fakes: ['cigarete', 'scenario'] },
+  // Gejming
+  { id: 'g01', topic: 'gejming', q: 'Pionirska igra „Pong” iz 1972. godine tako se zvala jer je „Ping-Pong” već bio zaštićeni ___.', a: 'žig', alt: ['zig', 'zaštitni znak', 'zastitni znak', 'brend', 'naziv', 'trademark'], fakes: ['ime bara', 'naziv flipera'] },
+  { id: 'g02', topic: 'gejming', q: 'Ime Super Marija potiče od ___ skladišta koje je Nintendo of America iznajmljivao.', a: 'vlasnika', alt: ['gazde', 'stanodavca', 'vlasnik', 'zakupodavca'], fakes: ['čuvara', 'kuvara'] },
+  { id: 'g03', topic: 'gejming', q: 'Omiljeno oružje igrača u „Half-Life” igrama je običan ___.', a: 'pajser', alt: ['poluga', 'ćuskija', 'cuskija', 'metalna poluga', 'gvozdena poluga'], fakes: ['ključ', 'čekić'] },
+  { id: 'g04', topic: 'gejming', q: 'Kriper iz „Minecrafta” nastao je greškom, dok je autor pokušavao da napravi ___.', a: 'svinju', alt: ['svinja', 'prase', 'svinje'], fakes: ['zombija', 'kaktus'] },
+  // Film i serije
+  { id: 'f01', topic: 'film', q: 'Zvuk svetlosnog mača u „Ratovima zvezda” napravljen je od brujanja ___ i starog televizora.', a: 'projektora', alt: ['projektor', 'filmskog projektora', 'motora projektora'], fakes: ['frižidera', 'usisivača'] },
+  { id: 'f02', topic: 'film', q: 'Ajkula u filmu „Ajkula” se stalno kvarila, pa se retko vidi. Ekipa ju je zvala ___.', a: 'Brus', alt: ['bruce', 'brusom'], fakes: ['Džordž', 'Debeli Hari'] },
+  { id: 'f03', topic: 'film', q: 'U seriji „Prijatelji” svih šest glumaca je u poslednjim sezonama zarađivalo po ___ dolara po epizodi.', a: 'milion', alt: ['1.000.000', '1000000', '1 milion', 'milion dolara', 'jedan milion'], fakes: ['250.000', '600.000'] },
+  { id: 'f04', topic: 'film', q: 'U filmu „Ko to tamo peva” pevačku grupu koja se javlja kroz ceo film čine dva ___.', a: 'Roma', alt: ['Cigana', 'Cigani', 'Romi', 'ciganina', 'cigana'], fakes: ['brata', 'zatvorenika'] },
+  // Zavičaj: Kruševac, Zemun i Beograd
+  { id: 'z01', topic: 'zavicaj', q: 'Kula na Gardošu u Zemunu podignuta je 1896. godine u čast ___ godina od dolaska Mađara u Panoniju.', a: '1000', alt: ['hiljadu', 'hiljadu godina', '1.000', 'milenijum'], fakes: ['500', '300'] },
+  { id: 'z02', topic: 'zavicaj', q: 'Knez Lazar je Kruševac sagradio kao svoju prestonicu, pa se grad i danas zove ___ grad.', a: 'Carski', alt: ['carski', 'car lazarev', 'lazarev'], fakes: ['Kneževski', 'Vinogradarski'] },
+  { id: 'z03', topic: 'zavicaj', q: 'Spomenik Pobednik na Kalemegdanu prvo je trebalo da stoji na Terazijama, ali je premešten jer je građane bunilo što je ___.', a: 'go', alt: ['nag', 'golišav', 'bez odeće', 'nagi', 'goli'], fakes: ['previsok', 'okrenut ka Austriji'] },
+  { id: 'z04', topic: 'zavicaj', q: 'Zemun je do 1918. pripadao Austrougarskoj, a od Beograda ga je delila granica na reci ___.', a: 'Savi', alt: ['sava'], fakes: ['Dunavu', 'Tisi'] },
 ]
 
 export function getBlefQuestion(id: string): BlefQuestion {

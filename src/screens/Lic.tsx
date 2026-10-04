@@ -284,7 +284,7 @@ function Duel({ pub, me, isHost, actions }: ScreenProps) {
         <p className="big-line">{verdict}</p>
       </div>
       <Duo pub={pub} me={me} />
-      <Button onClick={actions.next}>{lastRound ? 'Kraj igre 🏁' : 'Sledeća runda ✈️'}</Button>
+      <Button onClick={actions.next}>{lastRound ? 'Kraj igre 🏁' : 'Sledeća runda 💥'}</Button>
     </section>
   )
 }
@@ -319,7 +319,7 @@ function SetOver({ pub, me, isHost, actions }: ScreenProps) {
       </div>
       <Duo pub={pub} me={me} />
       <p className="muted center">Pobeđuje ko prvi dobije {WINS_NEEDED} igre.</p>
-      <Button onClick={actions.nextSet}>Sledeća igra ✈️</Button>
+      <Button onClick={actions.nextSet}>Sledeća igra 💥</Button>
     </section>
   )
 }

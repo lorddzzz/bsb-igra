@@ -39,17 +39,17 @@ await host.goto(`${BASE}?local`)
 await host.evaluate(() => localStorage.clear())
 await host.reload()
 await host.getByRole('button', { name: 'Napravi sobu' }).click()
-await join(host, 'Aleksandra Marić', 'Nick') // 16 characters
+await join(host, 'Aleksandra Marić', 'Zmaj') // 16 characters
 const code = (await host.locator('.code-chip').textContent()).trim()
 const b = await newPhone(1)
 await b.goto(`${BASE}?local&soba=${code}`)
-await join(b, '🎸🎸 Đorđe', 'AJ')
+await join(b, '🎸🎸 Đorđe', 'Vuk')
 const c = await newPhone(2)
 await c.goto(`${BASE}?local&soba=${code}`)
 // the badge someone else took is greyed out
-check(await c.locator('.badge-pick', { hasText: 'AJ' }).isDisabled(), 'a taken badge cannot be picked')
-await join(c, 'Ž', 'Brian')
-await host.getByText('Putnici (3)').waitFor()
+check(await c.locator('.badge-pick', { hasText: 'Vuk' }).isDisabled(), 'a taken badge cannot be picked')
+await join(c, 'Ž', 'Soko')
+await host.getByText('Družina (3)').waitFor()
 await shot(host, '01-lobby-long-names')
 
 // lowercase code typed by hand
@@ -70,7 +70,7 @@ await host.waitForTimeout(300)
 // a latecomer opens the link after the start
 await d.goto(`${BASE}?local&soba=${code}`)
 if (await d.getByPlaceholder('npr. Marko').waitFor({ timeout: 5000 }).then(() => true, () => false)) {
-  await join(d, 'Kasni', 'Kevin')
+  await join(d, 'Kasni', 'Medved')
   check(await waitText(d, 'već počela'), 'a latecomer is told the game already started')
   await shot(d, '02-latecomer')
 } else check(false, 'a latecomer sees the check-in screen')

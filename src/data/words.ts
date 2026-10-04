@@ -257,13 +257,13 @@ export const CATEGORIES: Category[] = [
     ],
   },
   {
-    id: 'fanovi',
-    name: 'Fan zona',
-    icon: '🌟',
+    id: 'heroji',
+    name: 'Superheroji',
+    icon: '🦸',
     words: [
-      'Autogram', 'Plakat', 'Fan klub', 'Transparent', 'Suze radosti', 'Vrisak', 'Prvi red', 'Merč',
-      'Meet and greet', 'Slika sa idolom', 'Tetovaža', 'Ljubavno pismo', 'Svetleći štapić', 'Red ispred ulaza', 'Setlista', 'Majica sa likom',
-      'Bis', 'Poster u sobi', 'Dvogled', 'Glasovna poruka drugarici',
+      'Plašt', 'Maska', 'Supermoć', 'Tajni identitet', 'Zlikovac', 'Pomoćnik', 'Jazbina', 'Laser iz očiju',
+      'Nevidljivost', 'Letenje', 'Štit', 'Oklop', 'Kriptonit', 'Strip', 'Signal na nebu', 'Telefonska govornica',
+      'Super brzina', 'Mutant', 'Čitanje misli', 'Grad u opasnosti', 'Pajkice', 'Smrtni neprijatelj', 'Ugriz pauka', 'Spasavanje sveta',
     ],
   },
   {

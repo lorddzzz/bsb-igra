@@ -15,7 +15,7 @@ import { keepAwake } from './ui/wakeLock'
 
 const ROOM_KEY = 'uljez-room'
 const NAME_KEY = 'uljez-name'
-const GAME_KEY = 'bsb-game'
+const GAME_KEY = 'druzina-game'
 
 const GAMES: { id: GameId; name: string; icon: string; tagline: string; players: string }[] = [
   { id: 'uljez', name: 'ULJEZ', icon: '🕵️', tagline: 'Svi znaju tajnu reč. Osim jednog.', players: '3 do 5 igrača' },
@@ -93,9 +93,8 @@ export default function App() {
   return (
     <div className="app">
       <div className="bg" aria-hidden>
-        <div className="beam b1" />
-        <div className="beam b2" />
-        <div className="stars" />
+        <div className="halftone" />
+        <div className="rays" />
       </div>
       <header className="top">
         <span className="logo chrome">{gameName(game)}</span>
@@ -208,7 +207,7 @@ function Home({
   return (
     <section className="screen home">
       <div className="hero">
-        <div className="hero-sub">BACKSTREET EDITION · 2026</div>
+        <div className="hero-sub">DRUŽINA · IGRE ZA EKIPU</div>
         <h1 className={`hero-title chrome${current.name.length > 6 ? ' long' : ''}`}>{current.name}</h1>
         <p className="muted">{current.tagline}</p>
       </div>
@@ -269,7 +268,7 @@ function Home({
 
 const JOIN_ERRORS: Record<JoinError, string> = {
   'no-room': 'Ta soba više ne postoji.',
-  'badge-taken': 'Neko je upravo uzeo tog člana, izaberi drugog.',
+  'badge-taken': 'Neko je upravo uzeo tog heroja, izaberi drugog.',
   full: 'Soba je puna.',
   started: 'Igra je već počela bez tebe. Neka domaćin pokrene novu igru.',
 }
@@ -314,7 +313,7 @@ function Join({ be, code, view, onLeave }: { be: Backend; code: string; view: Re
 
   return (
     <section className="screen">
-      <h1 className="title">Ček-in ✈️</h1>
+      <h1 className="title">Javi se u bazu 🦸</h1>
       <div className="card">
         <h2>Tvoje ime</h2>
         <input
@@ -327,7 +326,7 @@ function Join({ be, code, view, onLeave }: { be: Backend; code: string; view: Re
         />
       </div>
       <div className="card">
-        <h2>Ko si iz benda?</h2>
+        <h2>Ko si u družini?</h2>
         <div className="badge-grid">
           {badgesFor(view.pub?.game).map((b) => (
             <button

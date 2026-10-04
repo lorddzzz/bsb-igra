@@ -17,10 +17,10 @@ mkdirSync(OUT, { recursive: true })
 const browser = await chromium.launch(launchOptions)
 const shared = await newPhoneContext(browser, { ignoreHTTPSErrors: true })
 const names = [
-  ['Dusan', 'Nick'],
-  ['Marko', 'AJ'],
-  ['Luka', 'Brian'],
-  ['Ivan', 'Kevin'],
+  ['Dusan', 'Zmaj'],
+  ['Marko', 'Vuk'],
+  ['Luka', 'Soko'],
+  ['Ivan', 'Medved'],
 ]
 const pages = []
 const errors = []
@@ -52,7 +52,7 @@ for (let i = 1; i < 4; i++) {
   await pages[i].goto(`${BASE}?${MODE}&soba=${code}`)
   await join(pages[i], names[i])
 }
-await host.getByText('Putnici (4)').waitFor()
+await host.getByText('Družina (4)').waitFor()
 await shot(host, '03-lobby')
 await host.getByRole('button', { name: /Počni igru/ }).click()
 

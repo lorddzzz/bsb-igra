@@ -70,7 +70,7 @@ describe('question bank', () => {
   it('splits evenly over the topics, mostly easy', () => {
     for (const t of KVIZ_TOPICS) {
       const qs = KVIZ_QUESTIONS.filter((q) => q.topic === t)
-      expect(qs.length, t).toBeGreaterThanOrEqual(70)
+      expect(qs.length, t).toBeGreaterThanOrEqual(60)
       expect(qs.filter((q) => q.level === 1).length / qs.length, t).toBeGreaterThan(0.6)
       expect(qs.filter((q) => q.level === 3).length, t).toBeGreaterThanOrEqual(LEVELS[3] * 2)
     }

@@ -1,6 +1,13 @@
-# Uljez · Backstreet Edition
+# Družina
 
-A party word game for 3 to 5 friends on their phones. Everyone gets the same secret word except the impostor (*uljez*), who only knows the category. Each round has 1 or 2 impostors. Two rounds of one-word clues, then a vote. The whole game is in Serbian (latinica).
+Six party games for friends on their phones, in a comic-book hero HQ look. One shared link, a 4-letter room code, phones synced live. The whole app is in Serbian (latinica).
+
+- **Uljez**: everyone gets the same secret word except the impostor, who only knows the category. Two rounds of one-word clues, then a vote.
+- **Blef**: a strange true fact with a blank; invent a believable lie, then find the truth.
+- **Talas**: Wavelength-style scale guessing.
+- **Kviz**: live trivia with attack cards and special rounds.
+- **Licitacija**: secret bidding for two.
+- **Misija**: Avalon-style hidden roles for 5 to 12.
 
 **Play:** https://lorddzzz.github.io/bsb-igra/
 
@@ -8,7 +15,7 @@ A party word game for 3 to 5 friends on their phones. Everyone gets the same sec
 
 - React + TypeScript (Vite), hosted on GitHub Pages, deployed by `.github/workflows/deploy.yml` on every push to `main`.
 - Phones sync through Firebase Realtime Database with anonymous sign-in. `database.rules.json` keeps each ticket private to its owner and hides the round's answer until voting is over.
-- Words and categories: `src/data/words.ts`. Scoring: `src/game/logic.ts`.
+- Words and categories: `src/data/words.ts`, quiz questions `src/data/kvizQuestions.ts`, Blef facts `src/data/blefQuestions.ts`. Scoring and rules: `src/<game>/logic.ts`.
 
 ## Development
 
