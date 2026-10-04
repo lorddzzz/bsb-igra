@@ -1,6 +1,9 @@
 // Synthesised "stage speaker" sounds: no audio files to load.
 // iOS only allows audio after a tap, so unlock() runs on the first touch.
 
+import type { GameId } from '../game/types'
+import { hz, musicBus, musicStep, stepLength, TRACKS, type MusicOut } from './music'
+
 let ctx: AudioContext | null = null
 const MUTE_KEY = 'uljez-muted'
 const MUSIC_KEY = 'druzina-music-off'
@@ -194,196 +197,41 @@ export function tick(final = false) {
 }
 
 // ---------------------------------------------------------------------------
-// Background music: a quiet, endless late-90s pop loop, synthesised note by note.
-// Am, F, C, G at 96 BPM. The first 8 bars are pad, bass and soft drums; the next 8
-// add a bell arpeggio and claps, then it starts over (40 s per cycle).
+// Background music: one loop per game, see music.ts.
 
 const MUSIC_VOL = 0.2
-const STEP = 60 / 96 / 4 // one sixteenth note
 const LOOKAHEAD = 0.6
-const CHORDS = [
-  { bass: 45, pad: [57, 60, 64], arp: [69, 72, 76, 81] }, // Am
-  { bass: 41, pad: [57, 60, 65], arp: [65, 69, 72, 77] }, // F
-  { bass: 48, pad: [55, 60, 64], arp: [67, 72, 76, 79] }, // C
-  { bass: 43, pad: [55, 59, 62], arp: [67, 71, 74, 79] }, // G
-]
-const ARP = [0, 1, 2, 3, 2, 1, 2, 1]
 
-const hz = (midi: number) => 440 * Math.pow(2, (midi - 69) / 12)
+let musicWanted: GameId | null = null
+let music: { game: GameId; gain: GainNode; io: MusicOut; timer: number; step: number; next: number } | null = null
 
-const noiseCache = new WeakMap<BaseAudioContext, AudioBuffer>()
-function noiseBuffer(c: BaseAudioContext): AudioBuffer {
-  let buf = noiseCache.get(c)
-  if (!buf) {
-    buf = c.createBuffer(1, c.sampleRate, c.sampleRate)
-    const data = buf.getChannelData(0)
-    for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1
-    noiseCache.set(c, buf)
-  }
-  return buf
-}
-
-export interface MusicOut {
-  /** Dry input of the music bus. */
-  dry: AudioNode
-  /** Echo send, for the bells. */
-  echo: AudioNode
-}
-
-/** Builds the bus (gain, echo) the loop plays into. */
-export function musicBus(c: BaseAudioContext, out: AudioNode, volume: number): { gain: GainNode; io: MusicOut } {
-  const gain = c.createGain()
-  gain.gain.value = volume
-  gain.connect(out)
-  const delay = c.createDelay(1)
-  delay.delayTime.value = STEP * 6
-  const feedback = c.createGain()
-  feedback.gain.value = 0.32
-  const wet = c.createGain()
-  wet.gain.value = 0.4
-  delay.connect(feedback).connect(delay)
-  delay.connect(wet).connect(gain)
-  return { gain, io: { dry: gain, echo: delay } }
-}
-
-/** Schedules one sixteenth step of the loop at time `at`. Steps count from 0 forever. */
-export function musicStep(c: BaseAudioContext, io: MusicOut, step: number, at: number) {
-  const bar = Math.floor(step / 16) % 16
-  const pos = step % 16
-  const chord = CHORDS[bar % 4]
-  const full = bar >= 8
-
-  if (pos === 0) {
-    // Pad: two slightly detuned triangles per note, softly filtered, one bar long.
-    const f = c.createBiquadFilter()
-    f.type = 'lowpass'
-    f.frequency.value = 1400
-    const g = c.createGain()
-    const len = STEP * 16
-    g.gain.setValueAtTime(0.0001, at)
-    g.gain.linearRampToValueAtTime(1, at + 0.35)
-    g.gain.setValueAtTime(1, at + len - 0.3)
-    g.gain.linearRampToValueAtTime(0.0001, at + len + 0.15)
-    f.connect(g).connect(io.dry)
-    for (const n of chord.pad)
-      for (const cents of [-7, 7]) {
-        const o = c.createOscillator()
-        o.type = 'triangle'
-        o.frequency.value = hz(n)
-        o.detune.value = cents
-        const v = c.createGain()
-        v.gain.value = 0.06
-        o.connect(v).connect(f)
-        o.start(at)
-        o.stop(at + len + 0.2)
-      }
-  }
-
-  // Bass on 1, the "and" of 2, and 3.
-  if (pos === 0 || pos === 6 || pos === 8) {
-    const o = c.createOscillator()
-    o.type = 'triangle'
-    o.frequency.value = hz(chord.bass)
-    const g = c.createGain()
-    g.gain.setValueAtTime(0.35, at)
-    g.gain.exponentialRampToValueAtTime(0.001, at + STEP * (pos === 6 ? 2 : 5))
-    o.connect(g).connect(io.dry)
-    o.start(at)
-    o.stop(at + STEP * 6)
-  }
-
-  // Soft kick on 1 and 3.
-  if (pos === 0 || pos === 8) {
-    const o = c.createOscillator()
-    o.frequency.setValueAtTime(140, at)
-    o.frequency.exponentialRampToValueAtTime(45, at + 0.18)
-    const g = c.createGain()
-    g.gain.setValueAtTime(0.55, at)
-    g.gain.exponentialRampToValueAtTime(0.001, at + 0.22)
-    o.connect(g).connect(io.dry)
-    o.start(at)
-    o.stop(at + 0.25)
-  }
-
-  // Hi-hat on the off-beats, a little louder in the second half.
-  if (pos % 4 === 2) noiseHit(c, io.dry, at, full ? 0.07 : 0.045, 0.05, 'highpass', 7000)
-
-  if (!full) return
-
-  // Clap on 2 and 4.
-  if (pos === 4 || pos === 12) noiseHit(c, io.dry, at, 0.16, 0.12, 'bandpass', 1500)
-
-  // Bell arpeggio in eighth notes, through the echo.
-  if (pos % 2 === 0) {
-    const n = chord.arp[ARP[pos / 2]]
-    const g = c.createGain()
-    g.gain.setValueAtTime(0.0001, at)
-    g.gain.exponentialRampToValueAtTime(0.09, at + 0.01)
-    g.gain.exponentialRampToValueAtTime(0.001, at + 0.5)
-    g.connect(io.dry)
-    g.connect(io.echo)
-    ;[1, 2].forEach((mult, i) => {
-      const o = c.createOscillator()
-      o.frequency.value = hz(n) * mult
-      const v = c.createGain()
-      v.gain.value = i ? 0.3 : 1
-      o.connect(v).connect(g)
-      o.start(at)
-      o.stop(at + 0.55)
-    })
-  }
-}
-
-function noiseHit(
-  c: BaseAudioContext,
-  out: AudioNode,
-  at: number,
-  vol: number,
-  len: number,
-  type: BiquadFilterType,
-  freq: number,
-) {
-  const src = c.createBufferSource()
-  src.buffer = noiseBuffer(c)
-  const f = c.createBiquadFilter()
-  f.type = type
-  f.frequency.value = freq
-  const g = c.createGain()
-  g.gain.setValueAtTime(vol, at)
-  g.gain.exponentialRampToValueAtTime(0.001, at + len)
-  src.connect(f).connect(g).connect(out)
-  src.start(at, Math.random() * 0.5)
-  src.stop(at + len + 0.02)
-}
-
-let musicWanted = false
-let music: { gain: GainNode; io: MusicOut; timer: number; step: number; next: number } | null = null
-
-/** The room screen asks for music (host phone only); it plays once audio is unlocked and not muted. */
-export function setMusic(on: boolean) {
-  musicWanted = on
+/** The room screen asks for its game's music (host phone only); it plays once audio is unlocked and not muted. */
+export function setMusic(game: GameId | null) {
+  musicWanted = game
   syncMusic()
 }
 
 function syncMusic() {
-  const should = musicWanted && Boolean(ctx) && !isMuted() && !isMusicOff()
-  if (should && !music) startMusic()
-  else if (!should && music) stopMusic()
+  const should = musicWanted && ctx && !isMuted() && !isMusicOff() ? musicWanted : null
+  if (music && music.game !== should) stopMusic()
+  if (should && !music) startMusic(should)
 }
 
-function startMusic() {
+function startMusic(game: GameId) {
   const c = ctx!
-  const { gain, io } = musicBus(c, c.destination, 0)
+  const track = TRACKS[game]
+  const step = stepLength(track)
+  const { gain, io } = musicBus(c, c.destination, 0, track)
   gain.gain.setValueAtTime(0.0001, c.currentTime)
   gain.gain.linearRampToValueAtTime(MUSIC_VOL, c.currentTime + 3)
-  const m = { gain, io, timer: 0, step: 0, next: c.currentTime + 0.1 }
+  const m = { game, gain, io, timer: 0, step: 0, next: c.currentTime + 0.1 }
   const pump = () => {
     // After a locked screen the clock ran on without us: pick up from now instead of rushing.
     if (m.next < c.currentTime) m.next = c.currentTime + 0.05
     while (m.next < c.currentTime + LOOKAHEAD) {
-      musicStep(c, m.io, m.step, m.next)
+      musicStep(c, m.io, track, m.step, m.next)
       m.step++
-      m.next += STEP
+      m.next += step
     }
   }
   pump()
