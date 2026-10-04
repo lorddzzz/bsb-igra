@@ -11,6 +11,7 @@ import { Wave } from './screens/Wave'
 import { badgeMark, BlefRules, Button, KvizRules, LicRules, Modal, Rules, Waiting, WaveRules } from './ui/components'
 import * as sound from './ui/sound'
 import { useStageSounds } from './ui/stageSounds'
+import { BUILD_ID, useUpdateAvailable } from './ui/update'
 import { keepAwake } from './ui/wakeLock'
 
 const ROOM_KEY = 'uljez-room'
@@ -61,6 +62,7 @@ export default function App() {
   const [picked, setPicked] = useState<GameId>(() => (GAME_IDS.includes(saved(GAME_KEY)) ? (saved(GAME_KEY) as GameId) : 'uljez'))
   const [roomGame, setRoomGame] = useState<GameId | null>(null)
   const game = (code && roomGame) || picked
+  const update = useUpdateAvailable()
 
   useEffect(() => {
     connect()
@@ -132,6 +134,8 @@ export default function App() {
         )}
       </header>
 
+      {update && <UpdateBanner inRoom={!!code} />}
+
       <main>
         <Crashed>
         {error ? (
@@ -164,6 +168,25 @@ export default function App() {
           {game === 'blef' ? <BlefRules /> : game === 'talas' ? <WaveRules /> : game === 'kviz' ? <KvizRules /> : game === 'licitacija' ? <LicRules /> : game === 'misija' ? <MisijaRules /> : <Rules />}
         </Modal>
       )}
+    </div>
+  )
+}
+
+/** A new version is live. Never reloads on its own: mid-game it only asks to refresh after the round. */
+function UpdateBanner({ inRoom }: { inRoom: boolean }) {
+  return (
+    <div className="update-banner" role="status">
+      {!inRoom && (
+        <span className="update-pow" aria-hidden>
+          NOVO!
+        </span>
+      )}
+      <p>
+        <b>Stigla je nova verzija.</b> {inRoom ? 'Osveži posle partije, ostaješ u sobi.' : 'Osveži da je dobiješ.'}
+      </p>
+      <Button small variant={inRoom ? 'ghost' : 'primary'} onClick={() => location.reload()}>
+        {inRoom ? 'Osveži sad' : 'Osveži'}
+      </Button>
     </div>
   )
 }
@@ -262,6 +285,7 @@ function Home({
         </div>
         {error && <p className="error">{error}</p>}
       </div>
+      <p className="version-note">verzija {BUILD_ID}</p>
     </section>
   )
 }
