@@ -21,7 +21,7 @@ describe('app', () => {
     const games = await screen.findAllByRole('radio')
     expect(games.map((g) => g.querySelector('b')?.textContent)).toEqual(['ULJEZ', 'BLEF', 'TALAS', 'KVIZ', 'LICITACIJA', 'MISIJA'])
     fireEvent.click(screen.getByRole('radio', { name: /KVIZ/ }))
-    expect(localStorage.getItem('bsb-game')).toBe('kviz')
+    expect(localStorage.getItem('druzina-game')).toBe('kviz')
     expect(screen.getByRole('radio', { name: /KVIZ/ }).getAttribute('aria-checked')).toBe('true')
   })
 
@@ -35,10 +35,10 @@ describe('app', () => {
     const enter = screen.getByRole('button', { name: /Uđi u sobu/ }) as HTMLButtonElement
     expect(enter.disabled).toBe(true)
     fireEvent.change(name, { target: { value: 'Dusan' } })
-    fireEvent.click(screen.getByText('Nick'))
+    fireEvent.click(screen.getByText('Zmaj'))
     expect(enter.disabled).toBe(false)
     fireEvent.click(enter)
-    expect(await screen.findByText(/Putnici \(1\)/)).toBeTruthy()
+    expect(await screen.findByText(/Družina \(1\)/)).toBeTruthy()
     // the start button counts down the players still missing
     expect(screen.getByRole('button', { name: /Treba još 4 igrača/ })).toBeTruthy()
     const code = localStorage.getItem('uljez-room')

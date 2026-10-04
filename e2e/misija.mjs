@@ -36,13 +36,13 @@ await ctx.addInitScript(() => {
   Object.defineProperty(window, 'speechSynthesis', { value: synth, configurable: true })
 })
 const names = [
-  ['Dusan', 'Nick'],
-  ['Marko', 'AJ'],
-  ['Luka', 'Brian'],
-  ['Ana', 'Howie'],
-  ['Jova', 'Kevin'],
-  ['Mila', 'Mikrofon'],
-  ['Sale', 'Gitara'],
+  ['Dusan', 'Zmaj'],
+  ['Marko', 'Vuk'],
+  ['Luka', 'Soko'],
+  ['Ana', 'Lisica'],
+  ['Jova', 'Medved'],
+  ['Mila', 'Sova'],
+  ['Sale', 'Ris'],
   ['Iva', 'Zvezda'],
 ]
 const pages = []
@@ -75,7 +75,7 @@ for (let i = 1; i < names.length; i++) {
   await pages[i].goto(`${BASE}?local&soba=${code}`)
   await join(pages[i], names[i])
 }
-await host.getByText(`Putnici (${names.length})`).waitFor()
+await host.getByText(`Družina (${names.length})`).waitFor()
 
 async function findPage(text, timeout = 8000) {
   const end = Date.now() + timeout
@@ -212,7 +212,7 @@ async function game(no, specials, sabotage) {
   }
   if (specials > 0 && !sabotage) {
     await host.getByText('ŠPIJUNI SE OTKRIVAJU').waitFor()
-    const spy = await findPage('Ko je Menadžer?')
+    const spy = await findPage('Ko je Vidovnjak?')
     await shot(spy, '10-guess')
     await spy.locator('.badge-pick').first().click()
     await spy.getByRole('button', { name: /To je/ }).click()

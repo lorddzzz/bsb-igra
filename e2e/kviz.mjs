@@ -12,10 +12,10 @@ mkdirSync(OUT, { recursive: true })
 const browser = await chromium.launch(launchOptions)
 const ctx = await newPhoneContext(browser)
 const names = [
-  ['Dusan', 'Nick'],
-  ['Marko', 'AJ'],
-  ['Luka', 'Brian'],
-  ['Jova', 'Kevin'],
+  ['Dusan', 'Zmaj'],
+  ['Marko', 'Vuk'],
+  ['Luka', 'Soko'],
+  ['Jova', 'Medved'],
 ]
 const pages = []
 const errors = []
@@ -43,7 +43,7 @@ for (let i = 1; i < names.length; i++) {
   await pages[i].locator('.badge-pick', { hasText: names[i][1] }).click()
   await pages[i].getByRole('button', { name: /Uđi u sobu/ }).click()
 }
-await host.getByText(`Putnici (${names.length})`).waitFor()
+await host.getByText(`Družina (${names.length})`).waitFor()
 if ((await host.locator('.logo').textContent()) !== 'KVIZ') errors.push('header does not say KVIZ')
 await shot(host, '02-lobby')
 await host.getByRole('button', { name: /Počni igru/ }).click()

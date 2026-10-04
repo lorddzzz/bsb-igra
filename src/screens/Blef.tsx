@@ -292,7 +292,7 @@ function Truth({ pub, me, isHost, actions }: ScreenProps) {
         {result && <RoundGains pub={pub} me={me} title="Ovo pitanje" gains={result.gains} />}
         <ScoreTable pub={pub} me={me} />
         {isHost ? (
-          <Button onClick={actions.next}>{isFinalRound(pub) ? 'Proglasi pobednika 👑' : 'Sledeće pitanje ✈️'}</Button>
+          <Button onClick={actions.next}>{isFinalRound(pub) ? 'Proglasi pobednika 👑' : 'Sledeće pitanje 💥'}</Button>
         ) : (
           <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} nastavi</Waiting>
         )}

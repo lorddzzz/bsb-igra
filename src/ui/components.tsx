@@ -96,7 +96,7 @@ export function Waiting({ children }: { children: ReactNode }) {
   )
 }
 
-/** Boarding-pass ticket. Press and hold to see your word; it hides the moment you let go. */
+/** Secret dossier. Press and hold to see your word; it hides the moment you let go. */
 export function Ticket({ ticket, player, round }: { ticket: TicketData | null; player: Player | undefined; round: number }) {
   const [peek, setPeek] = useState(false)
   useEffect(() => {
@@ -129,27 +129,27 @@ export function Ticket({ ticket, player, round }: { ticket: TicketData | null; p
       <div className="ticket-inner">
         <div className="ticket-face ticket-front">
           <div className="ticket-top">
-            <span className="airline">ULJEZ AIRLINES</span>
-            <span className="flight">LET BSB-{String(round).padStart(2, '0')}</span>
+            <span className="airline">DOSIJE ULJEZ</span>
+            <span className="flight">SLUČAJ #{String(round).padStart(2, '0')}</span>
           </div>
           <div className="ticket-mid">
             <div className="ticket-field">
-              <small>PUTNIK</small>
+              <small>AGENT</small>
               <b>{player?.name ?? '—'}</b>
             </div>
             <div className="ticket-field">
-              <small>SEDIŠTE</small>
+              <small>HEROJ</small>
               <b className="seat">
                 <Badge id={badge.id} size="sm" /> {badge.name}
               </b>
             </div>
             <div className="ticket-field">
-              <small>KAPIJA</small>
-              <b>{category?.icon ?? '✈️'}</b>
+              <small>FASCIKLA</small>
+              <b>{category?.icon ?? '📁'}</b>
             </div>
           </div>
           <div className="perforation" />
-          <div className="ticket-hold">{ready ? '👆 DRŽI DA VIDIŠ KARTU' : 'Karta se štampa…'}</div>
+          <div className="ticket-hold">{ready ? '👆 DRŽI DA OTVORIŠ DOSIJE' : 'Dosije se sprema…'}</div>
           <div className="barcode" aria-hidden />
         </div>
         <div className="ticket-face ticket-back">
@@ -300,7 +300,7 @@ export function KvizRules() {
         <li>Svi dobijaju isto pitanje u isto vreme, sa 4 ponuđena odgovora.</li>
         <li>Imate 10 sekundi. Jedan dodir zaključava odgovor.</li>
         <li>Posle svakog pitanja vidi se tačan odgovor i ko je šta izabrao, pa odmah sledeće.</li>
-        <li>Igra ima 15 pitanja iz četiri oblasti: Backstreet Boys, Evropa, srpska istorija i Srbija danas.</li>
+        <li>Igra ima 15 pitanja iz šest oblasti: heroji i fantastika, gejming, film i serije, Kruševac, Zemun i Beograd, srpska istorija i Srbija danas.</li>
         <li>Većina pitanja je laka, nekoliko je teže, a jedno ili dva su baš teška 🔥.</li>
       </ol>
       <h3>Džokeri za napad</h3>

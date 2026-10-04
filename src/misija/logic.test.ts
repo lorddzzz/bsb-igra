@@ -48,7 +48,7 @@ describe('setup tables', () => {
     expect(failsNeeded(6, 4)).toBe(1)
     expect(failsNeeded(8, 3)).toBe(1)
   })
-  it('allows the Fan only with three spies', () => {
+  it('allows the Samotnjak only with three spies', () => {
     expect(maxSpecials(6)).toBe(4)
     expect(maxSpecials(7)).toBe(5)
   })
@@ -78,8 +78,8 @@ describe('roles', () => {
     }
     const t = ticketsFor(roles, 'g1')
     expect(t.a.sees).toEqual(['c', 'e']) // not Senka
-    expect(t.b.sees).toEqual(['a', 'c']) // Menadžer and the Imitator
-    expect(t.c.sees).toEqual(['d']) // not the Fan
+    expect(t.b.sees).toEqual(['a', 'c']) // Vidovnjak and the Imitator
+    expect(t.c.sees).toEqual(['d']) // not the Samotnjak
     expect(t.d.sees).toEqual(['c'])
     expect(t.e.sees).toEqual([])
     expect(t.f.sees).toEqual([])
@@ -154,7 +154,7 @@ describe('the end', () => {
     expect(end.misija?.tally).toEqual({ spijuni: 1 })
   })
 
-  it('gives the spies a shot at the Menadžer', () => {
+  it('gives the spies a shot at the Vidovnjak', () => {
     const results = { m1: ok, m2: bad, m3: ok, m4: ok }
     expect(afterReveal(pub({ phase: 'reveal', round: 4, misija: { results } })).misija?.winner).toBe('ekipa')
     const guess = afterReveal(pub({ phase: 'reveal', round: 4, misija: { specials: 1, results } }))
@@ -177,12 +177,12 @@ describe('the narrator', () => {
     expect(plain).not.toContain('Menadž')
     expect(plain).toContain('Prvi vođa je Ana.')
     const two = introScript(2, 'Ana').map((l) => l.text).join(' ')
-    expect(two).toContain('Telohranitelju, otvori oči i zapamti ko je Menadžer.')
+    expect(two).toContain('Telohranitelju, otvori oči i zapamti ko je Vidovnjak.')
     expect(two).not.toContain('Imitator')
     const all = introScript(5, 'Ana').map((l) => l.text).join(' ')
     expect(all).toContain('Senka, ti ne podižeš palac.')
-    expect(all).toContain('Fan ostaje zatvorenih očiju.')
-    expect(all).toContain('Menadžeru i Imitatore')
+    expect(all).toContain('Samotnjak ostaje zatvorenih očiju.')
+    expect(all).toContain('Vidovnjače i Imitatore')
   })
 
   it('starts the game with the narrator', () => {

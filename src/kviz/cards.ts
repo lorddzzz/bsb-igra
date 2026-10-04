@@ -31,7 +31,7 @@ export const CARDS: Card[] = [
   { id: 'kasni', name: 'Kasni start', icon: '🐢', effect: 'odgovori stižu tek za 4 s' },
   { id: 'kap', name: 'Kap po kap', icon: '💧', effect: 'pitanje stiže reč po reč' },
   { id: 'sitna', name: 'Sitna slova', icon: '🔍', effect: 'sve mu je sitno' },
-  { id: 'kisa', name: 'BSB kiša', icon: '🕺', effect: 'Backstreet Boysi mu padaju po ekranu' },
+  { id: 'kisa', name: 'Kiša heroja', icon: '🦸', effect: 'heroji mu padaju po ekranu' },
 ]
 
 export function getCard(id: string | undefined): Card {

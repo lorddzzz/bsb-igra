@@ -3,7 +3,7 @@
 
 let ctx: AudioContext | null = null
 const MUTE_KEY = 'uljez-muted'
-const MUSIC_KEY = 'bsb-music-off'
+const MUSIC_KEY = 'druzina-music-off'
 
 export function isMuted(): boolean {
   try {

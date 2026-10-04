@@ -14,10 +14,10 @@ export const FORCED_AFTER = 4
 export const SPECIAL_ORDER: Role[] = ['menadzer', 'telohranitelj', 'imitator', 'senka', 'fan']
 
 export const ROLES: Record<Role, { name: string; icon: string; side: Side; text: string }> = {
-  ekipa: { name: 'Ekipa', icon: '🎤', side: 'ekipa', text: 'Na misiji uvek igraš Uspeh. Pronađi špijune i ne vodi ih na misije.' },
+  ekipa: { name: 'Ekipa', icon: '🦸', side: 'ekipa', text: 'Na misiji uvek igraš Uspeh. Pronađi špijune i ne vodi ih na misije.' },
   menadzer: {
-    name: 'Menadžer',
-    icon: '🕶️',
+    name: 'Vidovnjak',
+    icon: '🔮',
     side: 'ekipa',
     text: 'Znaš ko su špijuni. Navodi ekipu, ali pažljivo: ako vas pobede, špijuni pogađaju ko si i mogu da ukradu pobedu.',
   },
@@ -25,19 +25,19 @@ export const ROLES: Record<Role, { name: string; icon: string; side: Side; text:
     name: 'Telohranitelj',
     icon: '🛡️',
     side: 'ekipa',
-    text: 'Znaš ko je Menadžer. Čuvaj ga i skreći pažnju špijuna na sebe.',
+    text: 'Znaš ko je Vidovnjak. Čuvaj ga i skreći pažnju špijuna na sebe.',
   },
   spijun: { name: 'Špijun', icon: '🦹', side: 'spijuni', text: 'Sabotiraj misije, ali tako da te ne provale.' },
   imitator: {
     name: 'Imitator',
     icon: '🎭',
     side: 'spijuni',
-    text: 'Špijun koga Telohranitelj vidi kao Menadžera. Glumi Menadžera!',
+    text: 'Špijun koga Telohranitelj vidi kao Vidovnjaka. Glumi Vidovnjaka!',
   },
-  senka: { name: 'Senka', icon: '👤', side: 'spijuni', text: 'Špijun koga ni Menadžer ne vidi.' },
+  senka: { name: 'Senka', icon: '👤', side: 'spijuni', text: 'Špijun koga ni Vidovnjak ne vidi.' },
   fan: {
-    name: 'Fan',
-    icon: '📸',
+    name: 'Samotnjak',
+    icon: '🐺',
     side: 'spijuni',
     text: 'Špijun koji radi sam: ne znaš ostale špijune i oni ne znaju tebe.',
   },
@@ -70,7 +70,7 @@ export function failsNeeded(players: number, mission: number): number {
   return mission === 4 && players >= 7 ? 2 : 1
 }
 
-/** The most special roles this many players can have: the 5th (Fan) is a third special spy. */
+/** The most special roles this many players can have: the 5th (Samotnjak) is a third special spy. */
 export function maxSpecials(players: number): number {
   return spyCount(players) >= 3 ? 5 : 4
 }
@@ -201,7 +201,7 @@ export function introScript(specials: number, firstLeader: string): IntroLine[] 
   ]
   lines.push({
     text: has('fan')
-      ? 'Špijuni, otvorite oči i pogledajte se. Fan ostaje zatvorenih očiju.'
+      ? 'Špijuni, otvorite oči i pogledajte se. Samotnjak ostaje zatvorenih očiju.'
       : 'Špijuni, otvorite oči i pogledajte se.',
     pause: 6,
   })
@@ -211,22 +211,22 @@ export function introScript(specials: number, firstLeader: string): IntroLine[] 
       text: has('senka')
         ? 'Špijuni, podignite palac. Senka, ti ne podižeš palac.'
         : has('fan')
-          ? 'Špijuni i Fan, podignite palac.'
+          ? 'Špijuni i Samotnjak, podignite palac.'
           : 'Špijuni, podignite palac.',
       pause: 3,
     })
-    lines.push({ text: 'Menadžeru, otvori oči i zapamti ko su špijuni.', pause: 6 })
-    lines.push({ text: 'Menadžeru, zatvori oči. Špijuni, spustite palac.', pause: 3 })
+    lines.push({ text: 'Vidovnjače, otvori oči i zapamti ko su špijuni.', pause: 6 })
+    lines.push({ text: 'Vidovnjače, zatvori oči. Špijuni, spustite palac.', pause: 3 })
   }
   if (has('telohranitelj')) {
     lines.push({
-      text: has('imitator') ? 'Menadžeru i Imitatore, podignite palac.' : 'Menadžeru, podigni palac.',
+      text: has('imitator') ? 'Vidovnjače i Imitatore, podignite palac.' : 'Vidovnjače, podigni palac.',
       pause: 3,
     })
     lines.push({
       text: has('imitator')
-        ? 'Telohranitelju, otvori oči. Jedan od njih je pravi Menadžer, drugi je Imitator.'
-        : 'Telohranitelju, otvori oči i zapamti ko je Menadžer.',
+        ? 'Telohranitelju, otvori oči. Jedan od njih je pravi Vidovnjak, drugi je Imitator.'
+        : 'Telohranitelju, otvori oči i zapamti ko je Vidovnjak.',
       pause: 6,
     })
     lines.push({ text: 'Telohranitelju, zatvori oči. Spustite palac.', pause: 3 })
@@ -300,7 +300,7 @@ function finish(pub: Pub, winner: Side, extra: Partial<MisijaState> = {}): Pub {
   return { ...pub, phase: 'over', misija: { ...m, ...extra, winner, tally } }
 }
 
-/** After the mission reveal: the next mission, the spies' shot at the Menadžer, or the end. */
+/** After the mission reveal: the next mission, the spies' shot at the Vidovnjak, or the end. */
 export function afterReveal(pub: Pub): Pub {
   const w = wins(pub)
   const m = misijaOf(pub)
@@ -314,7 +314,7 @@ export function afterReveal(pub: Pub): Pub {
   }
 }
 
-/** The spies name who they think is the Menadžer; right steals the win. */
+/** The spies name who they think is the Vidovnjak; right steals the win. */
 export function shoot(pub: Pub, target: string, roles: Record<string, Role>): Pub {
   return finish(pub, roles[target] === 'menadzer' ? 'spijuni' : 'ekipa', { shot: target })
 }
