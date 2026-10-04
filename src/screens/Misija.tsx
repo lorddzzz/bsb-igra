@@ -141,7 +141,7 @@ function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
         {level === 0 && <p className="muted">Bez specijalnih uloga: samo ekipa i špijuni.</p>}
         {max < SPECIAL_ORDER.length && n > 0 && (
           <p className="muted">
-            <small>Fan dolazi tek kad ima 3 špijuna, od 7 igrača.</small>
+            <small>Samotnjak dolazi tek kad ima 3 špijuna, od 7 igrača.</small>
           </p>
         )}
       </div>
@@ -302,7 +302,7 @@ function RoleCard({ pub, me, ticket }: { pub: Pub; me: string; ticket: MisijaTic
       <div className="ticket-inner">
         <div className="ticket-face ticket-front">
           <div className="ticket-top">
-            <span className="airline">MISIJA BSB</span>
+            <span className="airline">MISIJA DRUŽINA</span>
             <span className="flight">STROGO POVERLJIVO</span>
           </div>
           <div className="ticket-mid">
@@ -351,7 +351,7 @@ function RoleCard({ pub, me, ticket }: { pub: Pub; me: string; ticket: MisijaTic
 
 function seesLabel(role: Role): string {
   if (role === 'menadzer') return 'ŠPIJUNI'
-  if (role === 'telohranitelj') return 'JEDAN OD OVIH JE MENADŽER'
+  if (role === 'telohranitelj') return 'JEDAN OD OVIH JE VIDOVNJAK'
   return 'TVOJI SAUČESNICI'
 }
 
@@ -652,7 +652,7 @@ function Reveal({ pub, isHost, actions }: ScreenProps) {
   )
 }
 
-/** The crew won three missions; the spies get one shot at naming the Menadžer. */
+/** The crew won three missions; the spies get one shot at naming the Vidovnjak. */
 function Guess({ pub, me, actions, ticket, secret }: ScreenProps) {
   const [pick, setPick] = useState('')
   const roles = secret?.roles ?? {}
@@ -672,14 +672,14 @@ function Guess({ pub, me, actions, ticket, secret }: ScreenProps) {
             <PlayerTag key={uid} player={pub.players?.[uid]} />
           ))}
         </div>
-        <p className="muted">Ako pogode ko je Menadžer, špijuni kradu pobedu. Dogovorite se naglas!</p>
+        <p className="muted">Ako pogode ko je Vidovnjak, špijuni kradu pobedu. Dogovorite se naglas!</p>
       </div>
       {!secret ? (
         <Waiting>Učitavanje</Waiting>
       ) : amSpy ? (
         <>
           <div className="card">
-            <h2>Ko je Menadžer?</h2>
+            <h2>Ko je Vidovnjak?</h2>
             <Players pub={pub} uids={others} picked={pick ? { [pick]: true } : {}} onPick={setPick} />
           </div>
           <Button variant="pink" disabled={!pick} onClick={() => actions.shoot(pick)}>
@@ -690,7 +690,7 @@ function Guess({ pub, me, actions, ticket, secret }: ScreenProps) {
           </p>
         </>
       ) : (
-        <Waiting>Špijuni traže Menadžera. Ne odaji ništa! 🤐</Waiting>
+        <Waiting>Špijuni traže Vidovnjaka. Ne odaji ništa! 🤐</Waiting>
       )}
       <RoleCard pub={pub} me={me} ticket={ticket} />
     </section>
@@ -715,13 +715,13 @@ function Over({ pub, me, isHost, actions, secret }: ScreenProps) {
   return (
     <section className="screen">
       <div className="winner">
-        <div className="crown">{winner === 'ekipa' ? '🎤' : '🦹'}</div>
+        <div className="crown">{winner === 'ekipa' ? '🦸' : '🦹'}</div>
         <div className="winner-name">
           <span className="chrome">{winner === 'ekipa' ? 'EKIPA POBEĐUJE!' : 'ŠPIJUNI POBEĐUJU!'}</span>
         </div>
         {m.shot && (
           <p>
-            Špijuni su gađali: {nameOf(pub, m.shot)}. {shotRight ? 'Pogodak, to je Menadžer! 🎯' : 'Promašaj! 😅'}
+            Špijuni su gađali: {nameOf(pub, m.shot)}. {shotRight ? 'Pogodak, to je Vidovnjak! 🎯' : 'Promašaj! 😅'}
           </p>
         )}
         {roles[me] && (
@@ -788,7 +788,7 @@ export function MisijaRules() {
         ))}
       </ul>
       <p className="muted">
-        Kad je Menadžer u igri i ekipa pobedi, špijuni se otkrivaju i jednom pogađaju ko je Menadžer. Pogodak im
+        Kad je Vidovnjak u igri i ekipa pobedi, špijuni se otkrivaju i jednom pogađaju ko je Vidovnjak. Pogodak im
         donosi pobedu.
       </p>
     </div>

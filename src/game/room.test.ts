@@ -23,35 +23,35 @@ describe('creating and joining a room', () => {
 
   it('explains why a join fails', async () => {
     const { db, code } = await room('uljez', 5)
-    expect(await joinRoom(db.phone('z'), 'ZZZZ', 'Neko', 'aj')).toBe('no-room')
+    expect(await joinRoom(db.phone('z'), 'ZZZZ', 'Neko', 'vuk')).toBe('no-room')
     // Uljez has five badges, so the sixth friend can't get in
-    expect(await joinRoom(db.phone('z'), code, 'Neko', 'mic')).toBe('full')
+    expect(await joinRoom(db.phone('z'), code, 'Neko', 'sova')).toBe('full')
     const two = await room('blef', 2)
-    expect(await joinRoom(two.db.phone('z'), two.code, 'Neko', 'aj')).toBe('badge-taken')
+    expect(await joinRoom(two.db.phone('z'), two.code, 'Neko', 'vuk')).toBe('badge-taken')
     await two.db.phone('a').set(`${roomPath(two.code)}/pub/phase`, 'write')
-    expect(await joinRoom(two.db.phone('z'), two.code, 'Neko', 'kevin')).toBe('started')
+    expect(await joinRoom(two.db.phone('z'), two.code, 'Neko', 'medved')).toBe('started')
   })
 
   it('lets a player back in after the game started, keeping their place in the order', async () => {
     const { db, code } = await room('uljez', 3)
     const before = db.get(`${roomPath(code)}/pub/players/b`) as { joinedAt: number }
     await db.phone('a').set(`${roomPath(code)}/pub/phase`, 'voting')
-    expect(await joinRoom(db.phone('b'), code, '  Novo ime  ', 'brian')).toBeNull()
-    expect(db.get(`${roomPath(code)}/pub/players/b`)).toEqual({ name: 'Novo ime', badge: 'brian', joinedAt: before.joinedAt })
+    expect(await joinRoom(db.phone('b'), code, '  Novo ime  ', 'soko')).toBeNull()
+    expect(db.get(`${roomPath(code)}/pub/players/b`)).toEqual({ name: 'Novo ime', badge: 'soko', joinedAt: before.joinedAt })
   })
 
   it('cuts names to 16 characters', async () => {
     const db = new MemoryDb()
     const code = await createRoom(db.phone('a'), 'uljez')
-    await joinRoom(db.phone('a'), code, 'Aleksandar Veliki Makedonski', 'aj')
+    await joinRoom(db.phone('a'), code, 'Aleksandar Veliki Makedonski', 'vuk')
     expect((db.get(`${roomPath(code)}/pub/players/a/name`) as string).length).toBe(16)
   })
 
   it('caps Licitacija at two and Misija at twelve', async () => {
     const lic = await room('licitacija', 2)
-    expect(await joinRoom(lic.db.phone('z'), lic.code, 'Treći', 'howie')).toBe('full')
+    expect(await joinRoom(lic.db.phone('z'), lic.code, 'Treći', 'lisica')).toBe('full')
     const m = await room('misija', 12)
-    expect(await joinRoom(m.db.phone('z'), m.code, 'Trinaesti', 'aj')).toBe('full')
+    expect(await joinRoom(m.db.phone('z'), m.code, 'Trinaesti', 'vuk')).toBe('full')
   })
 })
 

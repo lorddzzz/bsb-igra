@@ -238,7 +238,7 @@ function Result({ pub, me, isHost, actions }: ScreenProps) {
       {result && <RoundGains pub={pub} me={me} title="Ova runda" gains={result.gains} />}
       <ScoreTable pub={pub} me={me} />
       {isHost ? (
-        <Button onClick={actions.next}>{last ? 'Proglasi pobednika 👑' : 'Sledeća runda ✈️'}</Button>
+        <Button onClick={actions.next}>{last ? 'Proglasi pobednika 👑' : 'Sledeća runda 💥'}</Button>
       ) : (
         <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} nastavi</Waiting>
       )}

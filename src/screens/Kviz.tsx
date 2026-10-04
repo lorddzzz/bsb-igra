@@ -59,7 +59,7 @@ export function Kviz({ be, code, view }: Props) {
           steps={[
             `Svi dobijaju isto pitanje u isto vreme, sa 4 ponuđena odgovora.`,
             `Imate samo ${ANSWER_SECONDS} sekundi. Jedan dodir, bez predomišljanja!`,
-            `Tačan odgovor je 1 poen, brzina se ne računa. Igra ima ${QUESTIONS_PER_GAME} pitanja: Backstreet Boys, Evropa, srpska istorija i Srbija danas.`,
+            `Tačan odgovor je 1 poen, brzina se ne računa. Igra ima ${QUESTIONS_PER_GAME} pitanja: heroji, gejming, film, zavičaj, srpska istorija i Srbija danas.`,
             'Svako ima 2 džokera za napad: tokom pitanja zamrzni, zamagli ili okreni naopako ekran drugaru koji još nije odgovorio. Poslednji posle 5. i 10. pitanja dobija novi.',
             'Tri pitanja su specijalne runde: Dupli poeni, Munja, Haos ili Pljačka.',
           ]}
@@ -96,7 +96,7 @@ function RoundTitle({ pub }: { pub: Pub }) {
 }
 
 const VOWELS = /[aeiouAEIOU]/g
-const RAIN = ['🕺', '🎤', '💿', '🕶️', '⭐', '💃', '🎶', '💖']
+const RAIN = ['🦸', '💥', '🦹', '⚡', '⭐', '🦸‍♀️', '💫', '🛡️']
 /** Mešalica moves the options this often. */
 const SHUFFLE_MS = 1500
 /** Kap po kap shows one more word this often. */

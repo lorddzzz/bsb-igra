@@ -11,8 +11,8 @@ mkdirSync(OUT, { recursive: true })
 const browser = await chromium.launch(launchOptions)
 const ctx = await newPhoneContext(browser)
 const names = [
-  ['Dusan', 'Nick'],
-  ['Marko', 'AJ'],
+  ['Dusan', 'Zmaj'],
+  ['Marko', 'Vuk'],
 ]
 const pages = []
 const errors = []
@@ -39,13 +39,13 @@ await guest.goto(`${BASE}?local&soba=${code}`)
 await guest.getByPlaceholder('npr. Marko').fill(names[1][0])
 await guest.locator('.badge-pick', { hasText: names[1][1] }).click()
 await guest.getByRole('button', { name: /Uđi u sobu/ }).click()
-await host.getByText('Putnici (2)').waitFor()
+await host.getByText('Družina (2)').waitFor()
 if ((await host.locator('.logo').textContent()) !== 'LICITACIJA') errors.push('header does not say LICITACIJA')
 
 // a third phone must be turned away
 await third.goto(`${BASE}?local&soba=${code}`)
 await third.getByPlaceholder('npr. Marko').fill('Luka')
-await third.locator('.badge-pick', { hasText: 'Brian' }).click()
+await third.locator('.badge-pick', { hasText: 'Soko' }).click()
 await third.getByRole('button', { name: /Uđi u sobu/ }).click()
 await third.getByText('Soba je puna.').waitFor()
 await third.close()

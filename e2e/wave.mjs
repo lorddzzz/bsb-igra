@@ -11,9 +11,9 @@ mkdirSync(OUT, { recursive: true })
 const browser = await chromium.launch(launchOptions)
 const ctx = await newPhoneContext(browser)
 const names = [
-  ['Dusan', 'Nick'],
-  ['Marko', 'AJ'],
-  ['Luka', 'Brian'],
+  ['Dusan', 'Zmaj'],
+  ['Marko', 'Vuk'],
+  ['Luka', 'Soko'],
 ]
 const clues = ['supa', 'ponedeljak', 'Larger Than Life', 'mačka', 'Beograd', 'karaoke']
 const pages = []
@@ -42,7 +42,7 @@ for (let i = 1; i < 3; i++) {
   await pages[i].locator('.badge-pick', { hasText: names[i][1] }).click()
   await pages[i].getByRole('button', { name: /Uđi u sobu/ }).click()
 }
-await host.getByText('Putnici (3)').waitFor()
+await host.getByText('Družina (3)').waitFor()
 if ((await host.locator('.logo').textContent()) !== 'TALAS') errors.push('header does not say TALAS')
 await shot(host, '02-lobby')
 await host.getByRole('button', { name: /Počni igru/ }).click()

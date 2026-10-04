@@ -93,7 +93,7 @@ function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
       </div>
 
       <div className="card">
-        <h2>Putnici ({order.length})</h2>
+        <h2>Družina ({order.length})</h2>
         <ul className="player-list">
           {order.map((uid) => (
             <li key={uid}>
@@ -131,7 +131,7 @@ function Lobby({ pub, me, isHost, actions, code }: ScreenProps) {
 
       {isHost ? (
         <Button disabled={missing > 0} onClick={actions.startGame}>
-          {missing > 0 ? `Treba još ${missing} ${missing === 1 ? 'igrač' : 'igrača'}` : 'Poleći! Počni igru ✈️'}
+          {missing > 0 ? `Treba još ${missing} ${missing === 1 ? 'igrač' : 'igrača'}` : 'Na posao! Počni igru 💥'}
         </Button>
       ) : (
         <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene igru</Waiting>
@@ -440,7 +440,7 @@ function Score({ pub, me, isHost, actions }: ScreenProps) {
       )}
       <Standings pub={pub} me={me} />
       {isHost ? (
-        <Button onClick={actions.nextRound}>Sledeća runda ✈️</Button>
+        <Button onClick={actions.nextRound}>Sledeća runda 💥</Button>
       ) : (
         <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene sledeću rundu</Waiting>
       )}

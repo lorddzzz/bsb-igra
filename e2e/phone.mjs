@@ -13,7 +13,7 @@ export const viewport = { width: Number(process.env.WIDTH ?? 390), height: Numbe
 export const phoneContext = { viewport, deviceScaleFactor: 2, hasTouch: false }
 
 /**
- * A phone-sized browser context with the game's real fonts. The page asks Google Fonts for Audiowide and
+ * A phone-sized browser context with the game's real fonts. The page asks Google Fonts for Bangers and
  * Manrope; here they come from the @fontsource packages instead, so screens measure the same with or without
  * internet (a sandbox without it fell back to a narrower font and missed a header overflow CI then caught).
  */
@@ -31,7 +31,7 @@ const require = createRequire(import.meta.url)
 const LATIN_EXT = 'U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1E00-1E9F, U+20A0-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF'
 const FONT_FILES = {}
 let FONT_CSS = ''
-for (const [family, pkg, weight] of [['Audiowide', 'audiowide', 400], ['Manrope', 'manrope', 400], ['Manrope', 'manrope', 600], ['Manrope', 'manrope', 800]])
+for (const [family, pkg, weight] of [['Bangers', 'bangers', 400], ['Manrope', 'manrope', 400], ['Manrope', 'manrope', 600], ['Manrope', 'manrope', 800]])
   for (const subset of ['latin', 'latin-ext']) {
     const name = `${pkg}-${subset}-${weight}-normal.woff2`
     FONT_FILES[name] = require.resolve(`@fontsource/${pkg}/files/${name}`)

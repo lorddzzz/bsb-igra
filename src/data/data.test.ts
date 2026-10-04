@@ -74,7 +74,7 @@ describe('Kviz questions', () => {
     }
   })
   it('keeps options short enough to read in ten seconds', () => {
-    // the longest today, "Show Me the Meaning of Being Lonely", wraps to two lines on a 375 px screen
+    // a 36-character option wraps to two lines on a 375 px screen, which is still readable
     for (const q of KVIZ_QUESTIONS) for (const o of [q.a, ...q.w]) expect(o.length, `${q.id}: ${o}`).toBeLessThanOrEqual(36)
     for (const q of KVIZ_QUESTIONS) expect(q.q.length, q.id).toBeLessThanOrEqual(110)
   })
@@ -82,7 +82,7 @@ describe('Kviz questions', () => {
     expect(dupes(KVIZ_QUESTIONS.map((q) => q.q.toLowerCase()))).toEqual([])
   })
   it('has the id prefix of its topic', () => {
-    const prefix: Record<string, string> = { bsb: 'b', evropa: 'e', istorija: 'i', srbija: 's' }
+    const prefix: Record<string, string> = { heroji: 'h', gejming: 'g', film: 'f', zavicaj: 'z', istorija: 'i', srbija: 's' }
     for (const q of KVIZ_QUESTIONS) expect(q.id[0], q.id).toBe(prefix[q.topic])
   })
 })

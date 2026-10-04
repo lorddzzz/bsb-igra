@@ -41,7 +41,7 @@ export function PartyLobby({
       </div>
 
       <div className="card">
-        <h2>Putnici ({order.length})</h2>
+        <h2>Družina ({order.length})</h2>
         <ul className="player-list">
           {order.map((uid) => (
             <li key={uid}>
@@ -73,7 +73,7 @@ export function PartyLobby({
 
       {isHost ? (
         <Button disabled={missing > 0} onClick={onStart}>
-          {missing > 0 ? `Treba još ${missing} ${missing === 1 ? 'igrač' : 'igrača'}` : 'Poleći! Počni igru ✈️'}
+          {missing > 0 ? `Treba još ${missing} ${missing === 1 ? 'igrač' : 'igrača'}` : 'Na posao! Počni igru 💥'}
         </Button>
       ) : (
         <Waiting>Čekamo da {nameOf(pub, pub.hostUid)} pokrene igru</Waiting>
