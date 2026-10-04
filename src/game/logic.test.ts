@@ -12,6 +12,10 @@ import {
   categoryChoices,
   caughtImpostors,
   impostorCount,
+  IMPOSTOR_ODDS,
+  maxImpostors,
+  FOOLED_CAP,
+  ESCAPE_BONUS,
   isCaught,
   nextRound,
   newGameSeed,
@@ -172,13 +176,40 @@ describe('rounds', () => {
     }
   })
 
-  it('picks 1 or 2 impostors, mostly 1, and never 2 with three players', () => {
+  it('picks 1 or 2 impostors with four players, mostly 1, and always 1 with three', () => {
     const rng = seeded(3)
     const counts = [0, 0, 0]
     for (let i = 0; i < 1000; i++) counts[impostorCount(4, rng)]++
     expect(counts[2]).toBeGreaterThan(200)
     expect(counts[2]).toBeLessThan(400)
     for (let i = 0; i < 100; i++) expect(impostorCount(3, rng)).toBe(1)
+  })
+
+  it('scales impostors with the group: about a fifth, rarely up to half', () => {
+    for (let n = 3; n <= 12; n++) {
+      const odds = IMPOSTOR_ODDS[n]
+      expect(odds.reduce((a, b) => a + b, 0)).toBe(100)
+      expect(maxImpostors(n)).toBe(Math.floor(n / 2) || 1)
+    }
+    const rng = seeded(7)
+    const counts: number[] = Array(7).fill(0)
+    for (let i = 0; i < 20000; i++) counts[impostorCount(12, rng)]++
+    expect(counts[0]).toBe(0)
+    expect(counts[6]).toBeGreaterThan(0)
+    expect(counts[6]).toBeLessThan(600)
+    const mean = counts.reduce((a, c, k) => a + c * k, 0) / 20000
+    expect(mean / 12).toBeGreaterThan(0.18)
+    expect(mean / 12).toBeLessThan(0.25)
+    for (let i = 0; i < 200; i++) expect(impostorCount(12, rng)).toBeLessThanOrEqual(6)
+  })
+
+  it('caps the points an impostor gets for wrong votes', () => {
+    const uids = Array.from({ length: 12 }, (_, i) => `p${i}`)
+    const players = Object.fromEntries(uids.map((u, i) => [u, { name: u, badge: u, joinedAt: i }]))
+    const big = pub({ phase: 'reveal', players, votes: Object.fromEntries(uids.slice(2).map((u) => [u, { p11: true }])) })
+    const r = scoreRound(big, { ...secret, impostors: ['p0', 'p1'] })
+    expect(r.gains.p0.points).toBe(FOOLED_CAP + ESCAPE_BONUS)
+    expect(r.gains.p1.points).toBe(FOOLED_CAP + ESCAPE_BONUS)
   })
 
   it('offers a few categories, stable within a round, not the last one', () => {

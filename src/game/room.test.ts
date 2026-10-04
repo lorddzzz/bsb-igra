@@ -22,10 +22,13 @@ describe('creating and joining a room', () => {
   })
 
   it('explains why a join fails', async () => {
-    const { db, code } = await room('uljez', 5)
+    const { db, code } = await room('kviz', 5)
     expect(await joinRoom(db.phone('z'), 'ZZZZ', 'Neko', 'vuk')).toBe('no-room')
-    // Uljez has five badges, so the sixth friend can't get in
+    // Kviz has five badges, so the sixth friend can't get in
     expect(await joinRoom(db.phone('z'), code, 'Neko', 'sova')).toBe('full')
+    // Uljez takes up to twelve, like Misija
+    const big = await room('uljez', 12)
+    expect(await joinRoom(big.db.phone('z'), big.code, 'Neko', 'vuk')).toBe('full')
     const two = await room('blef', 2)
     expect(await joinRoom(two.db.phone('z'), two.code, 'Neko', 'vuk')).toBe('badge-taken')
     await two.db.phone('a').set(`${roomPath(two.code)}/pub/phase`, 'write')

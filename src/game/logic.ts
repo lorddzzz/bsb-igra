@@ -57,12 +57,40 @@ export function targetFor(pub: Pub): number | null {
   return MODES.find((m) => m.id === pub.mode)?.target ?? null
 }
 
-/** Chance of a second impostor in a round, once there are enough players for it. */
-export const TWO_IMPOSTOR_CHANCE = 0.3
-export const MIN_PLAYERS_FOR_TWO = 4
+/**
+ * Odds (in percent) of 1, 2, 3… impostors by player count. Usually about a fifth of the group, now and then
+ * one more, and rarely up to half. Three players always have one; four and five keep the 70/30 split they had.
+ */
+export const IMPOSTOR_ODDS: Record<number, number[]> = {
+  3: [100],
+  4: [70, 30],
+  5: [70, 30],
+  6: [60, 35, 5],
+  7: [50, 42, 8],
+  8: [40, 47, 11, 2],
+  9: [30, 50, 17, 3],
+  10: [22, 50, 22, 4, 2],
+  11: [15, 47, 30, 6, 2],
+  12: [10, 42, 35, 9, 3, 1],
+}
+
+function oddsFor(playerCount: number): number[] {
+  const counts = Object.keys(IMPOSTOR_ODDS).map(Number)
+  const n = Math.min(Math.max(playerCount, Math.min(...counts)), Math.max(...counts))
+  return IMPOSTOR_ODDS[n]
+}
+
+/** The most impostors a round can have with this many players. */
+export function maxImpostors(playerCount: number): number {
+  return oddsFor(playerCount).length
+}
 
 export function impostorCount(playerCount: number, rng: Rng): number {
-  return playerCount >= MIN_PLAYERS_FOR_TWO && rng() < TWO_IMPOSTOR_CHANCE ? 2 : 1
+  const odds = oddsFor(playerCount)
+  let r = rng() * odds.reduce((a, b) => a + b, 0)
+  let i = 0
+  while (i < odds.length - 1 && r >= odds[i]) r -= odds[i++]
+  return i + 1
 }
 
 /** The categories offered to the picker this round: a few at random, same on every render. */
@@ -101,6 +129,8 @@ export function seededRng(seed: number): Rng {
 export const STREAK_WEIGHTS = [1, 0.7, 0.1]
 /** Points for an impostor who was not caught. */
 export const ESCAPE_BONUS = 2
+/** Most points an impostor gets for wrong votes in one round, so a big group can't hand out 10 at once. */
+export const FOOLED_CAP = 4
 
 /**
  * Picks the impostors at random, but someone who was an impostor the last round is a bit less likely,
@@ -190,7 +220,7 @@ export function allGuessed(pub: Pub, secret: Secret): boolean {
 /**
  * Scoring:
  *  - each of your (up to 2) votes that lands on an impostor: +1 for you
- *  - each vote for someone who knew the word: +1 for every impostor
+ *  - each vote for someone who knew the word: +1 for every impostor (at most FOOLED_CAP per round)
  *  - impostor who is not caught: +2
  *  - caught impostor who guesses the word: +2 for that impostor
  * Impostors' own votes score nothing.
@@ -211,10 +241,13 @@ export function scoreRound(pub: Pub, secret: Secret): RoundResult {
     if (imps.includes(voter)) continue
     const targets = votesOf(pub, voter)
     const right = targets.filter((t) => imps.includes(t)).length
-    if (right) give(voter, right, right === 1 ? 'Pogodio uljeza' : 'Pogodio oba uljeza')
+    if (right) give(voter, right, right === 1 ? 'Pogodio uljeza' : `Pogodio ${right} uljeza`)
     fooled += targets.length - right
   }
-  if (fooled) for (const imp of imps) give(imp, fooled, fooled === 1 ? 'Prevario 1 igrača' : `Prevario ${fooled} igrača`)
+  const fooledPoints = Math.min(fooled, FOOLED_CAP)
+  const fooledReason =
+    fooled === 1 ? 'Prevario 1 igrača' : fooled > FOOLED_CAP ? `Prevario ${fooled} igrača (najviše +${FOOLED_CAP})` : `Prevario ${fooled} igrača`
+  if (fooled) for (const imp of imps) give(imp, fooledPoints, fooledReason)
 
   const caught = caughtImpostors(pub, secret)
   for (const imp of imps) if (!caught.includes(imp)) give(imp, ESCAPE_BONUS, 'Nije uhvaćen')
