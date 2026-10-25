@@ -4,6 +4,8 @@ Created: 2026-10-25. Based on the repository review and follow-up discussion.
 
 This document records decisions and suggestions for making more games for different friend groups. It is not an implementation plan. Most suggestions have not been reviewed by the owner; their presence here does not authorize implementation or establish priority.
 
+Repository structure, branches, agent setup, infrastructure, and jobs are covered in the [prioritized repository maintenance review](docs/REPOSITORY_REVIEW.md). Its recommendations are also awaiting owner review.
+
 ## Status meanings
 
 - **Agreed direction**: the owner has chosen the direction; implementation details still need to be worked out.

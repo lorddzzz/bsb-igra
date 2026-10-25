@@ -15,6 +15,8 @@ Every finished game is saved to an all-time scoreboard ("Tabela svih vremena" on
 
 Future direction and suggestions, with their review status, are tracked in [BACKLOG.md](BACKLOG.md).
 
+Repository maintenance findings and proposed priorities are in [the repository review](docs/REPOSITORY_REVIEW.md).
+
 ## How it works
 
 - React + TypeScript (Vite), hosted on GitHub Pages, deployed by `.github/workflows/deploy.yml` on every push to `main`.
