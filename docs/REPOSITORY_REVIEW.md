@@ -2,7 +2,7 @@
 
 Reviewed: 2026-10-25. Source checkout: `19d1631`; GitHub `main`: `377de56`.
 
-All recommendations below are **To review**. Priorities are proposed by the reviewer, not approved implementation work. P1 means establish the working foundation before substantial new development; P2 means improve it as development resumes; P3 means routine housekeeping. Effort is relative, not a time estimate.
+Recommendations are **To review** unless an item records a later completion. R02 was completed on 2026-10-25 at the owner's request; other recommendations remain unreviewed. Priorities are proposed by the reviewer, not approved implementation work. P1 means establish the working foundation before substantial new development; P2 means improve it as development resumes; P3 means routine housekeeping. Effort is relative, not a time estimate.
 
 Scope: repository structure, Git/GitHub configuration, agent workflow, infrastructure, and jobs. Keep the agreed single-app direction and trusted-friends scope in [the backlog](../BACKLOG.md). Deliberate-cheating prevention remains deferred.
 
@@ -23,7 +23,7 @@ Scope: repository structure, Git/GitHub configuration, agent workflow, infrastru
 | Order | ID | Priority | Recommendation | Relative effort |
 | --- | --- | --- | --- | --- |
 | 1 | R01 | P1 | Check changes before merge and protect the release branch | Medium |
-| 2 | R02 | P1 | Add concise, versioned instructions for AI agents and contributors | Small |
+| 2 | R02 | P1 | Completed 2026-10-25: shared agent instructions and workflow guide | Small |
 | 3 | R03 | P1 | Make setup and verification repeatable on Windows and CI | Medium |
 | 4 | R04 | P1 | Separate ordinary development from the live Firebase database | Medium |
 | 5 | R05 | P2 | Remove integrated feature branches and enable future cleanup | Small |
@@ -47,11 +47,13 @@ Related: backlog B14. Reference: [GitHub workflow triggers](https://docs.github.
 
 ### R02 — Add reusable agent instructions
 
-**Evidence:** The repository has no project-level agent instructions, despite substantial agent-generated history and several decisions that should survive a new chat.
+**Status: Completed, 2026-10-25** — requested by the owner, adapting generic instructions from `apprentices-notebook`.
 
-**Proposed fix:** Add a short root `AGENTS.md` covering the app's purpose, Serbian Latin UI, source map, setup and verification commands, Firebase mode selection, branch/PR conventions, and how backlog states work. Record the single-app and trusted-friends decisions. Explain that backlog proposals are not automatic permission to implement every item. If another agent tool needs a separate entry point, point it to the shared guidance to limit drift.
+**Original finding:** The repository had no project-level agent instructions, despite substantial agent-generated history and several decisions that should survive a new chat.
 
-**Completion evidence:** A fresh agent can find the relevant game, run the appropriate checks, and distinguish approved scope from proposals without relying on this conversation. Keep detailed operational instructions in linked documentation. Official OpenAI documentation describes repository-level [`AGENTS.md` guidance](https://learn.chatgpt.com/docs/agent-configuration/agents-md).
+**Implemented:** [AGENTS.md](../AGENTS.md) records context, scope, source layout, current npm commands, verification, Git/delivery practices, and backlog semantics. [CLAUDE.md](../CLAUDE.md) points to that shared guidance. [The agent workflow guide](AGENT_WORKFLOW.md) covers small design rounds, verification, resumable plans, and handoffs. Source-project mechanics, tooling permissions, exact model choices, and automatic delegation/push policies were excluded.
+
+**Verification:** Documentation links and command references checked, along with `git diff --check`. Runtime tests are not needed for this documentation-only change. Official OpenAI documentation describes repository-level [`AGENTS.md` guidance](https://learn.chatgpt.com/docs/agent-configuration/agents-md). Other maintenance recommendations, including portable test tooling, strict TypeScript, and CI changes, were not implemented as part of this item.
 
 ### R03 — Make local setup repeatable
 
