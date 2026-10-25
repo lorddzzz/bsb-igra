@@ -13,6 +13,8 @@ Every finished game is saved to an all-time scoreboard ("Tabela svih vremena" on
 
 **Play:** https://lorddzzz.github.io/bsb-igra/
 
+Future direction and suggestions, with their review status, are tracked in [BACKLOG.md](BACKLOG.md).
+
 ## How it works
 
 - React + TypeScript (Vite), hosted on GitHub Pages, deployed by `.github/workflows/deploy.yml` on every push to `main`.
