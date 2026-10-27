@@ -29,7 +29,7 @@ Scope: repository structure, Git/GitHub configuration, agent workflow, infrastru
 | 5 | R05 | P2 | Remove integrated feature branches and enable future cleanup (revalidated 2026-10-27; remote deletion pending) | Small |
 | 6 | R06 | P2 | Completed 2026-10-27: infrastructure runbook ([INFRASTRUCTURE.md](INFRASTRUCTURE.md)); console-only settings still to confirm | Small–medium |
 | 7 | R07 | P2 | Cover actual Firebase integration and phone behavior | Medium |
-| 8 | R08 | P2 | Enable stronger TypeScript checks incrementally | Medium |
+| 8 | R08 | P2 | Completed 2026-10-27 (revalidated, narrower than proposed): see R08 notes | Medium |
 | 9 | R09 | P2 | Clarify shared code versus individual games | Medium |
 | 10 | R10 | P2 | Measure and reduce eager loading | Medium |
 | 11 | R11 | P3 | Establish portable Git, formatting, and dependency conventions | Small |
@@ -104,6 +104,12 @@ Related: backlog B12 and B13; release gating belongs to R01.
 **Evidence:** Neither [application](../tsconfig.app.json) nor [tooling](../tsconfig.node.json) configuration enables `strict`. Existing unused-symbol checks do not enable strict null checks or implicit-any checks. Firebase's removal of empty containers is already a known source of runtime shape differences in this codebase.
 
 **Proposed fix:** Enable strict checking in manageable steps, especially around backend values and game state, and resolve issues with meaningful types rather than broad assertions or suppressions. Add a clear type-check command if it helps local work; builds already invoke TypeScript.
+
+**Revalidation, 2026-10-27:** The premise was stale. The repo uses TypeScript 6.0, where `strict` is on by default, so implicit-any and null checks already passed; the code has no `any`, `@ts-ignore` or `@ts-expect-error`. Measured extra flags: `noImplicitOverride` 2 errors, `noImplicitReturns` 0, `exactOptionalPropertyTypes` 35, `noUncheckedIndexedAccess` 215 (about 95 in runtime code, the rest in tests).
+
+**Done:** `strict` written explicitly (no longer depends on the compiler default), plus `noImplicitOverride` and `noImplicitReturns`; two `override` modifiers added in `src/App.tsx`.
+
+**Deliberately not enabled:** `exactOptionalPropertyTypes` fights the convention that `field: undefined` in a state patch clears the key (the backend strips `undefined`, see `src/backend/types.ts`); it would force `| undefined` onto most state types for no safety gain. `noUncheckedIndexedAccess` is the one with real value for Firebase-shaped records (`votes[uid]`), but most of its errors are `arr[i]` with a provably valid index, where the only fix is a `!` assertion. Revisit it per module, ideally while splitting modules under R09, and only with real narrowing, not blanket assertions.
 
 **Completion evidence:** Strict checks pass for the agreed scope, and existing rule tests and simulations continue to pass. No claim is made here about how many errors enabling strict mode would reveal.
 

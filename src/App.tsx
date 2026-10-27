@@ -192,11 +192,11 @@ function UpdateBanner({ inRoom }: { inRoom: boolean }) {
 
 /** If a screen crashes, show a reload button instead of a black page. The room is remembered, so reloading rejoins it. */
 class Crashed extends Component<{ children: ReactNode }, { error: string }> {
-  state = { error: '' }
+  override state = { error: '' }
   static getDerivedStateFromError(e: unknown) {
     return { error: String((e as Error)?.message ?? e) }
   }
-  render() {
+  override render() {
     if (!this.state.error) return this.props.children
     return (
       <div className="card center">
