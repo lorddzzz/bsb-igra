@@ -1,6 +1,6 @@
 # Agent guidance
 
-Working instructions for this repository. Procedures (design rounds, UI verification, plans, handoffs) are in [the workflow guide](docs/AGENT_WORKFLOW.md).
+Working instructions for this repository. Procedures are skills in `.claude/skills/` (also visible to Codex via `.agents/skills`): `design-round`, `implement-design`, `add-game`, `verify-change`, `verify-ui`. Read the relevant skill before applying it. [The workflow guide](docs/AGENT_WORKFLOW.md) is being migrated into them.
 
 ## Project
 
