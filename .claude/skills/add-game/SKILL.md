@@ -15,8 +15,8 @@ Don't trust this list blindly; confirm with `grep -rniE "talas|wave" src e2e dat
 - `src/game/types.ts`: add to `GameId`, add the game's state type to `Pub` (`wave?: WaveState` (Talas keeps its original `wave` key in stored rooms)), and badges if it has them.
 - `src/<game>/types.ts`, `logic.ts`, `room.ts`: state, rules, actions (below).
 - `src/games.ts`: catalog entry (name, icon, tagline, player count text in Serbian).
-- `src/App.tsx`: render the screen for the game and its rules text (`<Game>Rules` in `src/ui/components.tsx`).
-- `src/screens/<Game>.tsx`: the UI; reuse `src/screens/shared.tsx` and `src/ui/` pieces.
+- `src/gameScreens.ts`: one entry with the lazy screen and rules (a `Record<GameId, ...>`, so a missing entry is a type error). Never import a game's screen, rules or content from the shell; they must stay separate downloads.
+- `src/screens/<Game>.tsx`: the UI; reuse `src/screens/shared.tsx` and `src/ui/` pieces. `src/screens/rules/<Game>.tsx`: the "Kako se igra" text.
 - `src/history/logic.ts`: scoreboard. Add to `SCORED` if it has winners and points, and a per-game stat or title if there is a fun one.
 - Content in `src/data/` plus its checks in `src/data/data.test.ts` (Latin script, no stray whitespace, unique ids, answerable).
 - Music: each game has its own background track in `src/ui/music.ts`.

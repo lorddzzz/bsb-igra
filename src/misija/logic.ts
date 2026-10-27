@@ -43,6 +43,8 @@ export const ROLES: Record<Role, { name: string; icon: string; side: Side; text:
   },
 }
 
+export const SIDE_NAME: Record<Side, string> = { ekipa: 'Ekipa', spijuni: 'Špijuni' }
+
 export function misijaOf(pub: Pub): MisijaState {
   return pub.misija ?? {}
 }

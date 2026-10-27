@@ -1,17 +1,13 @@
-import { Component, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { Component, Suspense, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
 import { connect, isLocalBackend, type Backend } from './backend'
 import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './game/room'
 import { badgesFor, type GameId } from './game/types'
 import { useRecordGame } from './history/record'
 import { GAMES } from './games'
-import { Blef } from './screens/Blef'
-import { Uljez } from './screens/Uljez'
-import { Kviz } from './screens/Kviz'
-import { Licitacija } from './screens/Licitacija'
-import { Misija, MisijaRules } from './screens/Misija'
+import { screensFor } from './gameScreens'
 import { Tabela } from './screens/Tabela'
-import { Talas } from './screens/Talas'
-import { badgeMark, BlefRules, Button, KvizRules, LicRules, Modal, Rules, Waiting, WaveRules } from './ui/components'
+import { badgeMark, Button, Modal, Waiting } from './ui/components'
+import { ChunkLoadError } from './ui/lazyScreen'
 import * as sound from './ui/sound'
 import { useStageSounds } from './ui/stageSounds'
 import { BUILD_ID, useUpdateAvailable } from './ui/update'
@@ -164,7 +160,7 @@ export default function App() {
       {isLocalBackend() && <div className="local-note">Probni režim (bez interneta)</div>}
       {rules && (
         <Modal title="Kako se igra" onClose={() => setRules(false)}>
-          {game === 'blef' ? <BlefRules /> : game === 'talas' ? <WaveRules /> : game === 'kviz' ? <KvizRules /> : game === 'licitacija' ? <LicRules /> : game === 'misija' ? <MisijaRules /> : <Rules />}
+          <GameRules game={game} />
         </Modal>
       )}
     </div>
@@ -190,22 +186,43 @@ function UpdateBanner({ inRoom }: { inRoom: boolean }) {
   )
 }
 
-/** If a screen crashes, show a reload button instead of a black page. The room is remembered, so reloading rejoins it. */
-class Crashed extends Component<{ children: ReactNode }, { error: string }> {
-  override state = { error: '' }
+/** The rules text of a game, loaded when the dialog opens. */
+function GameRules({ game }: { game: GameId }) {
+  const { Rules } = screensFor(game)
+  return (
+    <Crashed>
+      <Suspense fallback={<Waiting>Učitavanje</Waiting>}>
+        <Rules />
+      </Suspense>
+    </Crashed>
+  )
+}
+
+/**
+ * If a screen crashes, show a reload button instead of a black page. The room is remembered, so reloading rejoins it.
+ * A game that fails to download most likely means a new version went live since this page loaded.
+ */
+class Crashed extends Component<{ children: ReactNode }, { error: string; download: boolean }> {
+  override state = { error: '', download: false }
   static getDerivedStateFromError(e: unknown) {
-    return { error: String((e as Error)?.message ?? e) }
+    return { error: String((e as Error)?.message ?? e), download: e instanceof ChunkLoadError }
   }
   override render() {
     if (!this.state.error) return this.props.children
     return (
       <div className="card center">
-        <h2>Ups, nešto je puklo</h2>
-        <p className="muted">Osveži stranicu, vraćaš se u istu sobu.</p>
-        <Button onClick={() => location.reload()}>Osveži</Button>
+        <h2>{this.state.download ? 'Igra se nije učitala' : 'Ups, nešto je puklo'}</h2>
         <p className="muted">
-          <small>{this.state.error}</small>
+          {this.state.download
+            ? 'Verovatno je stigla nova verzija, ili je veza prekinuta. Osveži, vraćaš se u istu sobu.'
+            : 'Osveži stranicu, vraćaš se u istu sobu.'}
         </p>
+        <Button onClick={() => location.reload()}>Osveži</Button>
+        {!this.state.download && (
+          <p className="muted">
+            <small>{this.state.error}</small>
+          </p>
+        )}
       </div>
     )
   }
@@ -326,12 +343,12 @@ function Room({
       </div>
     )
   if (!view.pub.players?.[be.uid]) return <Join be={be} code={code} view={view} onLeave={onLeave} />
-  if (game === 'blef') return <Blef be={be} code={code} view={view} />
-  if (game === 'talas') return <Talas be={be} code={code} view={view} />
-  if (game === 'kviz') return <Kviz be={be} code={code} view={view} />
-  if (game === 'licitacija') return <Licitacija be={be} code={code} view={view} />
-  if (game === 'misija') return <Misija be={be} code={code} view={view} />
-  return <Uljez be={be} code={code} view={view} />
+  const { Screen } = screensFor(game)
+  return (
+    <Suspense fallback={<Waiting>Učitavanje igre</Waiting>}>
+      <Screen be={be} code={code} view={view} />
+    </Suspense>
+  )
 }
 
 function Join({ be, code, view, onLeave }: { be: Backend; code: string; view: ReturnType<typeof useRoom>; onLeave: () => void }) {

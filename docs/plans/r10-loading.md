@@ -1,6 +1,6 @@
 # R10: loading, measurement and proposed plan
 
-Status: **measured, nothing implemented, awaiting owner decision.** Measured 2026-10-27 on `main` at `5cfe6fd` (production build, sizes from `vite build`; no real-device or network timing).
+Status: **implemented 2026-10-27** after the owner approved it, also because the cost of every added game would otherwise land in every visitor's first download. Baseline measured on `main` at `5cfe6fd` (production build, sizes from `vite build`; no real-device or network timing). See "Result" at the end.
 
 ## Baseline
 
@@ -78,3 +78,27 @@ Not proposed now:
 ## Decision needed
 
 Is a ~20% smaller first visit worth a new lazy-loading failure path and its recovery card? If yes, steps 1 to 5 are one focused change. If not, leave loading as it is: the registry in step 1 can still be done alone as a readability change, and the effort is better spent on the font question above.
+
+## Result
+
+Done as planned, with one extension: all rules text moved out of the shell too (not only `MisijaRules`), and `Ticket` (the Uljez dossier, the only shell component using the word list) moved into the Uljez screen, so the shell imports no game content at all.
+
+| Chunk | Before (gzip) | After (gzip) |
+| --- | --- | --- |
+| main (shell) | 142.8 kB | 86.5 kB |
+| Uljez (screen, rules, words) | in main | 10.5 kB |
+| Kviz | in main | 23.8 kB |
+| Blef | in main | 10.0 kB |
+| Misija | in main | 6.6 kB |
+| Talas | in main | 5.9 kB |
+| Licitacija | in main | 2.9 kB |
+| shared helper chunk | - | 1.3 kB |
+| per-game rules (6 files) | in main | 0.5 to 0.8 kB each |
+
+A first visit that opens one game is 56 kB (39%) lighter in the main file, minus that game's own chunk: about 44 kB saved for Uljez and about 30 kB for Kviz (game chunk, its rules and the shared helper chunk included), out of roughly 220 kB total with Firebase and CSS. The saving per visit stays the same as games are added, because new games add their own chunk instead of growing the shell.
+
+How it works: `src/gameScreens.ts` (a `Record<GameId, ...>`, so an unregistered game is a type error) holds each game's lazy screen and rules. `src/ui/lazyScreen.ts` retries a failed import once, then throws `ChunkLoadError`, which the error boundary in `App.tsx` turns into "Igra se nije učitala ... Osveži" (the room is remembered, so a reload rejoins it). The rules dialog has its own boundary because it sits outside the main one.
+
+Tests: `src/ui/lazyScreen.test.ts` (retry, then `ChunkLoadError` with its cause), `src/App.chunk.test.tsx` (the card appears when a game or its rules cannot load), and `e2e/pwa.mjs` now deploys while the phone is on the home screen, opens Kviz (never loaded), checks the card, and checks that refreshing opens the game in the same room.
+
+Known limits: an in-page retry may not help in browsers that remember a failed module import; the reload button is the dependable recovery. A game never opened is not in the service worker cache, so it cannot start offline (multiplayer needs the network anyway).

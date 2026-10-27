@@ -5,8 +5,8 @@ import { asList, playerOrder, standings } from '../game/util'
 import { catchThreshold, maxImpostors, categoryChoices, caughtImpostors, pickerFor, targetFor, votesAgainst, votesOf } from '../uljez/logic'
 import { type RoomView } from '../game/room'
 import { useUljezActions, type UljezActions } from '../uljez/room'
-import { MAX_VOTES, MIN_PLAYERS, MODES, type Pub, type Secret } from '../game/types'
-import { Badge, Button, Hint, nameOf, PlayerTag, Ticket, Waiting } from '../ui/components'
+import { MAX_VOTES, MIN_PLAYERS, MODES, type Player, type Pub, type Secret, type Ticket as TicketData } from '../game/types'
+import { Badge, badgeOf, Button, Hint, nameOf, PlayerTag, Waiting } from '../ui/components'
 import * as sound from '../ui/sound'
 import { useYourTurn } from '../ui/stageSounds'
 
@@ -532,4 +532,81 @@ function MiniScores({ pub, me }: { pub: Pub; me: string }) {
 
 function RoundTitle({ pub }: { pub: Pub }) {
   return <div className="round-title">RUNDA {pub.round}</div>
+}
+
+/** Secret dossier. Press and hold to see your word; it hides the moment you let go. */
+export function Ticket({ ticket, player, round }: { ticket: TicketData | null; player: Player | undefined; round: number }) {
+  const [peek, setPeek] = useState(false)
+  useEffect(() => {
+    const hide = () => setPeek(false)
+    window.addEventListener('blur', hide)
+    document.addEventListener('visibilitychange', hide)
+    return () => {
+      window.removeEventListener('blur', hide)
+      document.removeEventListener('visibilitychange', hide)
+    }
+  }, [])
+  const ready = ticket && ticket.round === round
+  const category = ready ? getCategory(ticket.category) : null
+  const badge = badgeOf(player?.badge)
+
+  return (
+    <div
+      className={`ticket${peek && ready ? ' peek' : ''}`}
+      onPointerDown={(e) => {
+        e.preventDefault()
+        setPeek(true)
+      }}
+      onPointerUp={() => setPeek(false)}
+      onPointerCancel={() => setPeek(false)}
+      onPointerLeave={() => setPeek(false)}
+      onContextMenu={(e) => e.preventDefault()}
+      role="button"
+      aria-label="Drži da vidiš svoju kartu"
+    >
+      <div className="ticket-inner">
+        <div className="ticket-face ticket-front">
+          <div className="ticket-top">
+            <span className="airline">DOSIJE ULJEZ</span>
+            <span className="flight">SLUČAJ #{String(round).padStart(2, '0')}</span>
+          </div>
+          <div className="ticket-mid">
+            <div className="ticket-field">
+              <small>AGENT</small>
+              <b>{player?.name ?? '—'}</b>
+            </div>
+            <div className="ticket-field">
+              <small>HEROJ</small>
+              <b className="seat">
+                <Badge id={badge.id} size="sm" /> {badge.name}
+              </b>
+            </div>
+            <div className="ticket-field">
+              <small>FASCIKLA</small>
+              <b>{category?.icon ?? '📁'}</b>
+            </div>
+          </div>
+          <div className="perforation" />
+          <div className="ticket-hold">{ready ? '👆 DRŽI DA OTVORIŠ DOSIJE' : 'Dosije se sprema…'}</div>
+          <div className="barcode" aria-hidden />
+        </div>
+        <div className="ticket-face ticket-back">
+          {ready && (
+            <>
+              <small className="ticket-cat">
+                {category?.icon} {category?.name}
+              </small>
+              {ticket.word ? (
+                <div className="ticket-word">{ticket.word}</div>
+              ) : (
+                <div className="ticket-word impostor">
+                  TI SI ULJEZ <span>🤫</span>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
