@@ -2,17 +2,17 @@
 import { act, cleanup, render } from '@testing-library/react'
 import { StrictMode } from 'react'
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
-import { normalizeSecret, playerOrder } from '../game/logic'
+import { normalizeSecret, playerOrder } from '../game/util'
 import type { RoomView } from '../game/room'
 import type { Pub } from '../game/types'
 import { MemoryDb } from '../test/memoryBackend'
 import { simBlef, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from '../test/sims'
 import { Blef } from './Blef'
-import { Game } from './Game'
+import { Uljez } from './Uljez'
 import { Kviz } from './Kviz'
-import { Lic } from './Lic'
+import { Licitacija } from './Licitacija'
 import { Misija } from './Misija'
-import { Wave } from './Wave'
+import { Talas } from './Talas'
 
 // Every state a simulated game passes through, rendered on every phone, with data shaped exactly
 // like Firebase returns it. This is the guard against the "black screen": a screen that crashes on
@@ -34,7 +34,7 @@ afterEach(() => {
   cleanup()
 })
 
-type Screen = typeof Game
+type Screen = typeof Uljez
 
 function viewFor(s: Snapshot, uid: string): RoomView {
   return {
@@ -82,19 +82,19 @@ function distinct(snaps: Snapshot[]): Snapshot[] {
 
 describe('every screen renders in every state, on every phone', () => {
   it('Uljez', () => {
-    for (const [seed, n] of [[1, 3], [2, 4], [3, 5], [7, 4]]) renderAll(Game, distinct(simUljez(seed, n)), `Uljez ${n}p`)
+    for (const [seed, n] of [[1, 3], [2, 4], [3, 5], [7, 4]]) renderAll(Uljez, distinct(simUljez(seed, n)), `Uljez ${n}p`)
   })
   it('Blef', () => {
     for (const [seed, n] of [[1, 3], [5, 5]]) renderAll(Blef, distinct(simBlef(seed, n)), `Blef ${n}p`)
   })
   it('Talas', () => {
-    for (const [seed, n] of [[1, 3], [4, 5]]) renderAll(Wave, distinct(simWave(seed, n)), `Talas ${n}p`)
+    for (const [seed, n] of [[1, 3], [4, 5]]) renderAll(Talas, distinct(simWave(seed, n)), `Talas ${n}p`)
   })
   it('Kviz', () => {
     for (const [seed, n] of [[1, 3], [9, 5]]) renderAll(Kviz, simKviz(seed, n).filter((_, i) => i % 3 === 0), `Kviz ${n}p`)
   })
   it('Licitacija', () => {
-    renderAll(Lic, simLic(3).filter((_, i) => i % 4 === 0 || true), 'Licitacija')
+    renderAll(Licitacija, simLic(3).filter((_, i) => i % 4 === 0 || true), 'Licitacija')
   })
   it('Misija', () => {
     for (const [seed, n, sp] of [[1, 5, 0], [2, 8, 5], [3, 12, 3], [4, 7, 1]])
@@ -111,7 +111,7 @@ describe('reveal drum rolls', () => {
     const db = new MemoryDb()
     const { container } = render(
       <StrictMode>
-        <Game be={db.phone('b')} code="TEST" view={viewFor(s, 'b')} />
+        <Uljez be={db.phone('b')} code="TEST" view={viewFor(s, 'b')} />
       </StrictMode>,
     )
     expect(container.querySelector('.drumroll')).not.toBeNull()

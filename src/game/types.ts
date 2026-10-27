@@ -1,8 +1,8 @@
 import type { BlefState } from '../blef/types'
 import type { KvizState } from '../kviz/types'
 import type { MisijaState } from '../misija/types'
-import type { LicState } from '../lic/types'
-import type { WaveState } from '../wave/types'
+import type { LicState } from '../licitacija/types'
+import type { WaveState } from '../talas/types'
 
 export type Phase =
   | 'lobby'
@@ -101,7 +101,12 @@ export interface RoundResult {
   gains: Record<string, { points: number; reasons?: string[] }>
 }
 
-/** Everything every player may see. Lives at rooms/{code}/pub. */
+/**
+ * Everything every player may see. Lives at rooms/{code}/pub.
+ *
+ * Shared by all games, but the top-level `category` ... `impostorStreak` fields and `phase` values belong to Uljez
+ * (the first game). Moving them under their own key would change stored rooms, so they stay until a migration is planned.
+ */
 export interface Pub {
   hostUid: string
   game?: GameId

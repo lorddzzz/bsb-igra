@@ -1,6 +1,6 @@
-import { asList, playerOrder } from '../game/logic'
+import { asList, playerOrder } from '../game/util'
 import type { GameId, Pub } from '../game/types'
-import { matchWinner, wins as licWins } from '../lic/logic'
+import { matchWinner, wins as licWins } from '../licitacija/logic'
 import { misijaOf, sideOf } from '../misija/logic'
 import type { Role } from '../misija/types'
 import type { HistoryGame, HistoryPlayer } from './types'

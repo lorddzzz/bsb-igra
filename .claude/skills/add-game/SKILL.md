@@ -5,14 +5,14 @@ description: Checklist and workflow for adding a new party game to Družina (rul
 
 # Add a game
 
-Družina is one app that keeps gaining games for different friend groups. A new game follows the shape of the existing ones; copy the closest one rather than inventing structure. `src/wave/` (Talas) is the smallest; `src/lic/` is the one for two players; `src/misija/` for hidden roles. Note ids differ from folders: the game id `talas` lives in `src/wave/`.
+Družina is one app that keeps gaining games for different friend groups. A new game follows the shape of the existing ones; copy the closest one rather than inventing structure. `src/talas/` is the smallest; `src/licitacija/` is the one for two players; `src/misija/` for hidden roles. Folder, screen (`src/screens/<Name>.tsx`) and game id share one name.
 
 Before coding: the rules and player count must be decided. If they are not, run the `design-round` skill first. For a multi-part build, use `implement-design`.
 
 ## 1. Find every touchpoint from a real example
 Don't trust this list blindly; confirm with `grep -rniE "talas|wave" src e2e database.rules.json .github` and mirror each hit for the new game. Known touchpoints:
 
-- `src/game/types.ts`: add to `GameId`, add the game's state type to `Pub` (`wave?: WaveState`), and badges if it has them.
+- `src/game/types.ts`: add to `GameId`, add the game's state type to `Pub` (`wave?: WaveState` (Talas keeps its original `wave` key in stored rooms)), and badges if it has them.
 - `src/<game>/types.ts`, `logic.ts`, `room.ts`: state, rules, actions (below).
 - `src/games.ts`: catalog entry (name, icon, tagline, player count text in Serbian).
 - `src/App.tsx`: render the screen for the game and its rules text (`<Game>Rules` in `src/ui/components.tsx`).

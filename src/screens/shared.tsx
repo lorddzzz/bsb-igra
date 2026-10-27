@@ -1,5 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
-import { asList, playerOrder, standings } from '../game/logic'
+import { asList, playerOrder, standings } from '../game/util'
 import { MIN_PLAYERS, type Pub } from '../game/types'
 import { Badge, Button, nameOf, PlayerTag, ShareButton, Waiting } from '../ui/components'
 import * as sound from '../ui/sound'

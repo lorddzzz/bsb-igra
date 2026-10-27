@@ -11,7 +11,7 @@ import {
   TOTAL_QUESTIONS,
 } from '../blef/logic'
 import { useBlefActions, type BlefActions } from '../blef/room'
-import { asList, playerOrder } from '../game/logic'
+import { asList, playerOrder } from '../game/util'
 import type { RoomView } from '../game/room'
 import type { Pub } from '../game/types'
 import { Badge, Button, Hint, nameOf, PlayerTag, Waiting } from '../ui/components'

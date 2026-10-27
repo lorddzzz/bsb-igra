@@ -5,12 +5,12 @@ import { badgesFor, type GameId } from './game/types'
 import { useRecordGame } from './history/record'
 import { GAMES } from './games'
 import { Blef } from './screens/Blef'
-import { Game } from './screens/Game'
+import { Uljez } from './screens/Uljez'
 import { Kviz } from './screens/Kviz'
-import { Lic } from './screens/Lic'
+import { Licitacija } from './screens/Licitacija'
 import { Misija, MisijaRules } from './screens/Misija'
 import { Tabela } from './screens/Tabela'
-import { Wave } from './screens/Wave'
+import { Talas } from './screens/Talas'
 import { badgeMark, BlefRules, Button, KvizRules, LicRules, Modal, Rules, Waiting, WaveRules } from './ui/components'
 import * as sound from './ui/sound'
 import { useStageSounds } from './ui/stageSounds'
@@ -327,11 +327,11 @@ function Room({
     )
   if (!view.pub.players?.[be.uid]) return <Join be={be} code={code} view={view} onLeave={onLeave} />
   if (game === 'blef') return <Blef be={be} code={code} view={view} />
-  if (game === 'talas') return <Wave be={be} code={code} view={view} />
+  if (game === 'talas') return <Talas be={be} code={code} view={view} />
   if (game === 'kviz') return <Kviz be={be} code={code} view={view} />
-  if (game === 'licitacija') return <Lic be={be} code={code} view={view} />
+  if (game === 'licitacija') return <Licitacija be={be} code={code} view={view} />
   if (game === 'misija') return <Misija be={be} code={code} view={view} />
-  return <Game be={be} code={code} view={view} />
+  return <Uljez be={be} code={code} view={view} />
 }
 
 function Join({ be, code, view, onLeave }: { be: Backend; code: string; view: ReturnType<typeof useRoom>; onLeave: () => void }) {

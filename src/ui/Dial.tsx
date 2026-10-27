@@ -1,5 +1,5 @@
 import { useRef } from 'react'
-import { RINGS } from '../wave/logic'
+import { RINGS } from '../talas/logic'
 
 const CX = 160
 const CY = 160

@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Backend } from '../backend'
 import { getWaveScale } from '../data/waveScales'
-import { asList } from '../game/logic'
+import { asList } from '../game/util'
 import type { RoomView } from '../game/room'
 import type { Pub } from '../game/types'
 import { badgeOf, Button, Hint, nameOf, PlayerTag, Waiting } from '../ui/components'
 import { Dial, type Needle } from '../ui/Dial'
 import * as sound from '../ui/sound'
 import { useYourTurn } from '../ui/stageSounds'
-import { clueGiver, guessers, MAX_CLUE_LENGTH, totalRounds, TURNS_EACH, waveOf } from '../wave/logic'
-import { useWaveActions, type WaveActions } from '../wave/room'
+import { clueGiver, guessers, MAX_CLUE_LENGTH, totalRounds, TURNS_EACH, waveOf } from '../talas/logic'
+import { useWaveActions, type WaveActions } from '../talas/room'
 import { DoneRow, PartyLobby, RoundGains, ScoreTable, Winner } from './shared'
 
 interface Props {
@@ -26,7 +26,7 @@ interface ScreenProps {
   code: string
 }
 
-export function Wave({ be, code, view }: Props) {
+export function Talas({ be, code, view }: Props) {
   const pub = view.pub!
   const actions = useWaveActions(be, code, pub)
   const common = { pub, me: be.uid, isHost: pub.hostUid === be.uid, actions, code }

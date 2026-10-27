@@ -10,7 +10,7 @@ Working instructions for this repository. Procedures are skills in `.claude/skil
 
 ## Code structure
 
-- Per game, `src/<game>/`: `logic.ts` (rules), `room.ts` (moves to shared state), `types.ts`; the screen is `src/screens/<Game>.tsx`. Shared: `src/game/` (room and types), `src/backend/`, `src/history/`, `src/ui/`. Content lives in `src/data/`.
+- Per game, `src/<game>/` named after its game id (`uljez`, `blef`, `talas`, `kviz`, `licitacija`, `misija`): `logic.ts` (rules), `room.ts` (moves to shared state), `types.ts`; the screen is `src/screens/<Game>.tsx`. Shared: `src/game/` (`room.ts` create/join/subscribe, `types.ts` the shared room state, `util.ts` helpers every game uses: `asList`, `shuffle`, `playerOrder`, `addStats`...; nothing game-specific belongs there), `src/backend/`, `src/history/`, `src/ui/`. Content lives in `src/data/`.
 - Keep rules independent of React, browser APIs and the database. Pass randomness and clocks in so tests are repeatable.
 - Firebase drops empty containers and returns different shapes than in-memory objects. Normalize at the boundary and reuse the helpers in `src/test/` (`firebaseShape.ts`, `sims.ts`, `phones.ts`).
 - Adding a game touches: `GameId` in `src/game/types.ts`, `src/games.ts`, routing and rules text in `src/App.tsx`, the game's state in the shared room state, `src/history/logic.ts` for the scoreboard, a simulation in `src/test/sims.ts`, an `e2e/<game>.mjs` script listed in `e2e/all.sh`, and `database.rules.json` if it has private or hidden data. Copy the closest existing game (`src/wave/` is the smallest).

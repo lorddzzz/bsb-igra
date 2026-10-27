@@ -1,4 +1,4 @@
-import { playerOrder, shuffle, type Rng } from '../game/logic'
+import { playerOrder, shuffle, type Rng } from '../game/util'
 import type { Pub } from '../game/types'
 import type { MisijaSecret, MisijaState, MisijaTicket, MissionResult, Role, Side, TeamVote } from './types'
 

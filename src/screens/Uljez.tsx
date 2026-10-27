@@ -1,20 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Backend } from '../backend'
 import { getCategory } from '../data/words'
-import {
-  asList,
-  catchThreshold,
-  maxImpostors,
-  categoryChoices,
-  caughtImpostors,
-  pickerFor,
-  playerOrder,
-  standings,
-  targetFor,
-  votesAgainst,
-  votesOf,
-} from '../game/logic'
-import { useActions, type Actions, type RoomView } from '../game/room'
+import { asList, playerOrder, standings } from '../game/util'
+import { catchThreshold, maxImpostors, categoryChoices, caughtImpostors, pickerFor, targetFor, votesAgainst, votesOf } from '../uljez/logic'
+import { type RoomView } from '../game/room'
+import { useUljezActions, type UljezActions } from '../uljez/room'
 import { MAX_VOTES, MIN_PLAYERS, MODES, type Pub, type Secret } from '../game/types'
 import { Badge, Button, Hint, nameOf, PlayerTag, Ticket, Waiting } from '../ui/components'
 import * as sound from '../ui/sound'
@@ -26,8 +16,8 @@ interface Props {
   view: RoomView
 }
 
-export function Game({ be, code, view }: Props) {
-  const actions = useActions(be, code, view)
+export function Uljez({ be, code, view }: Props) {
+  const actions = useUljezActions(be, code, view)
   const pub = view.pub!
   const me = be.uid
   const isHost = pub.hostUid === me
@@ -60,7 +50,7 @@ interface ScreenProps {
   pub: Pub
   me: string
   isHost: boolean
-  actions: Actions
+  actions: UljezActions
   view: RoomView
   code: string
 }

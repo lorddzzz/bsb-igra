@@ -15,8 +15,8 @@ import {
   upcoming,
   wins,
   WINS_NEEDED,
-} from '../lic/logic'
-import { useLicActions, type LicActions } from '../lic/room'
+} from '../licitacija/logic'
+import { useLicActions, type LicActions } from '../licitacija/room'
 import { Badge, badgeOf, Button, Hint, nameOf, Waiting } from '../ui/components'
 import * as sound from '../ui/sound'
 import { PartyLobby } from './shared'
@@ -38,7 +38,7 @@ interface ScreenProps {
 /** +7, −2 (with a real minus sign). */
 const fmt = (v: number) => (v < 0 ? `−${-v}` : `+${v}`)
 
-export function Lic({ be, code, view }: Props) {
+export function Licitacija({ be, code, view }: Props) {
   const pub = view.pub!
   const actions = useLicActions(be, code, pub)
   const common = { pub, me: be.uid, isHost: pub.hostUid === be.uid, actions, code }

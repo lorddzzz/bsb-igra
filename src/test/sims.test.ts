@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { playerOrder } from '../game/logic'
+import { playerOrder } from '../game/util'
 import { misijaOf, wins as missionWins } from '../misija/logic'
-import { HAND, licOf, WINS_NEEDED } from '../lic/logic'
+import { HAND, licOf, WINS_NEEDED } from '../licitacija/logic'
 import { simBlef, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from './sims'
 
 // Whole games played by bots through the real rules, with Firebase's data shape between every step.

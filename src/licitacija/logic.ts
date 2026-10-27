@@ -1,4 +1,4 @@
-import { asList, playerOrder, shuffle, type Rng } from '../game/logic'
+import { asList, playerOrder, shuffle, type Rng } from '../game/util'
 import type { Pub } from '../game/types'
 import type { LicDuel, LicState } from './types'
 

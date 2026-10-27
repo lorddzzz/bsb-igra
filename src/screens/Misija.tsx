@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import type { Backend } from '../backend'
-import { playerOrder } from '../game/logic'
+import { playerOrder } from '../game/util'
 import type { RoomView } from '../game/room'
 import type { Pub } from '../game/types'
 import {

@@ -1,5 +1,5 @@
 import { KVIZ_QUESTIONS, KVIZ_TOPICS, type KvizLevel, type KvizQuestion, type KvizTopic } from '../data/kvizQuestions'
-import { addStats, asList, playerOrder, shuffle, type Rng } from '../game/logic'
+import { addStats, asList, playerOrder, shuffle, type Rng } from '../game/util'
 import type { Pub } from '../game/types'
 import { CARDS, type CardId, type SpecialId } from './cards'
 import type { Attack, KvizResult, KvizState } from './types'

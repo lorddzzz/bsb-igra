@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState, type CSSProperties, type PointerE
 import type { Backend } from '../backend'
 import { TOPIC_LABELS } from '../data/kvizQuestions'
 import type { RoomView } from '../game/room'
-import { asList, playerOrder } from '../game/logic'
+import { asList, playerOrder } from '../game/util'
 import type { Pub } from '../game/types'
 import { getCard, SPECIALS, type CardId } from '../kviz/cards'
 import {

@@ -106,7 +106,7 @@ Starting points: [service worker](pwa/sw.js), [update detection](src/ui/update.t
 
 Phones can remain on an old build while others reload. Consider recording a game/protocol version in a session and defining when different versions can play together or should be asked to refresh. Existing compatibility handling for an older Uljez phase shows this is already a practical concern.
 
-Starting points: [build IDs](vite.config.ts), [update banner](src/App.tsx), [legacy phase recovery](src/game/room.ts).
+Starting points: [build IDs](vite.config.ts), [update banner](src/App.tsx), [legacy phase recovery](src/uljez/room.ts).
 
 ### B11 — Reassess hosting only if the workflow needs it
 
@@ -172,7 +172,7 @@ Retain these observations for a future change in audience or trust assumptions:
 
 This deferral concerns deliberate cheating and abuse. Recovery from ordinary disconnections, conflicting actions, and accidental data loss remains eligible for review in the items above.
 
-Starting points: [database rules](database.rules.json), [Misija secrets](src/misija/types.ts), [Talas state](src/wave/types.ts), [Licitacija state](src/lic/types.ts), [Blef options](src/blef/types.ts). Reference: [Firebase rule guidance](https://firebase.google.com/docs/rules/insecure-rules).
+Starting points: [database rules](database.rules.json), [Misija secrets](src/misija/types.ts), [Talas state](src/talas/types.ts), [Licitacija state](src/licitacija/types.ts), [Blef options](src/blef/types.ts). Reference: [Firebase rule guidance](https://firebase.google.com/docs/rules/insecure-rules).
 
 ## Review limitations
 

@@ -4,26 +4,11 @@
  * the rules hold in every state; the screen tests render every state on every phone.
  */
 import { applyBlef, buildOptions, currentQuestion as blefQuestion, nextBlefRound, optionsOf as blefOptions, scoreBlef, startBlef } from '../blef/logic'
-import {
-  allGuessed,
-  applyRound,
-  categoryChoices,
-  caughtImpostors,
-  newGameSeed,
-  nextRound,
-  normalizeSecret,
-  pickOne,
-  playerOrder,
-  resetToLobby,
-  scoreRound,
-  seededRng,
-  setupRound,
-  shuffle,
-  type Rng,
-} from '../game/logic'
+import { normalizeSecret, pickOne, playerOrder, shuffle, type Rng } from '../game/util'
+import { allGuessed, applyRound, categoryChoices, caughtImpostors, newGameSeed, nextRound, resetToLobby, scoreRound, seededRng, setupRound } from '../uljez/logic'
 import { ALL_BADGES, type GameId, type Mode, type Pub } from '../game/types'
 import { applyKviz, kvizOf, nextQuestion, optionsOf as kvizOptions, playCard, questionStart, scoreKviz, startKviz, targets, handOf as kvizHand } from '../kviz/logic'
-import { handOf as licHand, nextLic, nextSet, placeBid, startLic } from '../lic/logic'
+import { handOf as licHand, nextLic, nextSet, placeBid, startLic } from '../licitacija/logic'
 import {
   afterReveal,
   applyMission,
@@ -41,7 +26,7 @@ import {
   teamSize,
 } from '../misija/logic'
 import type { MisijaSecret, MisijaTicket } from '../misija/types'
-import { applyWave, clueGiver, guessers, nextWaveRound, scoreWave, startWave, waveOf } from '../wave/logic'
+import { applyWave, clueGiver, guessers, nextWaveRound, scoreWave, startWave, waveOf } from '../talas/logic'
 import { firebaseShape } from './firebaseShape'
 
 export interface Snapshot {

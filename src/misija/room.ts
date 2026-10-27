@@ -21,7 +21,7 @@ import {
   teamOf,
 } from './logic'
 import type { MisijaSecret, MisijaTicket } from './types'
-import { playerOrder } from '../game/logic'
+import { playerOrder } from '../game/util'
 
 /** This game's secret (roles and mission cards), once the database lets this phone read it. */
 export function misijaSecret(view: RoomView): MisijaSecret | null {

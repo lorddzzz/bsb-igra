@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { playerOrder } from '../game/logic'
+import { playerOrder } from '../game/util'
 import type { Pub } from '../game/types'
 import type { MisijaSecret } from '../misija/types'
 import { firebaseShape } from '../test/firebaseShape'

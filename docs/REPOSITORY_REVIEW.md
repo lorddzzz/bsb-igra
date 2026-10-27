@@ -30,7 +30,7 @@ Scope: repository structure, Git/GitHub configuration, agent workflow, infrastru
 | 6 | R06 | P2 | Completed 2026-10-27: infrastructure runbook ([INFRASTRUCTURE.md](INFRASTRUCTURE.md)); console-only settings still to confirm | Small–medium |
 | 7 | R07 | P2 | Cover actual Firebase integration and phone behavior | Medium |
 | 8 | R08 | P2 | Completed 2026-10-27 (revalidated, narrower than proposed): see R08 notes | Medium |
-| 9 | R09 | P2 | Clarify shared code versus individual games | Medium |
+| 9 | R09 | P2 | Partly completed 2026-10-27: shared code split from Uljez, folders and screens renamed to game ids; CSS split and Pub fields deferred (see R09 notes) | Medium |
 | 10 | R10 | P2 | Measure and reduce eager loading | Medium |
 | 11 | R11 | P3 | Establish portable Git, formatting, and dependency conventions | Small |
 | 12 | R12 | P3 | Review legacy names and compatibility paths without breaking returning users | Small–medium |
@@ -122,6 +122,10 @@ Reference: [TypeScript strict checking](https://www.typescriptlang.org/tsconfig/
 **Proposed fix:** Agree on a small source map: app shell, shared session/backend/history code, shared UI, and a clearly named module per game. Move game-specific rules UI and styles toward their owning game as those files change. Keep shared helpers independent of a particular game's content. Use a registry where it removes repeated branching. Avoid a large rename-only rewrite before useful work.
 
 **Completion evidence:** A new game has a predictable home, shared session code is not mistaken for Uljez code, and adding a game requires fewer unrelated edits.
+
+**Revalidation and outcome, 2026-10-27:** Confirmed: all five other games imported shared helpers (`asList`, `shuffle`, `playerOrder`, `addStats`, `Rng`) from Uljez's rules file, and Uljez's action hook sat in the shared `game/room.ts`. Done as pure moves and renames with no behavior or stored-data change (307 tests, lint and build unchanged): `src/game/util.ts` holds the shared helpers (with its own test); Uljez's rules, actions and tests moved to `src/uljez/`; `src/wave` and `src/lic` became `src/talas` and `src/licitacija`; screens `Game`, `Wave`, `Lic` became `Uljez`, `Talas`, `Licitacija`. Stored keys such as `pub.wave` are unchanged.
+
+**Deliberately left:** (1) `Pub` still carries Uljez's fields at the top level; nesting them is a data migration and not worth it for trusted friends' short-lived rooms. (2) Screens stay in `src/screens/`; colocating them is better decided together with R10's loading boundaries. (3) The 2,267-line `styles.css` is not split yet: cascade order matters, so a split should be done with a visual check per game. (4) A game registry waits for R10, where it would also hold the loaders. (5) Identifiers such as `WaveState` and `useWaveActions` keep their names.
 
 Related: backlog B07. Coordinate with R10 so reorganizing files actually permits separate loading.
 

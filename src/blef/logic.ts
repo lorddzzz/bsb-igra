@@ -1,5 +1,5 @@
 import { BLEF_QUESTIONS, getBlefQuestion, type BlefQuestion } from '../data/blefQuestions'
-import { addStats, asList, playerOrder, shuffle, type Rng } from '../game/logic'
+import { addStats, asList, playerOrder, shuffle, type Rng } from '../game/util'
 import type { Pub } from '../game/types'
 import type { BlefOption, BlefResult, BlefState } from './types'
 
