@@ -2,7 +2,7 @@
 
 Reviewed: 2026-10-25. Source checkout: `19d1631`; GitHub `main`: `377de56`.
 
-Recommendations are **To review** unless an item records a later completion. R02 was completed on 2026-10-25 at the owner's request; other recommendations remain unreviewed. Priorities are proposed by the reviewer, not approved implementation work. P1 means establish the working foundation before substantial new development; P2 means improve it as development resumes; P3 means routine housekeeping. Effort is relative, not a time estimate.
+Recommendations are **To review** unless an item records a later completion. R02 was completed on 2026-10-25 at the owner's request. On 2026-10-27 the owner judged R01, R03 and R04 not important for this project; they are deferred, not planned. R05, R06, R08, R09 and R10 were chosen, in that order. Priorities are proposed by the reviewer, not approved implementation work. P1 means establish the working foundation before substantial new development; P2 means improve it as development resumes; P3 means routine housekeeping. Effort is relative, not a time estimate.
 
 Scope: repository structure, Git/GitHub configuration, agent workflow, infrastructure, and jobs. Keep the agreed single-app direction and trusted-friends scope in [the backlog](../BACKLOG.md). Deliberate-cheating prevention remains deferred.
 
@@ -26,8 +26,8 @@ Scope: repository structure, Git/GitHub configuration, agent workflow, infrastru
 | 2 | R02 | P1 | Completed 2026-10-25: shared agent instructions and workflow guide | Small |
 | 3 | R03 | P1 | Make setup and verification repeatable on Windows and CI | Medium |
 | 4 | R04 | P1 | Separate ordinary development from the live Firebase database | Medium |
-| 5 | R05 | P2 | Remove integrated feature branches and enable future cleanup | Small |
-| 6 | R06 | P2 | Document infrastructure ownership, deployment, and recovery | Small–medium |
+| 5 | R05 | P2 | Remove integrated feature branches and enable future cleanup (revalidated 2026-10-27; remote deletion pending) | Small |
+| 6 | R06 | P2 | Completed 2026-10-27: infrastructure runbook ([INFRASTRUCTURE.md](INFRASTRUCTURE.md)); console-only settings still to confirm | Small–medium |
 | 7 | R07 | P2 | Cover actual Firebase integration and phone behavior | Medium |
 | 8 | R08 | P2 | Enable stronger TypeScript checks incrementally | Medium |
 | 9 | R09 | P2 | Clarify shared code versus individual games | Medium |
