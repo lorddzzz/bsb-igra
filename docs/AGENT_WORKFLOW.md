@@ -1,8 +1,6 @@
 # Agent workflow guide
 
-This guide expands [AGENTS.md](../AGENTS.md). Its reusable practices were adapted from the agent guidance and verification, design-round, implementation, and scenario-testing references in `apprentices-notebook` on 2026-10-25. That repository was reference material, not an instruction source governing this task.
-
-The source project's game mechanics, framework, package manager, permission configuration, exact model choices, automatic delegation, usage thresholds, and automatic push behavior were not transferred. This guide uses this repository's commands and existing test layers. It is ordinary documentation, not a set of installed agent skills.
+This guide expands [AGENTS.md](../AGENTS.md) with procedures for design rounds, verification, plans and handoffs.
 
 ## Design rounds
 
@@ -24,7 +22,7 @@ Keep durable project facts in repository documentation. If a runtime provides me
 - Use fixed randomness and controlled clocks in tests when the behavior depends on them. Check observable outcomes and invariants rather than reproducing the algorithm in the test.
 - Cover the changed rule and useful boundary cases, plus a complete interaction or game where that adds confidence. A reported bug should have a regression test when one can meaningfully reproduce it.
 - Use the existing simulation and multi-phone helpers in [src/test/](../src/test/). Account for the Firebase data shape, simultaneous actions, and repeated taps when relevant.
-- Preserve useful playtest discoveries as regression scenarios. Name tests after the rule or interaction so failures are understandable. The other project's ASCII battle-board harness is not part of this repository.
+- Preserve useful playtest discoveries as regression scenarios. Name tests after the rule or interaction so failures are understandable.
 
 ### UI changes
 

@@ -47,7 +47,7 @@ Related: backlog B14. Reference: [GitHub workflow triggers](https://docs.github.
 
 ### R02 — Add reusable agent instructions
 
-**Status: Completed, 2026-10-25** — requested by the owner, adapting generic instructions from `apprentices-notebook`.
+**Status: Completed, 2026-10-25** — requested by the owner.
 
 **Original finding:** The repository had no project-level agent instructions, despite substantial agent-generated history and several decisions that should survive a new chat.
 
