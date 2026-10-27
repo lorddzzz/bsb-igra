@@ -31,7 +31,7 @@ Scope: repository structure, Git/GitHub configuration, agent workflow, infrastru
 | 7 | R07 | P2 | Cover actual Firebase integration and phone behavior | Medium |
 | 8 | R08 | P2 | Completed 2026-10-27 (revalidated, narrower than proposed): see R08 notes | Medium |
 | 9 | R09 | P2 | Partly completed 2026-10-27: shared code split from Uljez, folders and screens renamed to game ids; CSS split and Pub fields deferred (see R09 notes) | Medium |
-| 10 | R10 | P2 | Measure and reduce eager loading | Medium |
+| 10 | R10 | P2 | Measured 2026-10-27, plan awaiting owner decision: [plans/r10-loading.md](plans/r10-loading.md) | Medium |
 | 11 | R11 | P3 | Establish portable Git, formatting, and dependency conventions | Small |
 | 12 | R12 | P3 | Review legacy names and compatibility paths without breaking returning users | Small–medium |
 
