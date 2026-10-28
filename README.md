@@ -15,11 +15,9 @@ Every finished game is saved to an all-time scoreboard ("Tabela svih vremena" on
 
 Future direction and suggestions, with their review status, are tracked in [BACKLOG.md](BACKLOG.md).
 
-Repository maintenance findings and proposed priorities are in [the repository review](docs/REPOSITORY_REVIEW.md).
-
 Hosting, database rules, releases and recovery are described in [the infrastructure runbook](docs/INFRASTRUCTURE.md).
 
-Agent and contributor guidance is in [AGENTS.md](AGENTS.md), with detailed procedures in [the agent workflow guide](docs/AGENT_WORKFLOW.md).
+Agent and contributor guidance is in [AGENTS.md](AGENTS.md), with detailed procedures in [the repository skills](.claude/skills/).
 
 ## How it works
 

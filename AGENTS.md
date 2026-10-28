@@ -1,12 +1,12 @@
 # Agent guidance
 
-Working instructions for this repository. Procedures are skills in `.claude/skills/` (also visible to Codex via `.agents/skills`): `design-round`, `implement-design`, `add-game`, `verify-change`, `verify-ui`. Read the relevant skill before applying it. [The workflow guide](docs/AGENT_WORKFLOW.md) is being migrated into them.
+Working instructions for this repository. Procedures are skills in [.claude/skills/](.claude/skills/) (also visible to Codex via `.agents/skills`): `design-round`, `implement-design`, `add-game`, `verify-change`, `verify-ui`. Read the relevant skill before applying it.
 
 ## Project
 
 - Družina is one React + TypeScript + Vite PWA with party games for groups of friends on their phones. It will keep growing: more games, grouped into collections for different friend groups. Player-facing text is Serbian Latin (latinica, with diacritics) and keeps the comic-book hero HQ tone; no Backstreet Boys content.
 - Players are trusted friends; preventing deliberate cheating is out of scope.
-- [README.md](README.md) describes the app. [BACKLOG.md](BACKLOG.md) holds decisions and proposals, and [docs/REPOSITORY_REVIEW.md](docs/REPOSITORY_REVIEW.md) holds maintenance recommendations. Respect their statuses: an unreviewed suggestion is not an approved requirement.
+- [README.md](README.md) describes the app. [BACKLOG.md](BACKLOG.md) holds decisions, proposals, and remaining maintenance recommendations. Respect their statuses: an unreviewed suggestion is not an approved requirement.
 
 ## Code structure
 
@@ -22,7 +22,7 @@ Working instructions for this repository. Procedures are skills in `.claude/skil
 - Also run `npm run test:rules` for database-rule changes (needs Java) and `npm run e2e` when full-game flows change (Unix shell, Chromium, ~8 min).
 - Prose-only changes: check links and commands against their definitions, and `git diff --check`.
 - Behavior changes need tests at the affected layer: rule and scenario tests, multi-phone simulations. Do not mirror the implementation.
-- UI changes need a real browser check at phone size with an inspected screenshot; see [the verification procedure](docs/AGENT_WORKFLOW.md#verification).
+- UI changes need a real browser check at phone size with an inspected screenshot; see [verify-ui](.claude/skills/verify-ui/SKILL.md).
 - Do the mechanical verification yourself. Owner playtests are for feel, UX and direction. Report what ran, what failed, and what could not run.
 
 ## Git and delivery

@@ -4,7 +4,9 @@ Created: 2026-10-25. Based on the repository review and follow-up discussion.
 
 This document records decisions and suggestions for making more games for different friend groups. It is not an implementation plan. Most suggestions have not been reviewed by the owner; their presence here does not authorize implementation or establish priority.
 
-Repository structure, branches, agent setup, infrastructure, and jobs are covered in the [prioritized repository maintenance review](docs/REPOSITORY_REVIEW.md). Its remaining recommendations are awaiting owner review; completed work is marked on the relevant item.
+Remaining maintenance recommendations from the 2026-10-25 repository review were consolidated here on 2026-10-28, retaining their decisions and statuses. The old review and workflow guide were retired; procedures now live in the [repository skills](.claude/skills/), and operations in the [infrastructure runbook](docs/INFRASTRUCTURE.md). Historical review IDs below identify the original recommendations, not a priority order.
+
+Completed review work: shared agent guidance and skills (R02), the infrastructure runbook (R06, commit `eedd6dc`; console confirmations remain in B19), explicit strict TypeScript checks (R08, `60de9b0`; optional follow-up in B20), shared helpers and game-id folders (R09, `5cfe6fd`; remaining boundaries in B21), and lazy game loading (R10, `12fc21a`; see B02). Implementation and verification details remain in those commits and the [loading report](docs/plans/r10-loading.md).
 
 ## Status meanings
 
@@ -36,11 +38,11 @@ Starting points: [game catalog](src/games.ts), [app and joining flow](src/App.ts
 
 ### B02 — Load games and content when needed
 
-**Status: To review** — the owner expressed interest in improving eager loading; no implementation has been chosen.
+**Status: Core loading completed, 2026-10-27; fonts To review**
 
-Game screens are imported eagerly, bringing their logic and question banks into the initial application. Measure the production build and first load before choosing changes. Consider loading the selected game's screen, rules, and content on demand; shared imports may also need adjustment to make splitting effective.
+Implemented in `12fc21a` (review R10): game screens and rules load on demand through [the screen registry](src/gameScreens.ts), and the shell imports no game content. The main JavaScript file shrank from 142.8 kB to 86.5 kB gzip. Failed chunk loads retry once, then offer a refresh that preserves the room. Unit/screen regression coverage and the deploy-during-use browser scenario are described in the [measurement and implementation report](docs/plans/r10-loading.md).
 
-Keep ordinary static assets on the static host. Music and sound effects already use on-device generation. Consider self-hosting fonts instead of requesting Google Fonts; font packages are already available for browser tests. Check loading and retry behavior, including after a deployment, if games become separate downloaded chunks.
+Remaining proposal: measure font loading on a real phone and consider self-hosting fonts instead of requesting Google Fonts; font packages are already available for browser tests. Keep ordinary static assets on the static host. Music and sound effects already use on-device generation. Broader caching and version compatibility remain B09 and B10.
 
 Starting points: [app imports](src/App.tsx), [shared UI](src/ui/components.tsx), [HTML and fonts](index.html), [build configuration](vite.config.ts).
 
@@ -80,7 +82,7 @@ Starting points: [room subscriptions and presence](src/game/room.ts), [Firebase 
 
 **Status: To review**
 
-Preserve the existing separation between pure game rules, room actions, and screens. Consider a game registry that connects each game's metadata, rules UI, screen, and loader, with game-specific state types. Reduce the need to edit branches in the app and shared types for each new game. Keep shared joining, identity, sound, and UI reusable; a general-purpose plugin framework is not an agreed requirement.
+Preserve the existing separation between pure game rules, room actions, and screens. The screen/rules loader registry is implemented in [src/gameScreens.ts](src/gameScreens.ts) (`12fc21a`); metadata remains in [src/games.ts](src/games.ts). Consider further registry consolidation and game-specific state types only where they reduce unrelated edits. Keep shared joining, identity, sound, and UI reusable; a general-purpose plugin framework is not an agreed requirement. Remaining source-boundary proposals are in B21.
 
 Starting points: [catalog](src/games.ts), [app branches](src/App.tsx), [shared room types](src/game/types.ts).
 
@@ -136,7 +138,7 @@ Starting points: [browser helpers](e2e/phone.mjs), [audio](src/ui/sound.ts), [sp
 
 **Status: To review**
 
-Unit tests and lint currently gate the Pages deployment. Browser and database-rule checks run separately and do not block it. Decide which checks must pass before releasing. Also document or automate how database rules are deployed: the Pages workflow publishes frontend files and does not publish `database.rules.json`. Plan frontend and database changes together when compatibility matters.
+Lint, unit tests and build currently gate the Pages deployment. Browser and database-rule checks run separately and do not block it. Database-rule publishing and recovery are now documented in [the infrastructure runbook](docs/INFRASTRUCTURE.md) (`eedd6dc`). Remaining proposals: decide whether release gates need changing or database-rule deployment needs automation. Required pre-merge checks and branch protection were explicitly deferred on 2026-10-27 (review R01); they are not approved work. Plan frontend and database changes together when compatibility matters.
 
 Starting points: [deploy workflow](.github/workflows/deploy.yml), [separate checks](.github/workflows/checks.yml), [rules configuration](firebase.json).
 
@@ -156,7 +158,69 @@ The leaderboard listens to all history and calculates totals on the phone. If us
 
 Starting points: [leaderboard subscription](src/screens/Tabela.tsx), [backend interface](src/backend/types.ts). Reference: [Firebase limits](https://firebase.google.com/docs/database/usage/limits).
 
+## Remaining repository maintenance
+
+### B18 — Finish integrated-branch cleanup (R05)
+
+**Status: Selected, completion unverified** — chosen by the owner on 2026-10-27. The last recorded review still marked remote deletion pending; local remote-tracking references are not proof of current remote state.
+
+Refresh remote heads and revalidate integration before deleting any old feature branch. The original audit found 16 integrated branches, including three whose trees matched merge results rather than being ancestors. Enable automatic merged-branch deletion if still disabled, and prune stale references. Rebuild the audit from current Git state; do not treat the retired review's snapshot as deletion authorization for new work.
+
+### B19 — Confirm console-only infrastructure settings (R06)
+
+**Status: To review** — the runbook is complete; live settings remain unverified.
+
+Confirm and record the [runbook's console settings](docs/INFRASTRUCTURE.md#settings-that-live-in-consoles-confirm-and-record): Pages source and environment policy, merged-branch deletion, Firebase anonymous sign-in and authorized domains, API-key restrictions, billing plan, capacity, alerts and backups. Compare live database rules with the checked-in file. Capacity monitoring also belongs to B16. Do not infer console state from repository configuration.
+
+### B20 — Consider stronger indexed-access checks per module (R08)
+
+**Status: To review** — optional follow-up; the selected TypeScript work is complete.
+
+Both TypeScript configurations explicitly enable `strict`, `noImplicitOverride` and `noImplicitReturns` (`60de9b0`). Consider `noUncheckedIndexedAccess` incrementally where it improves Firebase-record handling through real narrowing, avoiding blanket assertions for known-valid array indices. `exactOptionalPropertyTypes` was deliberately left off because state patches use `field: undefined` to clear keys; retain that decision unless the patch convention changes.
+
+Starting points: [app types](tsconfig.app.json), [tooling types](tsconfig.node.json), [backend patch convention](src/backend/types.ts).
+
+### B21 — Revisit remaining source boundaries only when useful (R09)
+
+**Status: To review; data migration and CSS splitting deferred** — the selected shared-helper moves and game-id renames are complete (`5cfe6fd`). The lazy registry and separate rules screens followed in `12fc21a`.
+
+Screens remain in `src/screens/`; consider colocation only when it helps an actual change. `Pub` still carries Uljez fields at the top level: nesting them was judged not worth a stored-data migration for short-lived rooms. Splitting [styles.css](src/styles.css) was deferred because it saves little download weight and risks cascade changes; any later split needs a visual check per game. Internal names such as `WaveState` and `useWaveActions`, and stored keys such as `pub.wave`, intentionally remain. Broader game registration is B07.
+
+### B22 — Set portable maintenance conventions (R11)
+
+**Status: To review**
+
+Consider `.gitattributes` and `.editorconfig`, especially LF for retained shell scripts, and lightweight formatting conventions to avoid Windows/Linux line-ending churn. Keep dependency manifests and lockfiles together. Choose a modest dependency/Actions review cadence or grouped automation; avoid maintenance noise. Branch and delivery conventions already live in [AGENTS.md](AGENTS.md). Automatic fetch pruning is optional.
+
+### B23 — Review leftovers as compatibility decisions (R12)
+
+**Status: To review** — no specific deletion is approved.
+
+Require evidence before removing exports, CSS selectors, or compatibility paths. Legacy `uljez-*` browser-storage keys retain names, rooms and settings; rename only with migration or an intentional reset decision. Keep old Uljez phase recovery and default-game handling unless proven obsolete. The `bsb-igra` URL and Firebase identifiers are active infrastructure, and font development packages support browser tests. Product branding cleanup does not authorize infrastructure renames.
+
+Starting points: [saved player and room](src/App.tsx), [Uljez recovery](src/uljez/room.ts), [screen fallback](src/gameScreens.ts), [browser helpers](e2e/phone.mjs).
+
+Review R07 is already covered by B12 and B13; its existing CI screenshot artifacts need not be proposed again.
+
 ## Deliberately deferred
+
+### B24 — Require checks before merge (R01)
+
+**Status: Deferred** — owner decision, 2026-10-27: not important for this project now.
+
+If release needs change, consider pull-request validation, stable required checks and branch protection without a ceremonial second reviewer. Decide which slower suites should gate release (B14). Current workflows validate pushes to `main`; the separate full checks do not block deployment. Recheck GitHub settings before assuming the original review's branch-protection snapshot is current.
+
+### B25 — Make setup and test orchestration portable (R03)
+
+**Status: Deferred** — owner decision, 2026-10-27: not important for this project now.
+
+If revisited, document supported Node/npm versions, browser installation and Java prerequisites; replace Unix-only test orchestration where useful. [The browser runner](e2e/all.sh) can reuse stale `dist` and has no server-start deadline; a future runner should build fresh code, bound waits and clean up children. [The PWA test](e2e/pwa.mjs) also uses Unix executable paths. Consider locking the Firebase CLI instead of resolving `firebase-tools@14` through `npx`, and a convenient validation command. Verify a fresh Windows checkout and CI when implementing.
+
+### B26 — Make the development database choice explicit (R04)
+
+**Status: Deferred** — owner decision, 2026-10-27: not important for this project now.
+
+[Backend selection](src/backend/index.ts) still defaults to live Firebase, even during development. Verification must use `?local` or `?emu` as required by AGENTS.md. If revisited, make local/emulator the ordinary development choice and live access intentional; use a separate development project only if persistent shared test data is needed. The public Firebase client configuration is not a secret.
 
 ### B17 — Protection against deliberate inspection or tampering
 
