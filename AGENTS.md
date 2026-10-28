@@ -7,6 +7,7 @@ Working instructions for this repository. Procedures are skills in [.claude/skil
 - Družina is one React + TypeScript + Vite PWA with party games for groups of friends on their phones. It will keep growing: more games, grouped into collections for different friend groups. Player-facing text is Serbian Latin (latinica, with diacritics) and keeps the comic-book hero HQ tone; no Backstreet Boys content.
 - Players are trusted friends; preventing deliberate cheating is out of scope.
 - [README.md](README.md) describes the app. [BACKLOG.md](BACKLOG.md) holds decisions, proposals, and remaining maintenance recommendations. Respect their statuses: an unreviewed suggestion is not an approved requirement.
+- Keep the backlog focused on future work: remove completed, rejected, deferred, or dropped tasks; trim partly completed items to their remaining scope. Record past outcomes in Git history or relevant technical documentation, not as backlog tasks. Preserve existing item IDs.
 
 ## Code structure
 
