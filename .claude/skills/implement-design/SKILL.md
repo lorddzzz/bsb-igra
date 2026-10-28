@@ -1,11 +1,11 @@
 ---
 name: implement-design
-description: Fully implement an approved design end to end as an orchestrator. Plan, split into tasks, delegate to subagents with the cheapest adequate model, respect the usage budget, integrate, test, review, and ship. Use for multi-step or multi-file work such as a new game or a feature; not for small edits.
+description: Fully implement an approved design end to end as an orchestrator. Plan, split into tasks, delegate when authorized using the cheapest adequate model, respect the usage budget, integrate, test, review, and ship. Use for multi-step or multi-file work such as a new game or a feature; not for small edits.
 ---
 
 # Implement a design
 
-You are the orchestrator. Your context is the scarcest resource: keep it for decisions, contracts and integration, and push bulk work to subagents with focused briefs. Follow AGENTS.md throughout. Use `add-game` for new games, `verify-change` and `verify-ui` for checks, `design-round` if a design gap appears.
+You are responsible for decisions, contracts and integration. When delegation is authorized, give subagents focused briefs and keep their reports concise. Follow AGENTS.md throughout. Use `add-game` for new games, `verify-change` and `verify-ui` for checks, `design-round` if a design gap appears.
 
 If there is no approved design (BACKLOG status "Agreed direction" or a decision recorded in `docs/plans/`), stop and run `design-round`. A backlog suggestion is not approval.
 
@@ -14,35 +14,37 @@ If there is no approved design (BACKLOG status "Agreed direction" or a decision 
 - Define scope, explicit non-goals, acceptance criteria, and open proposals. If an open decision materially changes the work, ask now with a recommended default; otherwise state your assumption and go on.
 
 ## 2. Plan (`docs/plans/<feature>-plan.md`)
-Keep it proportional: a page. Contents: scope, settled decisions, proposals, shared interfaces and invariants, tasks, dependency order, file ownership per task, acceptance criteria, verification per task. Each task gets: deliverable, files owned, depends on, difficulty tier (below), acceptance check.
+Keep it proportional: a page. Contents: scope, settled decisions, proposals, shared interfaces and invariants, tasks, dependency order, file ownership per task, acceptance criteria, verification per task. Each task gets: deliverable, files owned, dependencies, role (below), size (S/M/L), acceptance check, and verification.
 
-Order work **contracts first**: types, state shape, phase names, function signatures and the Firebase data shape. Write these yourself (or have one strong-tier agent do it) before anything depends on them. Parallel agents must never invent private versions of a shared contract.
+Order work **contracts first**: types, state shape, phase names, function signatures and the Firebase data shape. Handle this yourself when small or when it needs close iteration; otherwise, when delegation is authorized, use a Strong agent. Require a handoff of public interfaces, invariants and integration risks, review it against downstream tasks, and integrate it before dependent work starts. Parallel agents must never invent private versions of a shared contract. Start each task as soon as its dependencies are integrated; a wave need not be a barrier.
 
-Typical split for a game: (A) types + `logic.ts` + logic tests; (B) `room.ts` + room and sim tests, after A's contract; (C) content in `src/data/` + content tests, independent; (D) screen + rules text + screen tests, after A's contract; (E) integration: catalog, App routing, history, e2e script, docs. A, then B/C/D in parallel, then E.
+Typical split for a game: (A) types + `logic.ts` + logic tests; (B) `room.ts` + room and sim tests, after A's contract; (C) content in `src/data/` + content tests, independent; (D) screen + rules text + screen tests, after A's contract; (E) integration: catalog, App routing, history, e2e script, docs. Integrate A’s contract first; B, C and D can then proceed as their dependencies allow, followed by E. Parallelize only when authorized.
 
 Create `docs/plans/<feature>-status.md` (format below) and keep it true.
 
 ## 3. Budget and model choice
-Spend the cheapest thing that will pass the acceptance check; escalate only on evidence.
+Choose the least expensive role suited to the task, using the active runtime's model and effort controls. When a model is unavailable, use the closest available option and record the substitution.
 
-| Tier | Model (Agent `model`) | Use for |
-| --- | --- | --- |
-| Light | `haiku` | search and file mapping, running checks and summarizing output, mechanical edits, content lists to a clear spec, docs link checks |
-| Standard | `sonnet` | most implementation: logic, room actions, screens, tests following an existing pattern |
-| Heavy | `opus` | contracts and state design, tricky concurrency or Firebase-shape issues, cross-cutting refactors, integrated review, anything that already failed twice at a lower tier |
+| Role | Claude option | Codex option | Use for |
+| --- | --- | --- | --- |
+| Strong | Opus 5.5 Medium | Sol 6.1 High (`gpt-6.1-sol`, `high`) | Shared contracts, difficult Firebase or concurrency issues, cross-cutting refactors and hard algorithms |
+| Medium | Sonnet 5.5 High | Sol 6.1 Medium (`gpt-6.1-sol`, `medium`) | Game logic, room actions, screens, debugging, substantive tests and review |
+| Fast | Haiku 5.5 High | Luna 6 Max (`gpt-6-luna`, `max`) | Precise-spec content, mechanical edits, checks, log inspection and fact gathering |
 
-Rules: you, the orchestrator, do not do bulk work yourself. Prefer fresh agents with a tight brief over forks, which carry your whole context. Escalate a task one tier after a failed attempt with the failure attached, never retry the same tier blindly. Don't use Heavy to review Light's trivial output; do use an independent reviewer for the integrated diff of non-trivial work.
+For delegated planning, use Opus 5.5 High or Sol 6.1 High (`gpt-6.1-sol`, `high`); this overrides the Claude Strong default. Legacy plan tiers Heavy/Standard/Light map to Strong/Medium/Fast. For Codex model overrides, use `fork_turns: "none"` and a standalone brief. Apply mappings to new agents; don't restart running agents just to change models. Respect the active runtime's delegation and model-override rules.
 
-**Usage.** Check what is available before fanning out (the runtime's usage readout, e.g. `/usage` or what the environment exposes). If you cannot read it, treat it as unknown: say so, favor Light/Standard tiers, run at most 2 agents at once, and checkpoint after every task. Proposed defaults, tunable by the owner:
-- plenty left (over ~50%): up to 3-4 parallel agents, Heavy where warranted;
-- moderate (~20-50%): at most 2 in parallel, no Heavy except contracts and final review, shorter briefs;
+After two failed reviews, escalate one role with the attempt's branch or file location and review notes. If already Strong, reassess the contract or task split before retrying. Use an independent reviewer for a non-trivial integrated diff when delegation is authorized.
+
+**Usage.** Check what is available before fanning out (the runtime's usage readout, e.g. `/usage` or what the environment exposes). If you cannot read it, treat it as unknown: say so, favor Fast/Medium roles, run at most 2 agents at once, and checkpoint after every task. Proposed defaults, tunable by the owner:
+- plenty left (over ~50%): up to 3-4 parallel agents, Strong where warranted;
+- moderate (~20-50%): at most 2 in parallel, no Strong except contracts and final review, shorter briefs;
 - low (under ~20%) or a limit warning: finish only the task in flight, write the status checkpoint, tell the owner exactly what is left, stop. Never start a big task you cannot finish, never compress verification to fit, never mark work done to save budget.
 Re-check usage between waves, not constantly.
 
 ## 4. Delegate
-Use the `Agent` tool (background, so you can continue); if the runtime has no subagents (e.g. Codex), run the tasks yourself in dependency order with the same briefs.
+Delegate only when authorized by the task and active runtime instructions. Use the runtime’s supported subagent tools; if delegation is unavailable or not authorized, do the work yourself in dependency order with the same acceptance criteria.
 
-Brief template (copy, fill, send; subagents don't see this conversation):
+Brief template (copy, fill, send; make it standalone when the agent does not inherit the conversation):
 ```text
 Task: <one concrete deliverable>
 Context: read AGENTS.md, <plan path> sections <x>, and these files: <list>.
@@ -63,7 +65,7 @@ Report in the handoff format (references/handoff.md): changed files, checks run 
 - Tests are part of the process, not a final step: every task ships with its tests (`references/game-tests.md`). Add multi-phone and e2e coverage during integration.
 
 ## 6. Review
-Spawn an independent reviewer (fresh agent, Heavy tier for non-trivial work, or the `code-review` skill) on the integrated diff against the design and acceptance criteria. It looks for rule bugs, Firebase shape and concurrency issues, missing states, copy and diacritic errors, and scope creep. Fix what it finds, re-run checks.
+Review the integrated diff against the design and acceptance criteria. When delegation is authorized, use an independent reviewer (a fresh Strong agent for non-trivial work, or the `code-review` skill if available). It looks for rule bugs, Firebase shape and concurrency issues, missing states, copy and diacritic errors, and scope creep. Fix what it finds, re-run checks.
 
 ## 7. Ship
 Update docs, BACKLOG status (decision, date, implementation reference, how verified), and mark the status file complete. Commit following AGENTS.md (straight to `main` by default, explicit paths, descriptive message), push only when that is within the task, then check CI and deploy for that exact commit. Clean up task-owned worktrees and branches after their work is integrated. Final handoff per `references/handoff.md`, including what needs the owner's playtest.
@@ -76,10 +78,11 @@ State: in progress | waiting on a decision | complete
 Next: <one to three concrete actions>
 
 ## Tasks
-| ID | Scope / owner (tier) | State | Branch / commit / files | Verification / remaining |
-| --- | --- | --- | --- | --- |
+| ID | Scope / role / model / effort | Size | State | Branch / commit / files | Verification / remaining |
+| --- | --- | --- | --- | --- | --- |
 
 ## Decisions and unresolved proposals
+Record each new rule or design proposal, its reason, and whether it was accepted or needs a decision.
 ## Integration risks and follow-ups
 ```
 Update at every checkpoint (task done, wave done, before stopping). Mark uncommitted or partial work explicitly.
