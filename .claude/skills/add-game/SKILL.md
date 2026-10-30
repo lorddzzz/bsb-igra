@@ -14,7 +14,7 @@ Don't trust this list blindly; confirm with `grep -rniE "talas|wave" src e2e dat
 
 - `src/game/types.ts`: add to `GameId`, add the game's state type to `Pub` (`wave?: WaveState` (Talas keeps its original `wave` key in stored rooms)), and badges if it has them.
 - `src/<game>/types.ts`, `logic.ts`, `room.ts`: state, rules, actions (below).
-- `src/games.ts`: catalog entry (name, icon, tagline, player count text in Serbian).
+- `src/games.ts`: catalog entry (name, icon, tagline, player count text in Serbian, `maxPlayers` and `badges`). Shared joining reads this metadata; do not add game-specific branches to the room helper. Numeric capacity must match the game rules and fit the badge choices.
 - `src/gameScreens.ts`: one entry with the lazy screen and rules (a `Record<GameId, ...>`, so a missing entry is a type error). Never import a game's screen, rules or content from the shell; they must stay separate downloads.
 - `src/screens/<Game>.tsx`: the UI; reuse `src/screens/shared.tsx` and `src/ui/` pieces. `src/screens/rules/<Game>.tsx`: the "Kako se igra" text.
 - `src/history/logic.ts`: scoreboard. Add to `SCORED` if it has winners and points, and a per-game stat or title if there is a fun one.
@@ -36,7 +36,10 @@ Mobile first, 375 px wide minimum. Every phase has a waiting state for players w
 - `src/test/sims.ts`: a `sim<Game>(seed, n)` that plays whole games with bots; add to `src/test/sims.test.ts` and `src/screens/screens.test.tsx` so every screen renders in every state.
 - `src/test/games.room.test.ts`: room actions across several phones, including double taps and Firebase data shape.
 - `e2e/<game>.mjs` modeled on `e2e/wave.mjs`, added to the `for game in` list in `e2e/all.sh`.
+- Use `createPhoneSession` from `e2e/session.mjs` so the same flow supports `MODE=local` and `MODE=emu` with independent authenticated phones. Add it to `scripts/e2e-emu.mjs` too. Assert the game really ends; refresh/rejoin must preserve identity. For hidden data, verify own-ticket access and denied access to other tickets/secret before reveal.
 - Details and conventions: the `implement-design` skill's `references/game-tests.md`.
 
 ## 6. Finish
 Update README (game list, if the count or list is stated), BACKLOG status, and any docs that count games. Run the `verify-change` skill and `verify-ui` on each new screen at 375×667 and 390×844. Say in the report what needs a real-phone playtest: feel, pacing, whether it is fun.
+
+Also run `npm run test:e2e:emu` (Java and Chromium required). Shared compatibility/recovery is inherited from the app shell: an unknown game or incompatible protocol never mounts its actions. A new game alone does not require a protocol bump; change `ROOM_PROTOCOL` only for incompatible room data/moves. Reset functions must preserve `protocol`, `game` and `hostUid`. Do not remove absent players or synthesize their votes/secret moves; shared recovery allows explicit host takeover but the group must wait/rejoin or start a new room if a required player cannot return.

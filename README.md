@@ -41,8 +41,21 @@ Three layers, from fast to slow:
 | `npm test` | **Unit**: every rule of every game; bots play hundreds of whole games through the real logic with Firebase's data shape between steps (`src/test/sims.ts`); all words and questions are well formed and in latinica. **Isolation**: room actions with several fake phones on one in-memory database (`src/test/memoryBackend.ts`), every screen rendered in every state a bot game reaches, the app shell. | ~10 s |
 | `npm run test:rules` | The database rules on the Firebase emulator: tickets private, answers hidden until the reveal. Needs Java. | ~20 s |
 | `npm run e2e` | **End to end**: every game played start to finish in Chromium on simulated phones against the production build, plus an exploratory run (refresh mid-round, leave and rejoin, latecomer, double taps). Screenshots land in `e2e/shots-all`; a usability probe flags sideways scrolling, cut-off text and small buttons. `WIDTH=375 HEIGHT=667 npm run e2e` plays on an iPhone SE sized screen. | ~8 min |
+| `npm run test:e2e:emu` | All six games against local Firebase Auth and Database emulators, with independent anonymous identities, refresh/rejoin and private-data permission checks. Requires Java and Chromium (`npx playwright install chromium`); starts and stops its own servers, refuses occupied ports, uses only `demo-uljez`. Screenshots: `e2e/shots-emu`. | ~10 min |
 | `npm run test:coverage` | Unit and isolation tests with a coverage report in `coverage/`. | ~15 s |
 
 `npm test` and `npm run lint` run before every deploy; the browser suite and the rules test run next to it in `.github/workflows/checks.yml`.
 
-`firebase emulators:start --only auth,database`, then `MODE=emu node e2e/play.mjs`, plays Uljez against the real rules.
+`npm run test:e2e:emu` installs the checked-in rules into the exact demo database namespace used by the app and checks access before running games. Starting emulators manually does not provide that assurance.
+
+For one emulator flow, use `E2E_GAME=blef npm run test:e2e:emu` (PowerShell: `$env:E2E_GAME='blef'; npm run test:e2e:emu`). Supported names: `play`, `blef`, `wave`, `kviz`, `lic`, `misija`, `recovery`. The recovery flow checks an explicit host transfer and the former host rejoining.
+
+## Adding games and recovering rooms
+
+Follow the [add-game checklist](.claude/skills/add-game/SKILL.md). The [catalog](src/games.ts) owns join capacity and badge choices; [screen loaders](src/gameScreens.ts) keep each game's downloads separate. Shared room state retains its legacy layout to avoid migrating active rooms.
+
+New rooms carry `protocol: 1`; legacy rooms without it are compatible. Bump [ROOM_PROTOCOL](src/game/compatibility.ts) only when old and new room data or moves cannot safely mix, not for each build or new game. Unknown games and incompatible protocols show refresh/leave guidance before joining or mounting game effects. This guard only protects phones that have loaded the updated app.
+
+Connection loss pauses the game screen until reconnection. Failed room subscriptions offer a retry, and failed button actions show an error. An existing online player can explicitly take over after the host has been confirmed offline for 15 seconds; database rules recheck presence when committing the change. The old host remains a player and sees the new host when reconnecting. Missing players are never removed mid-game and their secret moves are never invented: wait for them to return to the same room, or start a new room. These common controls apply to future games too.
+
+The host-transfer rule must be [published separately](docs/INFRASTRUCTURE.md#database-rules) before releasing the frontend; frontend deployment does not publish database rules.

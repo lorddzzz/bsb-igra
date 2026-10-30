@@ -22,7 +22,7 @@ The frontend and the database rules are released independently. A push to `main`
 
 1. Push to `main`. [deploy.yml](../.github/workflows/deploy.yml) runs lint, `npm test` and the build, then publishes `dist/` to Pages. [checks.yml](../.github/workflows/checks.yml) (browser suite, rules test) runs next to it and does **not** gate the deploy.
 2. Check the run for that commit, not the latest run.
-3. Phones notice the new build through `version.json` and show a refresh banner; they never reload by themselves mid-game. A phone may keep an older build until the player refreshes, so a change that old and new builds disagree on needs the compatibility thought in backlog B10.
+3. Phones notice the new build through `version.json` and show a refresh banner; they never reload by themselves mid-game. Room compatibility is checked separately using [ROOM_PROTOCOL](../src/game/compatibility.ts): missing means legacy protocol 1; unknown games and incompatible protocols require refresh or a new room. Bump only for incompatible room/move changes. Phones running builds from before this guard still need to refresh.
 
 ### Database rules
 
@@ -33,6 +33,8 @@ Rules are **not** published by any workflow. After changing `database.rules.json
 3. Order matters when old and new builds coexist: publish rules that accept both shapes first, then the frontend; tighten afterwards.
 
 Whether the live rules currently match the file is **unverified**: compare the console Rules tab with `database.rules.json`.
+
+The game-expansion preparation adds a host-change validation: only an online existing player can replace a host who has been confirmed offline for at least 15 seconds. Publish these rules before deploying that frontend. The client checks first for useful feedback; the rule is what rejects a reconnect that races the transfer. It preserves ordinary writes and room creation by legacy builds.
 
 ## Recovery
 

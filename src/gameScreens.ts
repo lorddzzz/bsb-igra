@@ -49,7 +49,8 @@ export const GAME_SCREENS: Record<GameId, GameScreens> = {
   },
 }
 
-/** A room from a build that knows more games than this one falls back to Uljez, as it always did. */
-export function screensFor(game: GameId | undefined): GameScreens {
-  return GAME_SCREENS[game ?? 'uljez'] ?? GAME_SCREENS.uljez
+/** Only missing IDs mean legacy Uljez. Unknown games must ask for a refresh. */
+export function screensFor(game: string | undefined): GameScreens | undefined {
+  const id = game ?? 'uljez'
+  return Object.hasOwn(GAME_SCREENS, id) ? GAME_SCREENS[id as GameId] : undefined
 }

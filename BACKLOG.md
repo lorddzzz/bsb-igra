@@ -67,22 +67,6 @@ A room currently has a fixed game. Consider a gathering with a shared invitation
 
 Starting points: [room creation and joining](src/game/room.ts), [room types](src/game/types.ts), [shared lobby](src/screens/shared.tsx).
 
-### B06 — Recover from interrupted sessions
-
-**Status: To review**
-
-Show when a phone is disconnected or reconnecting and make failed actions understandable. Define safe host transfer and what happens when a player leaves mid-game, rather than leaving everyone waiting indefinitely. The app remembers the room, and Kviz has some fallback progression, but these do not provide general host transfer or recovery for every game.
-
-Starting points: [room subscriptions and presence](src/game/room.ts), [Firebase connection handling](src/backend/firebase.ts), [Kviz progression](src/kviz/room.ts), [host controls](src/screens/shared.tsx).
-
-### B07 — Make adding a game more self-contained
-
-**Status: To review**
-
-Preserve the existing separation between pure game rules, room actions, and screens. The screen/rules loaders live in [src/gameScreens.ts](src/gameScreens.ts), while metadata lives in [src/games.ts](src/games.ts). Consider further registry consolidation and game-specific state types only where they reduce unrelated edits. Keep shared joining, identity, sound, and UI reusable; a general-purpose plugin framework is not an agreed requirement.
-
-Starting points: [catalog](src/games.ts), [app branches](src/App.tsx), [shared room types](src/game/types.ts).
-
 ### B08 — Define the offline experience
 
 **Status: To review**
@@ -99,14 +83,6 @@ The service worker explicitly pre-caches the page and selected metadata/icons, b
 
 Starting points: [service worker](pwa/sw.js), [update detection](src/ui/update.ts), [PWA browser tests](e2e/pwa.mjs).
 
-### B10 — Handle phones running different app versions
-
-**Status: To review**
-
-Phones can remain on an old build while others reload. Consider recording a game/protocol version in a session and defining when different versions can play together or should be asked to refresh. Existing compatibility handling for an older Uljez phase shows this is already a practical concern.
-
-Starting points: [build IDs](vite.config.ts), [update banner](src/App.tsx), [legacy phase recovery](src/uljez/room.ts).
-
 ### B11 — Reassess hosting only if the workflow needs it
 
 **Status: To review** — optional; there is no agreed migration away from GitHub Pages.
@@ -114,14 +90,6 @@ Starting points: [build IDs](vite.config.ts), [update banner](src/App.tsx), [leg
 GitHub Pages is adequate for the current static app. Consider Firebase Hosting if preview deployments, configurable cache headers, routing, or easier rollbacks would materially help. Compare the workflow and costs before moving; changing frontend hosting does not itself improve game synchronization or separate groups' data.
 
 Starting points: [Pages deployment](.github/workflows/deploy.yml), [Firebase configuration](firebase.json). Reference: [Firebase Hosting](https://firebase.google.com/docs/hosting).
-
-### B12 — Exercise complete games through Firebase
-
-**Status: To review**
-
-Keep the existing simulations and local browser tests. Add full-game browser coverage against the Firebase Auth and Database emulators, especially for permissions, concurrent moves, private tickets, and reconnecting. Current browser tests use the local backend by default; Uljez supports an emulator mode, and the rules have separate emulator tests.
-
-Starting points: [browser suite](e2e/all.sh), [Uljez emulator mode](e2e/play.mjs), [rules tests](rules/rules.test.mjs), [CI checks](.github/workflows/checks.yml).
 
 ### B13 — Check actual phones, including Safari
 
@@ -175,4 +143,4 @@ Starting points: [app types](tsconfig.app.json), [tooling types](tsconfig.node.j
 
 **Status: To review**
 
-Consider `.gitattributes` and `.editorconfig`, especially LF for retained shell scripts, and lightweight formatting conventions to avoid Windows/Linux line-ending churn. Keep dependency manifests and lockfiles together. Choose a modest dependency/Actions review cadence or grouped automation; avoid maintenance noise. Branch and delivery conventions already live in [AGENTS.md](AGENTS.md). Automatic fetch pruning is optional.
+Consider `.editorconfig` and lightweight formatting conventions to keep source and prose consistent across Windows and Linux. Keep dependency manifests and lockfiles together. Choose a modest dependency/Actions review cadence or grouped automation; avoid maintenance noise. Branch and delivery conventions already live in [AGENTS.md](AGENTS.md). Automatic fetch pruning is optional.

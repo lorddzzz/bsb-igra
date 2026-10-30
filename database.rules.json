@@ -10,7 +10,8 @@
       "$code": {
         "pub": {
           ".read": "auth != null",
-          ".write": "auth != null"
+          ".write": "auth != null",
+          ".validate": "newData.hasChild('hostUid') && (!data.exists() || newData.child('hostUid').val() === data.child('hostUid').val() || (newData.child('hostUid').val() === auth.uid && data.child('players').child(auth.uid).exists() && root.child('rooms').child($code).child('online').child(auth.uid).val() === true && root.child('rooms').child($code).child('online').child(data.child('hostUid').val()).isNumber() && root.child('rooms').child($code).child('online').child(data.child('hostUid').val()).val() <= now - 15000))"
         },
         "online": {
           ".read": "auth != null",

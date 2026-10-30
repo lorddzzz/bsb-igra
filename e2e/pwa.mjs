@@ -1,6 +1,6 @@
 // Update detection and offline start on the production build, served by vite preview on :5173.
 // Simulates a deploy by rebuilding while the phone has the app open.
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { chromium } from '@playwright/test'
 import { launchOptions } from './phone.mjs'
 
@@ -36,7 +36,7 @@ await page.getByPlaceholder('npr. Marko').fill('Dusan')
 await page.locator('.badge-pick').first().click()
 await page.getByRole('button', { name: /Uđi u sobu/ }).click()
 await page.getByText(/Družina \(1\)/).waitFor()
-execSync('./node_modules/.bin/vite build', { stdio: 'ignore' })
+execFileSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { stdio: 'pipe' })
 await page.evaluate(() => document.dispatchEvent(new Event('visibilitychange')))
 await page.getByText('Stigla je nova verzija.').waitFor({ timeout: 5000 })
 if (!(await page.getByText('Osveži posle partije, ostaješ u sobi.').isVisible())) fail('in-room wording')
@@ -56,7 +56,7 @@ await page.getByRole('button', { name: 'Izađi iz sobe' }).click()
 const after = await page.locator('.version-note').textContent()
 if (after === before) fail(`still on ${before}`)
 console.log('now running', after)
-execSync('./node_modules/.bin/vite build', { stdio: 'ignore' })
+execFileSync(process.execPath, ['node_modules/vite/bin/vite.js', 'build'], { stdio: 'pipe' })
 await page.evaluate(() => window.dispatchEvent(new Event('focus')))
 await page.getByRole('button', { name: 'Osveži', exact: true }).waitFor({ timeout: 5000 })
 await page.waitForTimeout(600)

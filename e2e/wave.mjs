@@ -1,15 +1,17 @@
-// Plays a full game of Talasna dužina with three simulated phones in local mode and saves screenshots.
+// Plays a full game of Talasna dužina with three simulated phones in local mode (MODE=emu for emulators) and saves screenshots.
 // Usage: npx vite --port 5173 & node e2e/wave.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, report, shooter } from './phone.mjs'
+import { createPhoneSession } from './session.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-wave'
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
-const ctx = await newPhoneContext(browser)
+const session = await createPhoneSession(browser, BASE)
+const ctx = session
 const names = [
   ['Dusan', 'Zmaj'],
   ['Marko', 'Vuk'],
@@ -26,9 +28,8 @@ for (let i = 0; i < 3; i++) {
   pages.push(p)
 }
 const [host] = pages
-await host.goto(`${BASE}?local`)
-await host.evaluate(() => localStorage.clear())
-await host.reload()
+await host.goto(session.url())
+await session.resetLocal(host)
 await host.getByRole('radio', { name: /TALAS/ }).click()
 await shot(host, '01-home')
 await host.getByRole('button', { name: 'Napravi sobu' }).click()
@@ -37,12 +38,13 @@ await host.locator('.badge-pick', { hasText: names[0][1] }).click()
 await host.getByRole('button', { name: /Uđi u sobu/ }).click()
 const code = (await host.locator('.code-chip').textContent()).trim()
 for (let i = 1; i < 3; i++) {
-  await pages[i].goto(`${BASE}?local&soba=${code}`)
+  await pages[i].goto(session.url(code))
   await pages[i].getByPlaceholder('npr. Marko').fill(names[i][0])
   await pages[i].locator('.badge-pick', { hasText: names[i][1] }).click()
   await pages[i].getByRole('button', { name: /Uđi u sobu/ }).click()
 }
 await host.getByText('Družina (3)').waitFor()
+await session.verifyLobby(pages, code)
 if ((await host.locator('.logo').textContent()) !== 'TALAS') errors.push('header does not say TALAS')
 await shot(host, '02-lobby')
 await host.getByRole('button', { name: /Počni igru/ }).click()

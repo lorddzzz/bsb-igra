@@ -1,0 +1,2 @@
+# Browser checks use a Unix shell, including on Windows through Git Bash.
+*.sh text eol=lf

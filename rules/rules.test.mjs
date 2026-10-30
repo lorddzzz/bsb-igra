@@ -79,6 +79,34 @@ describe('rooms', () => {
     await assertFails(set(ref(db('bob'), 'history'), null))
   })
 
+  it('changes host only to an online member after the old host has been offline for 15 seconds', async () => {
+    const seed = async (online) => env.withSecurityRulesDisabled((ctx) => update(ref(ctx.database(), room), {
+      'pub/players': { ana: { name: 'Ana' }, bob: { name: 'Bob' } }, online,
+    }))
+    for (const at of [true, Date.now(), null]) {
+      await seed({ ana: at, bob: true })
+      await assertFails(set(ref(db('bob'), `${room}/pub/hostUid`), 'bob'))
+    }
+    await seed({ ana: Date.now() - 30_000, bob: true, outsider: true })
+    await assertFails(set(ref(db('outsider'), `${room}/pub/hostUid`), 'outsider'))
+    await assertFails(set(ref(db('ana'), `${room}/pub/hostUid`), 'bob'))
+    await assertSucceeds(set(ref(db('bob'), `${room}/pub/hostUid`), 'bob'))
+    // A second contender cannot replace the now-online host using a stale snapshot.
+    await assertFails(set(ref(db('ana'), `${room}/pub/hostUid`), 'ana'))
+  })
+
+  it('rechecks a host reconnect at commit and refuses an offline replacement', async () => {
+    await env.withSecurityRulesDisabled((ctx) => update(ref(ctx.database(), room), {
+      'pub/players': { ana: { name: 'Ana' }, bob: { name: 'Bob' } },
+      online: { ana: Date.now() - 30_000, bob: Date.now() - 30_000 },
+    }))
+    await assertFails(set(ref(db('bob'), `${room}/pub/hostUid`), 'bob'))
+    await assertSucceeds(set(ref(db('bob'), `${room}/online/bob`), true))
+    await assertSucceeds(set(ref(db('ana'), `${room}/online/ana`), true))
+    await assertFails(update(ref(db('bob'), `${room}/pub`), { hostUid: 'bob', phase: 'voting' }))
+    await assertSucceeds(set(ref(db('ana'), `${room}/pub/phase`), 'voting'))
+  })
+
   it('refuse anything outside rooms and history', async () => {
     await assertFails(get(ref(db('ana'), '/')))
     await assertFails(set(ref(db('ana'), 'other/x'), 1))

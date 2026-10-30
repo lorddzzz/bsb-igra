@@ -62,15 +62,20 @@ export function Button({
   small?: boolean
 }) {
   const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
   return (
+    <>
     <button
       className={`btn btn-${variant}${small ? ' btn-small' : ''}`}
       disabled={disabled || busy}
       onClick={async () => {
         if (!onClick) return
         setBusy(true)
+        setFailed(false)
         try {
           await onClick()
+        } catch {
+          setFailed(true)
         } finally {
           setBusy(false)
         }
@@ -78,6 +83,8 @@ export function Button({
     >
       {children}
     </button>
+    {failed && <p className="error" role="alert">Potez nije uspeo. Proveri vezu i probaj ponovo.</p>}
+    </>
   )
 }
 

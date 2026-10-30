@@ -11,7 +11,8 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "test:rules": "npx -y firebase-tools@14 emulators:exec --only database --project demo-uljez \"node --test rules/rules.test.mjs\"",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:e2e:emu": "node scripts/e2e-emu.mjs"
   },
   "dependencies": {
     "firebase": "^12.19.0",

@@ -12,13 +12,15 @@ import * as sound from './ui/sound'
 import { useStageSounds } from './ui/stageSounds'
 import { BUILD_ID, useUpdateAvailable } from './ui/update'
 import { keepAwake } from './ui/wakeLock'
+import { roomCompatible } from './game/compatibility'
+import { RoomRecovery } from './screens/RoomRecovery'
 
 const ROOM_KEY = 'uljez-room'
 const NAME_KEY = 'uljez-name'
 const GAME_KEY = 'druzina-game'
 
 const GAME_IDS = GAMES.map((g) => g.id) as string[]
-const gameName = (id: GameId) => GAMES.find((g) => g.id === id)?.name ?? 'ULJEZ'
+const gameName = (id: string) => GAMES.find((g) => g.id === id)?.name ?? 'DRUŽINA'
 
 function saved(key: string): string {
   try {
@@ -51,7 +53,7 @@ export default function App() {
   const [musicOff, setMusicOff] = useState(sound.isMusicOff())
   // The game shown in the header and rules: the room's once inside one, else the one picked on the home screen.
   const [picked, setPicked] = useState<GameId>(() => (GAME_IDS.includes(saved(GAME_KEY)) ? (saved(GAME_KEY) as GameId) : 'uljez'))
-  const [roomGame, setRoomGame] = useState<GameId | null>(null)
+  const [roomGame, setRoomGame] = useState<string | null>(null)
   const [board, setBoard] = useState(false)
   const game = (code && roomGame) || picked
   const update = useUpdateAvailable()
@@ -187,8 +189,10 @@ function UpdateBanner({ inRoom }: { inRoom: boolean }) {
 }
 
 /** The rules text of a game, loaded when the dialog opens. */
-function GameRules({ game }: { game: GameId }) {
-  const { Rules } = screensFor(game)
+function GameRules({ game }: { game: string }) {
+  const screens = screensFor(game)
+  if (!screens) return <p>Osveži aplikaciju da dobiješ pravila ove igre.</p>
+  const { Rules } = screens
   return (
     <Crashed>
       <Suspense fallback={<Waiting>Učitavanje</Waiting>}>
@@ -316,6 +320,7 @@ const JOIN_ERRORS: Record<JoinError, string> = {
   'badge-taken': 'Neko je upravo uzeo tog heroja, izaberi drugog.',
   full: 'Soba je puna.',
   started: 'Igra je već počela bez tebe. Neka domaćin pokrene novu igru.',
+  incompatible: 'Osveži aplikaciju da igraš u ovoj sobi.',
 }
 
 function Room({
@@ -327,13 +332,24 @@ function Room({
   be: Backend
   code: string
   onLeave: () => void
-  onGame: (game: GameId) => void
+  onGame: (game: string) => void
 }) {
   const view = useRoom(be, code)
   const game = view.pub?.game ?? 'uljez'
-  useStageSounds(view.pub?.players?.[be.uid] ? view.pub : null, be.uid)
-  useRecordGame(be, code, view.pub)
   useEffect(() => onGame(game), [game, onGame])
+  if (view.connected === false)
+    return <div className="card center" role="status">
+      <h2>Veza je prekinuta</h2>
+      <p>Čekamo signal. Soba je sačuvana, vraćaš se čim se povežeš.</p>
+      <Button variant="ghost" onClick={onLeave}>Nazad</Button>
+    </div>
+  if (view.error)
+    return <div className="card center" role="alert">
+      <h2>Soba se nije učitala</h2>
+      <p>{view.error}</p>
+      <Button onClick={view.retry}>Probaj ponovo</Button>
+      <Button variant="ghost" onClick={onLeave}>Nazad</Button>
+    </div>
   if (view.loading) return <Waiting>Učitavanje sobe</Waiting>
   if (!view.pub)
     return (
@@ -342,8 +358,25 @@ function Room({
         <Button onClick={onLeave}>Nazad</Button>
       </div>
     )
+  if (!roomCompatible(view.pub))
+    return <div className="card center">
+      <h2>Ovoj sobi treba druga verzija</h2>
+      <p>Osveži aplikaciju. Ako poruka ostane, neka ekipa osveži aplikaciju i napravi novu sobu.</p>
+      <Button onClick={() => location.reload()}>Osveži</Button>
+      <Button variant="ghost" onClick={onLeave}>Nazad</Button>
+    </div>
   if (!view.pub.players?.[be.uid]) return <Join be={be} code={code} view={view} onLeave={onLeave} />
-  const { Screen } = screensFor(game)
+  return <>
+    <RoomRecovery be={be} code={code} view={view} />
+    <PlayingRoom be={be} code={code} view={view} />
+  </>
+}
+
+/** Mounted only for a connected, compatible room with this player checked in. */
+function PlayingRoom({ be, code, view }: { be: Backend; code: string; view: ReturnType<typeof useRoom> }) {
+  useStageSounds(view.pub, be.uid)
+  useRecordGame(be, code, view.pub)
+  const { Screen } = screensFor(view.pub?.game)!
   return (
     <Suspense fallback={<Waiting>Učitavanje igre</Waiting>}>
       <Screen be={be} code={code} view={view} />

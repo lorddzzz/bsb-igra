@@ -48,6 +48,9 @@ export async function createFirebaseBackend(
   return {
     uid,
     serverNow: () => Date.now() + offset,
+    connection(cb) {
+      return onValue(ref(db, '.info/connected'), (snap) => cb(snap.val() === true))
+    },
     listen(path, cb, onError) {
       return onValue(ref(db, path), (snap) => cb(snap.val()), (err) => onError?.(err))
     },
@@ -69,13 +72,19 @@ export async function createFirebaseBackend(
     },
     presence(path) {
       const r = ref(db, path)
-      onValue(ref(db, '.info/connected'), (snap) => {
+      let live = true
+      const stop = onValue(ref(db, '.info/connected'), (snap) => {
         if (snap.val() !== true) return
         onDisconnect(r)
           .set(serverTimestamp())
-          .then(() => set(r, true))
+          .then(async () => { if (live) await set(r, true) })
           .catch(() => {})
       })
+      return () => {
+        live = false
+        stop()
+        void set(r, serverTimestamp()).catch(() => {})
+      }
     },
   }
 }

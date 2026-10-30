@@ -1,15 +1,17 @@
-// Plays a full Licitacija match with two simulated phones in local mode and saves screenshots.
+// Plays a full Licitacija match with two simulated phones in local mode (MODE=emu for emulators) and saves screenshots.
 // Usage: npx vite --port 5173 & node e2e/lic.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, report, shooter } from './phone.mjs'
+import { createPhoneSession } from './session.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-lic'
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
-const ctx = await newPhoneContext(browser)
+const session = await createPhoneSession(browser, BASE)
+const ctx = session
 const names = [
   ['Dusan', 'Zmaj'],
   ['Marko', 'Vuk'],
@@ -24,9 +26,8 @@ for (let i = 0; i < 3; i++) {
   pages.push(p)
 }
 const [host, guest, third] = pages
-await host.goto(`${BASE}?local`)
-await host.evaluate(() => localStorage.clear())
-await host.reload()
+await host.goto(session.url())
+await session.resetLocal(host)
 await host.getByRole('radio', { name: /LICITACIJA/ }).click()
 await shot(host, '01-home')
 await host.getByRole('button', { name: 'Napravi sobu' }).click()
@@ -35,7 +36,7 @@ await host.locator('.badge-pick', { hasText: names[0][1] }).click()
 await host.getByRole('button', { name: /Uđi u sobu/ }).click()
 const code = (await host.locator('.code-chip').textContent()).trim()
 await host.getByRole('button', { name: /Treba još 1 igrač/ }).waitFor()
-await guest.goto(`${BASE}?local&soba=${code}`)
+await guest.goto(session.url(code))
 await guest.getByPlaceholder('npr. Marko').fill(names[1][0])
 await guest.locator('.badge-pick', { hasText: names[1][1] }).click()
 await guest.getByRole('button', { name: /Uđi u sobu/ }).click()
@@ -43,11 +44,12 @@ await host.getByText('Družina (2)').waitFor()
 if ((await host.locator('.logo').textContent()) !== 'LICITACIJA') errors.push('header does not say LICITACIJA')
 
 // a third phone must be turned away
-await third.goto(`${BASE}?local&soba=${code}`)
+await third.goto(session.url(code))
 await third.getByPlaceholder('npr. Marko').fill('Luka')
 await third.locator('.badge-pick', { hasText: 'Soko' }).click()
 await third.getByRole('button', { name: /Uđi u sobu/ }).click()
 await third.getByText('Soba je puna.').waitFor()
+await session.verifyLobby([host, guest], code)
 await third.close()
 pages.pop()
 

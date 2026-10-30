@@ -107,6 +107,7 @@ export function createLocalBackend(): Backend {
     },
     presence(path) {
       void this.set(path, true)
+      return () => { void this.set(path, Date.now()) }
     },
   }
 }

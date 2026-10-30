@@ -1,23 +1,20 @@
-// Plays a full game with four simulated phones in local mode and saves screenshots.
+// Plays a full game with four simulated phones in local mode (MODE=emu for emulators) and saves screenshots.
 // Usage: npx vite --port 5173 & node e2e/play.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, report, shooter } from './phone.mjs'
+import { createPhoneSession } from './session.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots'
-const ROUNDS = Number(process.env.ROUNDS ?? 2)
-// 'local' syncs tabs through localStorage (one shared browser context);
-// 'emu' uses the Firebase emulators, so each phone gets its own context and login.
-const MODE = process.env.MODE ?? 'local'
+const COMPLETE = process.env.COMPLETE === '1'
+const ROUNDS = Number(process.env.ROUNDS ?? (COMPLETE ? 30 : 2))
 // PLAYERS=12 plays with a big group (3 to 12).
 const PLAYERS = Number(process.env.PLAYERS ?? 4)
-// NOTHUMBS=1 approves no missions, so some players score 0 in a round.
-const NOTHUMBS = Boolean(process.env.NOTHUMBS)
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
-const shared = await newPhoneContext(browser, { ignoreHTTPSErrors: true })
+const session = await createPhoneSession(browser, BASE)
 const names = [
   ['Dusan', 'Zmaj'],
   ['Marko', 'Vuk'],
@@ -43,15 +40,14 @@ async function join(p, [name, badge]) {
 }
 
 for (let i = 0; i < PLAYERS; i++) {
-  const p = await (MODE === 'local' ? shared : await newPhoneContext(browser, { ignoreHTTPSErrors: true })).newPage()
+  const p = await session.newPage()
   p.on('pageerror', (e) => errors.push(`page ${i}: ${e.message}`))
   p.on('console', (m) => m.type() === 'error' && errors.push(`console ${i}: ${m.text()}`))
   pages.push(p)
 }
 const [host] = pages
-await host.goto(`${BASE}?${MODE}`)
-await host.evaluate(() => localStorage.clear())
-await host.reload()
+await host.goto(session.url())
+await session.resetLocal(host)
 await shot(host, '01-home')
 await host.getByRole('button', { name: 'Napravi sobu' }).click()
 await host.getByPlaceholder('npr. Marko').waitFor()
@@ -59,10 +55,12 @@ await shot(host, '02-checkin')
 await join(host, names[0])
 const code = (await host.locator('.code-chip').textContent()).trim()
 for (let i = 1; i < PLAYERS; i++) {
-  await pages[i].goto(`${BASE}?${MODE}&soba=${code}`)
+  await pages[i].goto(session.url(code))
   await join(pages[i], names[i])
 }
 await host.getByText(`Družina (${PLAYERS})`).waitFor()
+await session.verifyLobby(pages, code)
+if (COMPLETE) await host.getByRole('button', { name: /Brza/ }).click()
 await shot(host, '03-lobby')
 await host.getByRole('button', { name: /Počni igru/ }).click()
 
@@ -80,6 +78,7 @@ for (let round = 1; round <= ROUNDS; round++) {
   if (round === 1) await shot(picker, '04-category')
   await picker.locator('.category').first().click()
   await host.locator('.ticket').waitFor()
+  if (round === 1) await session.verifyPrivacy(pages, code)
   if (round === 1) {
     await shot(host, '05-clues')
     const box = await host.locator('.ticket').boundingBox()
@@ -137,6 +136,7 @@ for (let round = 1; round <= ROUNDS; round++) {
 }
 
 const scores = await host.locator('.standings li').allTextContents()
+if (COMPLETE) await host.locator('.winner').waitFor()
 console.log('code', code, 'standings', scores)
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors')
 // fonts come from Google; a sandbox without internet can't load them, which is not the game's fault

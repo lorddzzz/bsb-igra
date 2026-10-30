@@ -1,17 +1,19 @@
-// Plays two games of Misija with eight simulated phones in local mode and saves screenshots.
+// Plays two games of Misija with eight simulated phones in local mode (MODE=emu for emulators) and saves screenshots.
 // Game 1: all 5 special roles, spies play it safe, the crew wins 3 missions and the spies take their shot.
 // Game 2: no special roles, spies sabotage every mission and win. Also checks a rejected team and the forced 5th proposal.
 // Usage: npx vite --port 5173 & node e2e/misija.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, report, shooter } from './phone.mjs'
+import { createPhoneSession } from './session.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-misija'
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
-const ctx = await newPhoneContext(browser)
+const session = await createPhoneSession(browser, BASE)
+const ctx = session
 // A stand-in for the phone's text-to-speech, so both narrator paths run the same everywhere (CI's Chromium
 // has a real voice, the sandbox has none). With localStorage 'e2e-voice' = '1' there is a Croatian voice
 // that "speaks" each line in a moment and records it in window.__spoken; otherwise there is no voice.
@@ -56,9 +58,8 @@ for (let i = 0; i < names.length; i++) {
   pages.push(p)
 }
 const [host] = pages
-await host.goto(`${BASE}?local`)
-await host.evaluate(() => localStorage.clear())
-await host.reload()
+await host.goto(session.url())
+await session.resetLocal(host)
 await host.getByRole('radio', { name: /MISIJA/ }).click()
 await shot(host, '01-home')
 await host.getByRole('button', { name: 'Napravi sobu' }).click()
@@ -72,10 +73,11 @@ await shot(host, '02-checkin-12-badges')
 await join(host, names[0])
 const code = (await host.locator('.code-chip').textContent()).trim()
 for (let i = 1; i < names.length; i++) {
-  await pages[i].goto(`${BASE}?local&soba=${code}`)
+  await pages[i].goto(session.url(code))
   await join(pages[i], names[i])
 }
 await host.getByText(`Družina (${names.length})`).waitFor()
+await session.verifyLobby(pages, code)
 
 async function findPage(text, timeout = 8000) {
   const end = Date.now() + timeout
@@ -88,12 +90,7 @@ async function findPage(text, timeout = 8000) {
 
 /** Each seat's secret role, in join order (the order of the badges on the leader's screen). */
 async function roles() {
-  return host.evaluate(() => {
-    const db = JSON.parse(localStorage.getItem('uljez-local-db') ?? '{}')
-    const room = Object.values(db.rooms ?? {}).find((r) => r.pub?.game === 'misija')
-    const order = Object.entries(room.pub.players).sort((a, b) => a[1].joinedAt - b[1].joinedAt).map(([uid]) => uid)
-    return order.map((uid) => room.secret.misija.roles[uid])
-  })
+  return Promise.all(pages.map(async (p) => (await session.ownTicket(p, code)).role))
 }
 const SPIES = ['spijun', 'imitator', 'senka', 'fan']
 
@@ -154,6 +151,7 @@ async function game(no, specials, sabotage) {
     await host.getByText('2 /', { exact: false }).first().waitFor()
     await host.getByRole('button', { name: 'Preskoči uvod' }).click()
   }
+  await session.verifyPrivacy(pages, code)
   for (let mission = 1; mission <= 5; mission++) {
     await host.getByText(`MISIJA ${mission} / 5`).first().waitFor()
     const size = [3, 4, 4, 5, 5][mission - 1]

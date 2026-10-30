@@ -1,16 +1,18 @@
-// Plays a full game of Kviz with four simulated phones in local mode and saves screenshots.
+// Plays a full game of Kviz with four simulated phones in local mode (MODE=emu for emulators) and saves screenshots.
 // Question 2 waits out the clock with one player not answering.
 // Usage: npx vite --port 5173 & node e2e/kviz.mjs [outDir]
 import { chromium } from '@playwright/test'
 import { mkdirSync } from 'node:fs'
-import { launchOptions, newPhoneContext, report, shooter } from './phone.mjs'
+import { launchOptions, report, shooter } from './phone.mjs'
+import { createPhoneSession } from './session.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-kviz'
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
-const ctx = await newPhoneContext(browser)
+const session = await createPhoneSession(browser, BASE)
+const ctx = session
 const names = [
   ['Dusan', 'Zmaj'],
   ['Marko', 'Vuk'],
@@ -27,9 +29,8 @@ for (let i = 0; i < names.length; i++) {
   pages.push(p)
 }
 const [host] = pages
-await host.goto(`${BASE}?local`)
-await host.evaluate(() => localStorage.clear())
-await host.reload()
+await host.goto(session.url())
+await session.resetLocal(host)
 await host.getByRole('radio', { name: /KVIZ/ }).click()
 await shot(host, '01-home')
 await host.getByRole('button', { name: 'Napravi sobu' }).click()
@@ -38,12 +39,13 @@ await host.locator('.badge-pick', { hasText: names[0][1] }).click()
 await host.getByRole('button', { name: /Uđi u sobu/ }).click()
 const code = (await host.locator('.code-chip').textContent()).trim()
 for (let i = 1; i < names.length; i++) {
-  await pages[i].goto(`${BASE}?local&soba=${code}`)
+  await pages[i].goto(session.url(code))
   await pages[i].getByPlaceholder('npr. Marko').fill(names[i][0])
   await pages[i].locator('.badge-pick', { hasText: names[i][1] }).click()
   await pages[i].getByRole('button', { name: /Uđi u sobu/ }).click()
 }
 await host.getByText(`Družina (${names.length})`).waitFor()
+await session.verifyLobby(pages, code)
 if ((await host.locator('.logo').textContent()) !== 'KVIZ') errors.push('header does not say KVIZ')
 await shot(host, '02-lobby')
 await host.getByRole('button', { name: /Počni igru/ }).click()
@@ -92,10 +94,8 @@ for (let round = 1; round <= total; round++) {
   await host.locator('.kv-verdict').waitFor({ timeout: 15000 })
   const waited = Date.now() - t0
   // a Munja round only gives 5 seconds, so it may close sooner
-  const munja = await host.evaluate((r) => {
-    const db = JSON.parse(localStorage.getItem('uljez-local-db') ?? '{}')
-    return Object.values(db.rooms ?? {}).some((room) => room.pub?.kviz?.specials?.[`r${r}`] === 'munja')
-  }, round)
+  const room = await session.read(host, `rooms/${code}/pub`)
+  const munja = room.kviz?.specials?.[`r${round}`] === 'munja'
   if (round === 2 && !munja && waited < 8000) errors.push(`question 2 closed after ${waited} ms without everyone answering`)
   if (round !== 2 && !victimWait && waited > 9000) errors.push(`question ${round} took ${waited} ms although everyone answered`)
   if (round === 1) await shot(pages[1], '07-answer')

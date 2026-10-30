@@ -4,6 +4,9 @@
 # pwa runs last: it rebuilds dist to simulate a deploy landing while the app is open
 #   WIDTH=375 HEIGHT=667 sh e2e/all.sh   # iPhone SE
 set -e
+# Explore and PWA cover local browser state and deployment; emulator games have their own runner.
+export MODE=local
+export COMPLETE=1
 OUT=${OUT:-e2e/shots-all}
 [ -d dist ] || ./node_modules/.bin/vite build >/dev/null
 ./node_modules/.bin/vite preview --port 5173 --host 127.0.0.1 --strictPort >/dev/null 2>&1 &
@@ -11,7 +14,7 @@ SERVER=$!
 trap "kill $SERVER 2>/dev/null || true" EXIT
 until curl -s http://127.0.0.1:5173/ >/dev/null; do sleep 0.3; done
 status=0
-for game in play blef wave kviz lic misija explore pwa; do
+for game in play blef wave kviz lic misija explore recovery pwa; do
   echo "== $game"
   node e2e/$game.mjs "$OUT/$game" || status=1
 done

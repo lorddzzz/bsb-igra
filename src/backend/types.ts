@@ -14,8 +14,10 @@ export interface Backend {
    * seconds; this one is the same on every phone to within network jitter.
    */
   serverNow(): number
+  /** Live transport status. Older in-memory backends without this signal are always connected. */
+  connection?(cb: (connected: boolean) => void): () => void
   /** Marks this player online, and offline again when the connection drops. */
-  presence(path: string): void
+  presence(path: string): void | (() => void)
 }
 
 /** Firebase rejects undefined values, so strip them (and empty containers stay as-is). */

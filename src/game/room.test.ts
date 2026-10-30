@@ -15,7 +15,7 @@ describe('creating and joining a room', () => {
     const db = new MemoryDb()
     const code = await createRoom(db.phone('a'), 'kviz')
     expect(code).toMatch(new RegExp(`^[${ROOM_ALPHABET}]{4}$`))
-    expect(db.get(`${roomPath(code)}/pub`)).toMatchObject({ hostUid: 'a', game: 'kviz', phase: 'lobby', round: 0 })
+    expect(db.get(`${roomPath(code)}/pub`)).toMatchObject({ hostUid: 'a', game: 'kviz', protocol: 1, phase: 'lobby', round: 0 })
   })
 
   it('explains why a join fails', async () => {
@@ -30,6 +30,13 @@ describe('creating and joining a room', () => {
     expect(await joinRoom(two.db.phone('z'), two.code, 'Neko', 'vuk')).toBe('badge-taken')
     await two.db.phone('a').set(`${roomPath(two.code)}/pub/phase`, 'write')
     expect(await joinRoom(two.db.phone('z'), two.code, 'Neko', 'medved')).toBe('started')
+  })
+
+  it('still joins legacy rooms without a game ID or protocol', async () => {
+    const db = new MemoryDb()
+    db.commit('rooms/ABCD/pub', { hostUid: 'a', phase: 'lobby', round: 0, mode: 'normal', createdAt: 1 })
+    expect(await joinRoom(db.phone('a'), 'ABCD', 'Ana', 'vuk')).toBeNull()
+    expect(db.get('rooms/ABCD/pub/players/a/name')).toBe('Ana')
   })
 
   it('lets a player back in after the game started, keeping their place in the order', async () => {

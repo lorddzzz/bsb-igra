@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import type { Backend } from '../backend'
 import { makeRoomCode, normalizeSecret } from './util'
-import { LIC_PLAYERS } from '../licitacija/logic'
-import { badgesFor, type GameId, type Pub, type Secret, type Ticket } from './types'
+import { gameDefinition } from '../games'
+import { type GameId, type Pub, type Secret, type Ticket } from './types'
+import { ROOM_PROTOCOL, roomCompatible } from './compatibility'
 
 // 'missions' is from the previous version, kept so a room an old phone moved there can recover.
 const SECRET_PHASES: string[] = ['reveal', 'guess', 'missions', 'score', 'over']
@@ -14,7 +15,7 @@ export async function createRoom(be: Backend, game: GameId = 'uljez'): Promise<s
     const code = makeRoomCode(Math.random)
     const taken = await be.get(`${roomPath(code)}/pub/hostUid`)
     if (taken) continue
-    const pub: Pub = { hostUid: be.uid, game, createdAt: Date.now(), mode: 'normal', phase: 'lobby', round: 0 }
+    const pub: Pub = { hostUid: be.uid, game, protocol: ROOM_PROTOCOL, createdAt: Date.now(), mode: 'normal', phase: 'lobby', round: 0 }
     await be.set(`${roomPath(code)}/pub`, pub)
     return code
   }
@@ -25,7 +26,7 @@ export async function roomExists(be: Backend, code: string): Promise<boolean> {
   return Boolean(await be.get(`${roomPath(code)}/pub/hostUid`))
 }
 
-export type JoinError = 'no-room' | 'badge-taken' | 'full' | 'started'
+export type JoinError = 'no-room' | 'badge-taken' | 'full' | 'started' | 'incompatible'
 
 export async function joinRoom(be: Backend, code: string, name: string, badge: string): Promise<JoinError | null> {
   let error: JoinError | null = null
@@ -35,13 +36,17 @@ export async function joinRoom(be: Backend, code: string, name: string, badge: s
     error = null
     found = Boolean(pub)
     if (!pub) return pub
+    if (!roomCompatible(pub)) {
+      error = 'incompatible'
+      return undefined
+    }
     const players = { ...(pub.players ?? {}) }
     const me = players[be.uid]
     if (!me && pub.phase !== 'lobby') {
       error = 'started'
       return undefined
     }
-    const max = pub.game === 'licitacija' ? LIC_PLAYERS : badgesFor(pub.game).length
+    const max = gameDefinition(pub.game)!.maxPlayers
     if (!me && Object.keys(players).length >= max) {
       error = 'full'
       return undefined
@@ -65,6 +70,9 @@ export interface RoomView {
   secret: Secret | null
   online: Record<string, true | number>
   loading: boolean
+  connected?: boolean
+  error?: string
+  retry?: () => void
 }
 
 export function useRoom(be: Backend, code: string): RoomView {
@@ -73,23 +81,49 @@ export function useRoom(be: Backend, code: string): RoomView {
   const [ticket, setTicket] = useState<Ticket | null>(null)
   const [secret, setSecret] = useState<Secret | null>(null)
   const [online, setOnline] = useState<Record<string, true | number>>({})
+  const [connected, setConnected] = useState(!be.connection)
+  const [error, setError] = useState('')
+  const [attempt, setAttempt] = useState(0)
+  const [loadedCode, setLoadedCode] = useState('')
+
+  useEffect(() => be.connection?.(setConnected), [be])
 
   useEffect(() => {
     setLoading(true)
+    setError('')
+    setPub(null)
+    setTicket(null)
+    setSecret(null)
+    setOnline({})
+    const failed = () => {
+      setLoading(false)
+      setError('Veza sa sobom nije uspela. Probaj ponovo.')
+    }
     const stops = [
       be.listen(`${roomPath(code)}/pub`, (v) => {
         setPub(v as Pub | null)
+        setLoadedCode(code)
         setLoading(false)
-      }),
-      be.listen(`${roomPath(code)}/tickets/${be.uid}`, (v) => setTicket(v as Ticket | null)),
-      be.listen(`${roomPath(code)}/online`, (v) => setOnline((v as Record<string, true | number>) ?? {})),
+      }, failed),
+      be.listen(`${roomPath(code)}/online`, (v) => setOnline((v as Record<string, true | number>) ?? {}), failed),
     ]
-    be.presence(`${roomPath(code)}/online/${be.uid}`)
-    return () => stops.forEach((s) => s())
-  }, [be, code])
+    const stopPresence = be.presence(`${roomPath(code)}/online/${be.uid}`)
+    return () => {
+      stops.forEach((s) => s())
+      stopPresence?.()
+    }
+  }, [be, code, attempt])
+
+  const compatible = !!pub && loadedCode === code && roomCompatible(pub)
+  useEffect(() => {
+    if (!compatible) return
+    return be.listen(`${roomPath(code)}/tickets/${be.uid}`, (v) => setTicket(v as Ticket | null), () => {
+      setError('Tvoja tajna kartica nije stigla. Probaj ponovo.')
+    })
+  }, [be, code, compatible, attempt])
 
   // The round's answers are only readable once voting is over (enforced by database rules).
-  const secretOpen = pub ? SECRET_PHASES.includes(pub.phase) : false
+  const secretOpen = compatible && pub ? SECRET_PHASES.includes(pub.phase) : false
   const round = pub?.round
   useEffect(() => {
     if (!secretOpen) {
@@ -104,6 +138,7 @@ export function useRoom(be: Backend, code: string): RoomView {
         (v) => setSecret(normalizeSecret(v)),
         () => {
           if (attempt < 5) retry = setTimeout(() => start(attempt + 1), 400 * (attempt + 1))
+          else setError('Tajni podaci nisu stigli. Probaj ponovo.')
         },
       )
     }
@@ -112,7 +147,8 @@ export function useRoom(be: Backend, code: string): RoomView {
       clearTimeout(retry)
       stop()
     }
-  }, [be, code, secretOpen, round])
+  }, [be, code, secretOpen, round, attempt])
 
-  return { pub, ticket, secret, online, loading }
+  return { pub: loadedCode === code ? pub : null, ticket, secret, online, loading, connected, error,
+    retry: () => setAttempt((n) => n + 1) }
 }
