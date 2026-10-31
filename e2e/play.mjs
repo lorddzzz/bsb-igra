@@ -42,7 +42,8 @@ async function join(p, [name, badge]) {
 for (let i = 0; i < PLAYERS; i++) {
   const p = await session.newPage()
   p.on('pageerror', (e) => errors.push(`page ${i}: ${e.message}`))
-  p.on('console', (m) => m.type() === 'error' && errors.push(`console ${i}: ${m.text()}`))
+  // The offline check in verifyLobby makes the socket fail on purpose.
+  p.on('console', (m) => m.type() === 'error' && !/ERR_INTERNET_DISCONNECTED/.test(m.text()) && errors.push(`console ${i}: ${m.text()}`))
   pages.push(p)
 }
 const [host] = pages

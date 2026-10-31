@@ -27,7 +27,16 @@ try {
     await page.getByRole('button', { name: /Uđi u sobu/ }).click()
   }
   await session.verifyLobby(pages, code)
-  await host.getByRole('button', { name: 'Izađi iz sobe' }).click()
+  // Leaving as host now deletes the room, so the host drops off instead (lost connection, closed tab).
+  const hostUid = await session.read(host, `rooms/${code}/pub/hostUid`)
+  if (!emulator) {
+    await host.evaluate(([code, uid]) => {
+      const db = JSON.parse(localStorage.getItem('uljez-local-db'))
+      db.rooms[code].online[uid] = Date.now()
+      localStorage.setItem('uljez-local-db', JSON.stringify(db))
+    }, [code, hostUid])
+  }
+  await host.goto('about:blank')
   await next.getByText('Čekamo pojačanje').waitFor()
   assert.equal(await next.getByRole('button', { name: 'Preuzmi ulogu domaćina' }).count(), 0, 'Must allow time to reconnect')
   await shot(next, '01-waiting-for-host')
@@ -43,8 +52,8 @@ try {
   await next.reload()
   await next.getByPlaceholder('npr. papagaja').waitFor()
   await shot(next, '04-rejoined-mid-round')
-  await host.getByPlaceholder('ABCD').fill(code)
-  await host.getByRole('button', { name: 'Uđi', exact: true }).click()
+  await host.goto(session.url())
+  // The saved room brings the former host straight back as a player.
   await host.getByPlaceholder('npr. papagaja').waitFor()
   assert.equal(Object.keys((await session.read(next, `rooms/${code}/pub`)).players).length, 3)
   assert.deepEqual(errors, [])
