@@ -463,7 +463,44 @@ const misija: Track = {
   },
 }
 
-export const TRACKS: Record<GameId, Track> = { uljez, blef, talas, kviz, licitacija, misija }
+// ---------------------------------------------------------------------------
+// Čije je ovo?: "Šaputanje". A sly whodunit: a plucked bass that tiptoes, soft finger snaps and a
+// bell tune that sounds like it is hiding a secret.
+
+const CIJA_TUNE: Note[][] = [
+  [[0, 76, 2], [3, 79, 2], [6, 83, 3], [10, 81, 2], [12, 79, 3]],
+  [[0, 76, 2], [3, 79, 2], [6, 84, 3], [10, 83, 2], [12, 79, 3]],
+  [[0, 74, 2], [3, 78, 2], [6, 81, 3], [10, 79, 2], [12, 78, 3]],
+  [[0, 74, 3], [4, 76, 2], [8, 79, 4], [14, 78, 2]],
+]
+
+const cija: Track = {
+  name: 'Šaputanje',
+  bpm: 104,
+  swing: 0.18,
+  echo: 3,
+  gain: 1.9,
+  // Em, C, G, D.
+  chords: [
+    chord(40, [52, 55, 59], [40, 47, 43, 47]),
+    chord(36, [52, 55, 60], [36, 43, 40, 43]),
+    chord(43, [50, 55, 59], [43, 50, 47, 50]),
+    chord(38, [50, 54, 57], [38, 45, 42, 45]),
+  ],
+  play(c, io, { bar, pos, chord: ch, full, s }, at) {
+    if (pos === 0) pad(c, io, ch.pad, at, s * 16, 0.03, 900)
+    // Tiptoeing bass: on 1, the "and" of 2, and the "a" of 3.
+    if (pos === 0 || pos === 6 || pos === 10) voice(c, io, ch.arp[pos === 0 ? 0 : pos === 6 ? 1 : 2], at, { type: 'triangle', vol: 0.3, len: s * 2.5, cutoff: 800 })
+    if (pos === 0) kick(c, io, at, 0.3)
+    // Finger snaps on 2 and 4.
+    if (pos === 4 || pos === 12) clap(c, io, at, 0.07)
+    if (pos % 4 === 2) hat(c, io, at, 0.025, 0.03)
+    if (!full) return
+    melody(CIJA_TUNE[bar % 4], pos, (n, len) => voice(c, io, n, at, { type: 'triangle', vol: 0.1, len: s * len + 0.3, cutoff: 2400, echo: true }))
+  },
+}
+
+export const TRACKS: Record<GameId, Track> = { uljez, blef, talas, kviz, licitacija, misija, cija }
 
 /** One sixteenth note of a track, in seconds. */
 export const stepLength = (t: Track) => 60 / t.bpm / 4

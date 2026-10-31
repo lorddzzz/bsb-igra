@@ -9,7 +9,7 @@ const children = new Set()
 const port = 5174
 const dist = 'node_modules/.cache/druzina-e2e-dist'
 const base = `http://127.0.0.1:${port}/`
-const allowedFlows = ['play', 'blef', 'wave', 'kviz', 'lic', 'misija', 'recovery']
+const allowedFlows = ['play', 'blef', 'wave', 'kviz', 'lic', 'misija', 'cija', 'recovery']
 const requested = process.env.E2E_GAME
 assert.ok(!requested || allowedFlows.includes(requested), `Unknown E2E_GAME: ${requested}`)
 const flows = requested ? [requested] : allowedFlows

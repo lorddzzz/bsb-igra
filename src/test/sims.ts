@@ -4,6 +4,7 @@
  * the rules hold in every state; the screen tests render every state on every phone.
  */
 import { applyBlef, buildOptions, currentQuestion as blefQuestion, nextBlefRound, optionsOf as blefOptions, scoreBlef, startBlef } from '../blef/logic'
+import { applyCija, closeAnswers, nextCijaRound, orderOf as cijaOrder, scoreCija, startCija } from '../cija/logic'
 import { normalizeSecret, pickOne, playerOrder, shuffle, type Rng } from '../game/util'
 import { allGuessed, applyRound, categoryChoices, caughtImpostors, newGameSeed, nextRound, resetToLobby, scoreRound, seededRng, setupRound } from '../uljez/logic'
 import { ALL_BADGES, type GameId, type Mode, type Pub } from '../game/types'
@@ -255,6 +256,35 @@ export function simMisija(seed: number, n: number, specials: number): Snapshot[]
     } else if (p.phase === 'guess') {
       r.set(shoot(p, pickOne(playerOrder(p), rng), roles), 'shot')
     }
+  }
+  return r.snaps
+}
+
+export function simCija(seed: number, n: number, rounds = 3, level: 'lagano' | 'srednje' | 'ljuto' = 'lagano'): Snapshot[] {
+  const rng = seededRng(seed)
+  const r = new Recorder({ ...lobby('cija', n), cija: { rounds, level } })
+  r.set(startCija(r.pub, rng), 'start')
+  while (r.pub.phase !== 'over') {
+    for (const uid of playerOrder(r.pub)) {
+      // some answers repeat, so the board has to tell them apart
+      const text = rng() < 0.25 ? 'Pica' : `odgovor ${uid} ${Math.floor(rng() * 1000)}`
+      r.set({ ...r.pub, cija: { ...r.pub.cija, answers: { ...(r.pub.cija?.answers ?? {}), [uid]: text } } }, `${uid} answered`)
+    }
+    r.set(closeAnswers(r.pub, rng), 'board')
+    for (const uid of playerOrder(r.pub)) {
+      // a bot knows a few friends for sure; the rest is a shuffle of the friends left over
+      const owners = cijaOrder(r.pub).filter((o) => o !== uid)
+      const known = owners.filter(() => rng() < 0.5)
+      const rest = shuffle(
+        others(r.pub, uid).filter((f) => !known.includes(f)),
+        rng,
+      )
+      const guess: Record<string, string> = {}
+      for (const o of owners) guess[o] = known.includes(o) ? o : rest.pop()!
+      r.set({ ...r.pub, cija: { ...r.pub.cija, guesses: { ...(r.pub.cija?.guesses ?? {}), [uid]: guess } } }, `${uid} matched`)
+    }
+    r.set(applyCija(r.pub, scoreCija(r.pub)), 'result')
+    r.set(nextCijaRound(r.pub), 'next')
   }
   return r.snaps
 }

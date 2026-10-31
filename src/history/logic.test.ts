@@ -3,7 +3,7 @@ import { playerOrder } from '../game/util'
 import type { Pub } from '../game/types'
 import type { MisijaSecret } from '../misija/types'
 import { firebaseShape } from '../test/firebaseShape'
-import { simBlef, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from '../test/sims'
+import { simBlef, simCija, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from '../test/sims'
 import { plural } from '../screens/Tabela'
 import { gamesOf, nameKey, recordId, records, summarize, totals } from './logic'
 import type { HistoryGame } from './types'
@@ -54,6 +54,18 @@ describe('summarize', () => {
     expect(talas.players.every((p) => typeof p.points === 'number')).toBe(true)
   })
 
+  it('Čije je ovo?: winners are the top scorers, with matches and fooled friends counted', () => {
+    const s = last(simCija(13, 5))
+    const rec = save(s)
+    expect(rec.game).toBe('cija')
+    const top = Math.max(...rec.players.map((p) => p.points!))
+    expect(rec.players.filter((p) => p.won).every((p) => p.points === top)).toBe(true)
+    // every point came from a right match or a fooled friend
+    for (const p of rec.players) expect((p.stats?.guessed ?? 0) + (p.stats?.fooled ?? 0)).toBe(p.points)
+    const table = totals([rec])
+    expect(records(table, 'cija').map((r) => r.record.stat).sort()).toEqual(['cija.fooled', 'cija.guessed'].filter((k) => table.some((t) => t.stats[k])))
+  })
+
   it('Licitacija: the match winner wins, with games won as a stat', () => {
     const rec = save(last(simLic(13)))
     expect(rec.players.filter((p) => p.won)).toHaveLength(1)
@@ -71,7 +83,7 @@ describe('summarize', () => {
   })
 
   it('survives a trip through Firebase, and every phone gets the same id', () => {
-    for (const s of [last(simUljez(3, 4)), last(simKviz(3, 4)), last(simLic(3)), last(simBlef(3, 3))]) {
+    for (const s of [last(simUljez(3, 4)), last(simKviz(3, 4)), last(simLic(3)), last(simBlef(3, 3)), last(simCija(3, 4))]) {
       const rec = summarize(s.pub, 'ABCD')!
       const back = firebaseShape(rec)
       expect(gamesOf({ x: { ...back, at: 5 } })[0].players).toHaveLength(rec.players.length)

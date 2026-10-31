@@ -2,6 +2,8 @@
 import { act, cleanup } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { useBlefActions } from '../blef/room'
+import { cijaOf } from '../cija/logic'
+import { useCijaActions } from '../cija/room'
 import { currentQuestion as blefQuestion } from '../blef/logic'
 import { roomPath, type RoomView } from '../game/room'
 import type { Pub } from '../game/types'
@@ -60,6 +62,125 @@ describe('Blef', () => {
     await act(async () => phones[0].actions.pick(mine.id))
     await settle()
     expect(pub().blef?.picks?.a).toBeUndefined()
+  })
+})
+
+describe('Čije je ovo?', () => {
+  it('lets only the host set up the game, in the lobby', async () => {
+    const { phones, pub } = await table('cija', 3, withPub(useCijaActions))
+    await act(async () => phones[1].actions.setLevel('ljuto'))
+    await act(async () => phones[1].actions.setRounds(5))
+    await settle()
+    expect(pub().cija).toBeUndefined()
+    await act(async () => phones[0].actions.setLevel('ljuto'))
+    await act(async () => phones[0].actions.setRounds(99))
+    await settle()
+    expect(pub().cija).toMatchObject({ level: 'ljuto', rounds: 5 })
+    await act(async () => phones[0].actions.setRounds(1))
+    await settle()
+    expect(pub().cija?.rounds).toBe(2)
+    // a double tap on start is one start
+    await act(async () => {
+      void phones[0].actions.start()
+      void phones[0].actions.start()
+    })
+    await settle()
+    expect(pub()).toMatchObject({ phase: 'write', round: 1, cija: { level: 'ljuto', rounds: 2 } })
+    expect(cijaOf(pub()).prompts).toHaveLength(2)
+    // settings are locked once the game has started
+    await act(async () => phones[0].actions.setLevel('lagano'))
+    await settle()
+    expect(pub().cija?.level).toBe('ljuto')
+  })
+
+  it('plays a whole round: answers, a fair match-up, points, and the next prompt', async () => {
+    const { phones, pub } = await table('cija', 3, withPub(useCijaActions))
+    const [a, b, c] = phones
+    await act(async () => a.actions.start())
+    await settle()
+    // empty, repeated and over-long answers
+    await act(async () => a.actions.writeAnswer('   '))
+    await settle()
+    expect(cijaOf(pub()).answers?.a).toBeUndefined()
+    await act(async () => a.actions.writeAnswer('  Pica  '))
+    await act(async () => a.actions.writeAnswer('Burek'))
+    await act(async () => b.actions.writeAnswer('x'.repeat(200)))
+    await settle()
+    expect(cijaOf(pub()).answers).toEqual({ a: 'Pica', b: 'x'.repeat(60) })
+    expect(pub().phase).toBe('write')
+    await act(async () => c.actions.writeAnswer('pica'))
+    await settle()
+    // everyone answered: the board is up, equal answers told apart, authors not shown by the order
+    expect(pub().phase).toBe('match')
+    expect(cijaOf(pub()).answers?.c).toBe('pica (2)')
+    expect([...(cijaOf(pub()).order ?? [])].sort()).toEqual(['a', 'b', 'c'])
+
+    // refused: own answer in the set, a friend twice, a missing answer
+    await act(async () => a.actions.match({ a: 'b', b: 'c' }))
+    await act(async () => a.actions.match({ b: 'c', c: 'c' }))
+    await act(async () => a.actions.match({ b: 'c' }))
+    await settle()
+    expect(cijaOf(pub()).guesses).toBeUndefined()
+
+    await act(async () => a.actions.match({ b: 'b', c: 'c' }))
+    // a second submission does not change the first
+    await act(async () => a.actions.match({ b: 'c', c: 'b' }))
+    await act(async () => b.actions.match({ a: 'c', c: 'a' }))
+    await settle()
+    expect(cijaOf(pub()).guesses).toEqual({ a: { b: 'b', c: 'c' }, b: { a: 'c', c: 'a' } })
+    expect(pub().phase).toBe('match')
+    // nothing happens when scoring is asked for too early
+    await act(async () => a.actions.closeMatching())
+    expect(pub().phase).toBe('match')
+    await act(async () => c.actions.match({ a: 'a', b: 'b' }))
+    await settle()
+
+    expect(pub().phase).toBe('result')
+    // a and c matched both answers; b matched none, and the cap is 1 point per answer with 3 players
+    const gains = cijaOf(pub()).result!.gains
+    expect(gains.a).toMatchObject({ right: 2 })
+    expect(gains.b).toMatchObject({ right: 0 })
+    expect(gains.c).toMatchObject({ right: 2 })
+    expect(pub().scores).toEqual({ a: 2 + gains.a.fooled!, b: gains.b.fooled!, c: 2 + gains.c.fooled! })
+
+    // only the host moves on, and only once
+    await act(async () => b.actions.next())
+    expect(pub().phase).toBe('result')
+    await act(async () => {
+      void a.actions.next()
+      void a.actions.next()
+    })
+    await settle()
+    expect(pub()).toMatchObject({ phase: 'write', round: 2 })
+    expect(cijaOf(pub()).answers).toBeUndefined()
+  })
+
+  it('ends after the last prompt and returns to a lobby that keeps the settings', async () => {
+    const { phones, pub } = await table('cija', 3, withPub(useCijaActions))
+    await act(async () => phones[0].actions.setRounds(2))
+    await act(async () => phones[0].actions.start())
+    await settle()
+    for (let round = 1; round <= 2; round++) {
+      for (const p of phones) await act(async () => p.actions.writeAnswer(`odgovor ${p.be.uid}`))
+      await settle()
+      const order = cijaOf(pub()).order!
+      for (const p of phones) {
+        const mine = order.filter((o) => o !== p.be.uid)
+        await act(async () => p.actions.match(Object.fromEntries(mine.map((o) => [o, o]))))
+      }
+      await settle()
+      expect(pub().phase).toBe('result')
+      await act(async () => phones[0].actions.next())
+      await settle()
+    }
+    expect(pub().phase).toBe('over')
+    // everyone matched every answer right in both rounds: 2 points a round
+    expect(Object.values(pub().scores ?? {})).toEqual([4, 4, 4])
+    await act(async () => phones[1].actions.newGame())
+    expect(pub().phase).toBe('over')
+    await act(async () => phones[0].actions.newGame())
+    await settle()
+    expect(pub()).toMatchObject({ phase: 'lobby', round: 0, cija: { rounds: 2 } })
   })
 })
 

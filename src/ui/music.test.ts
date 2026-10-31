@@ -3,7 +3,7 @@ import { stepLength, swungTime, TRACKS } from './music'
 
 describe('music', () => {
   it('has its own track for every game', () => {
-    const games = ['uljez', 'blef', 'talas', 'kviz', 'licitacija', 'misija'] as const
+    const games = ['uljez', 'blef', 'talas', 'kviz', 'licitacija', 'misija', 'cija'] as const
     for (const g of games) expect(TRACKS[g]).toBeDefined()
     expect(new Set(games.map((g) => TRACKS[g].name)).size).toBe(games.length)
   })

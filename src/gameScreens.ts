@@ -43,6 +43,10 @@ export const GAME_SCREENS: Record<GameId, GameScreens> = {
     Screen: lazyNamed(() => import('./screens/Licitacija'), 'Licitacija'),
     Rules: lazyNamed(() => import('./screens/rules/Licitacija'), 'LicitacijaRules'),
   },
+  cija: {
+    Screen: lazyNamed(() => import('./screens/Cija'), 'Cija'),
+    Rules: lazyNamed(() => import('./screens/rules/Cija'), 'CijaRules'),
+  },
   misija: {
     Screen: lazyNamed(() => import('./screens/Misija'), 'Misija'),
     Rules: lazyNamed(() => import('./screens/rules/Misija'), 'MisijaRules'),

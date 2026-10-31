@@ -1280,6 +1280,105 @@ main {
   font-size: 14px;
 }
 
+/* Čije je ovo? */
+.segmented.four {
+  grid-template-columns: repeat(4, 1fr);
+}
+.prompt {
+  gap: 6px;
+}
+.prompt-text {
+  margin: 0;
+  font-family: var(--display);
+  font-size: 24px;
+  line-height: 1.2;
+  text-wrap: balance;
+}
+.match-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.match-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--card);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  text-align: left;
+  font-size: 17px;
+  min-height: 52px;
+}
+.match-card.active {
+  border-color: var(--pow-strong);
+  background: rgba(255, 214, 10, 0.12);
+  box-shadow: 3px 3px 0 rgba(255, 214, 10, 1);
+}
+.match-card.own {
+  opacity: 0.5;
+  border-style: dashed;
+}
+.match-letter {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--pow-strong);
+  font-family: var(--display);
+  font-size: 15px;
+}
+.match-text {
+  flex: 1;
+  min-width: 0;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+.match-who {
+  flex: none;
+  min-width: 34px;
+  display: flex;
+  justify-content: flex-end;
+}
+.roster {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.roster-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  min-height: 44px;
+  border-radius: 999px;
+  background: var(--bg2);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.roster-chip.used {
+  opacity: 0.55;
+}
+.roster-chip:disabled {
+  opacity: 0.4;
+}
+.chip-letter {
+  font-family: var(--display);
+  color: var(--pow-strong);
+}
+.answer-pickers.missed {
+  opacity: 0.7;
+}
+.center-text {
+  text-align: center;
+}
+
 /* Talasna dužina */
 .dial {
   display: flex;

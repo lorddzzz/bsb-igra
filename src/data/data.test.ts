@@ -3,6 +3,8 @@ import { normalizeAnswer, isTruth } from '../blef/logic'
 import { CARDS, SPECIALS } from '../kviz/cards'
 import { ROLES } from '../misija/logic'
 import { BLEF_QUESTIONS, BLANK } from './blefQuestions'
+import { CIJA_LEVELS, CIJA_PROMPTS } from './cijaPrompts'
+import { MAX_ROUNDS } from '../cija/logic'
 import { KVIZ_QUESTIONS, KVIZ_TOPICS, TOPIC_LABELS } from './kvizQuestions'
 import { WAVE_SCALES } from './waveScales'
 import { CATEGORIES } from './words'
@@ -20,6 +22,8 @@ function allText(): string[] {
     ...CATEGORIES.flatMap((c) => [c.name, ...c.words]),
     ...KVIZ_QUESTIONS.flatMap((q) => [q.q, q.a, ...q.w]),
     ...BLEF_QUESTIONS.flatMap((q) => [q.q, q.a, ...(q.alt ?? []), ...q.fakes]),
+    ...CIJA_PROMPTS.map((p) => p.q),
+    ...CIJA_LEVELS.flatMap((l) => [l.name, l.detail]),
     ...WAVE_SCALES.flatMap((s) => [s.left, s.right]),
     ...CARDS.flatMap((c) => [c.name, c.effect]),
     ...Object.values(SPECIALS).flatMap((s) => [s.name, s.text]),
@@ -45,6 +49,7 @@ describe('all content', () => {
     expect(dupes(CATEGORIES.map((c) => c.id))).toEqual([])
     expect(dupes(KVIZ_QUESTIONS.map((q) => q.id))).toEqual([])
     expect(dupes(BLEF_QUESTIONS.map((q) => q.id))).toEqual([])
+    expect(dupes(CIJA_PROMPTS.map((p) => p.id))).toEqual([])
     expect(dupes(WAVE_SCALES.map((s) => s.id))).toEqual([])
     expect(dupes(CARDS.map((c) => c.id))).toEqual([])
     expect(dupes(ALL_BADGES.map((b) => b.id))).toEqual([])
@@ -115,5 +120,20 @@ describe('Talas scales', () => {
   it('fits both ends on a phone dial', () => {
     // the longest end today is "Najluđe iznenađenje na koncertu" (31)
     for (const s of WAVE_SCALES) for (const end of [s.left, s.right]) expect(end.length, s.id).toBeLessThanOrEqual(32)
+  })
+})
+
+describe('Čije je ovo? prompts', () => {
+  it('has enough prompts at every level for a fresh game, and none twice', () => {
+    for (const level of CIJA_LEVELS) {
+      const mine = CIJA_PROMPTS.filter((p) => p.level === level.id)
+      // a game uses at most MAX_ROUNDS prompts, and a few games in one room should not repeat any
+      expect(mine.length, level.id).toBeGreaterThanOrEqual(MAX_ROUNDS * 3)
+      expect(dupes(mine.map((p) => p.q.toLowerCase())), level.id).toEqual([])
+    }
+    for (const p of CIJA_PROMPTS) expect(CIJA_LEVELS.map((l) => l.id), p.id).toContain(p.level)
+  })
+  it('fits on a phone card', () => {
+    for (const p of CIJA_PROMPTS) expect(p.q.length, p.id).toBeLessThanOrEqual(80)
   })
 })

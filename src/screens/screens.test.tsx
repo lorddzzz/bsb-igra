@@ -6,8 +6,9 @@ import { normalizeSecret, playerOrder } from '../game/util'
 import type { RoomView } from '../game/room'
 import type { Pub } from '../game/types'
 import { MemoryDb } from '../test/memoryBackend'
-import { simBlef, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from '../test/sims'
+import { simBlef, simCija, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from '../test/sims'
 import { Blef } from './Blef'
+import { Cija } from './Cija'
 import { Uljez } from './Uljez'
 import { Kviz } from './Kviz'
 import { Licitacija } from './Licitacija'
@@ -86,6 +87,9 @@ describe('every screen renders in every state, on every phone', () => {
   })
   it('Blef', () => {
     for (const [seed, n] of [[1, 3], [5, 5]]) renderAll(Blef, distinct(simBlef(seed, n)), `Blef ${n}p`)
+  })
+  it('Čije je ovo?', () => {
+    for (const [seed, n] of [[1, 3], [5, 8]]) renderAll(Cija, distinct(simCija(seed, n)), `Cija ${n}p`)
   })
   it('Talas', () => {
     for (const [seed, n] of [[1, 3], [4, 5]]) renderAll(Talas, distinct(simWave(seed, n)), `Talas ${n}p`)

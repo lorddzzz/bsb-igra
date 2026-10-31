@@ -14,7 +14,7 @@ SERVER=$!
 trap "kill $SERVER 2>/dev/null || true" EXIT
 until curl -s http://127.0.0.1:5173/ >/dev/null; do sleep 0.3; done
 status=0
-for game in play blef wave kviz lic misija explore recovery pwa; do
+for game in play blef wave kviz lic misija cija explore recovery pwa; do
   echo "== $game"
   node e2e/$game.mjs "$OUT/$game" || status=1
 done

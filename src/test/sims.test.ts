@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import { playerOrder } from '../game/util'
+import { foolCap, validMatching } from '../cija/logic'
 import { misijaOf, wins as missionWins } from '../misija/logic'
 import { HAND, licOf, WINS_NEEDED } from '../licitacija/logic'
-import { simBlef, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from './sims'
+import { simBlef, simCija, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from './sims'
 
 // Whole games played by bots through the real rules, with Firebase's data shape between every step.
 // Many seeds, so rare paths (two impostors, ties, Pljačka on a leader, forced teams) all come up.
@@ -39,6 +40,39 @@ describe('simulated games end cleanly under Firebase shapes', () => {
           expect(options.filter((o) => !(o.owners ?? []).includes(uid)).length, s.label).toBeGreaterThanOrEqual(2)
       }
     }
+  })
+
+  it.each(SEEDS)('Čije je ovo? seed %i', (seed) => {
+    for (const n of [3, 4, 6, 8])
+      for (const rounds of [2, 3, 5]) {
+        const snaps = simCija(seed, n, rounds)
+        const over = snaps.at(-1)!
+        expect(over.pub.phase, `${n} players`).toBe('over')
+        expect(over.pub.round).toBe(rounds)
+        snaps.forEach(scoresOk)
+        // every board holds each player's answer once, and every guess set is a fair matching
+        for (const s of snaps.filter((x) => x.pub.phase === 'match')) {
+          const order = s.pub.cija?.order ?? []
+          expect([...order].sort(), s.label).toEqual([...playerOrder(s.pub)].sort())
+          for (const [uid, guess] of Object.entries(s.pub.cija?.guesses ?? {}))
+            expect(validMatching(s.pub, uid, guess), s.label).toBe(true)
+        }
+        // a round is worth at most one point per right guess plus the capped fooling points per author
+        const results = snaps.filter((x) => x.pub.phase === 'result')
+        expect(results).toHaveLength(rounds)
+        for (const s of results) {
+          const gains = Object.values(s.pub.cija?.result?.gains ?? {})
+          const cap = foolCap(n)
+          for (const g of gains) {
+            expect(g.right!, s.label).toBeLessThanOrEqual(n - 1)
+            expect(g.fooled!, s.label).toBeLessThanOrEqual(cap)
+            expect(g.points, s.label).toBe(g.right! + g.fooled!)
+          }
+        }
+        // the scores add up to what every round paid out
+        const paid = results.flatMap((s) => Object.values(s.pub.cija?.result?.gains ?? {})).reduce((sum, g) => sum + g.points, 0)
+        expect(Object.values(over.pub.scores ?? {}).reduce((a, b) => a + b, 0)).toBe(paid)
+      }
   })
 
   it.each(SEEDS)('Talas seed %i', (seed) => {

@@ -16,6 +16,7 @@ const expected: Record<GameId, { maxPlayers: number; badgeCount: number }> = {
   kviz: { maxPlayers: 5, badgeCount: 5 },
   licitacija: { maxPlayers: 2, badgeCount: 5 },
   misija: { maxPlayers: 12, badgeCount: 12 },
+  cija: { maxPlayers: 8, badgeCount: 12 },
 }
 
 describe('game catalog', () => {
