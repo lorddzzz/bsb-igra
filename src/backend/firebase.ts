@@ -73,7 +73,8 @@ export async function createFirebaseBackend(
       await set(ref(db, path), clean(value))
     },
     async update(path, patch) {
-      await update(ref(db, path), clean(patch))
+      // An empty path means the database root, which the SDK only accepts as a ref with no path.
+      await update(path ? ref(db, path) : ref(db), clean(patch))
     },
     async transaction(path, fn) {
       const res = await runTransaction(ref(db, path), (cur) => {
