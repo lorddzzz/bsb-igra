@@ -1,6 +1,7 @@
 // Database rules, tested against the real Firebase emulator.
 // Usage: npm run test:rules   (downloads the emulator once; needs Java)
 import { assertFails, assertSucceeds, initializeTestEnvironment } from '@firebase/rules-unit-testing'
+import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { after, before, beforeEach, describe, it } from 'node:test'
 import { get, ref, set, update } from 'firebase/database'
@@ -107,8 +108,60 @@ describe('rooms', () => {
     await assertSucceeds(set(ref(db('ana'), `${room}/pub/phase`), 'voting'))
   })
 
-  it('refuse anything outside rooms and history', async () => {
+  it('refuse anything outside rooms, roomIndex and history', async () => {
     await assertFails(get(ref(db('ana'), '/')))
     await assertFails(set(ref(db('ana'), 'other/x'), 1))
+  })
+
+  describe('room cleanup', () => {
+    const DAY = 24 * 60 * 60 * 1000
+    const seedIndex = (at) => env.withSecurityRulesDisabled((ctx) => set(ref(ctx.database(), 'roomIndex/ABCD'), at))
+    const drop = (uid) => update(ref(db(uid), '/'), { [room]: null, 'roomIndex/ABCD': null })
+
+    it('lets only the host delete a fresh room, with its index entry', async () => {
+      await seedIndex(Date.now())
+      await assertFails(drop('bob'))
+      await assertSucceeds(drop('ana'))
+      await env.withSecurityRulesDisabled(async (ctx) => {
+        assert.equal((await get(ref(ctx.database(), room))).exists(), false)
+        assert.equal((await get(ref(ctx.database(), 'roomIndex/ABCD'))).exists(), false)
+      })
+    })
+
+    it('lets anyone delete a room 24 hours after its last activity', async () => {
+      await seedIndex(Date.now() - DAY - 60_000)
+      await assertSucceeds(drop('bob'))
+    })
+
+    it('uses the creation time for a room missing from the index', async () => {
+      await env.withSecurityRulesDisabled((ctx) => set(ref(ctx.database(), `${room}/pub/createdAt`), Date.now()))
+      await assertFails(set(ref(db('bob'), room), null))
+      await env.withSecurityRulesDisabled((ctx) => set(ref(ctx.database(), `${room}/pub/createdAt`), Date.now() - DAY - 60_000))
+      await assertSucceeds(set(ref(db('bob'), room), null))
+    })
+
+    it('cleans up leftovers that have no pub', async () => {
+      await env.withSecurityRulesDisabled(async (ctx) => {
+        await set(ref(ctx.database(), room), null)
+        await set(ref(ctx.database(), 'rooms/WXYZ/online'), { bob: true })
+      })
+      await assertSucceeds(set(ref(db('cat'), 'rooms/WXYZ'), null))
+    })
+
+    it('refuses presence, tickets and secrets for a room that is gone', async () => {
+      await env.withSecurityRulesDisabled((ctx) => set(ref(ctx.database(), room), null))
+      await assertFails(set(ref(db('bob'), `${room}/online/bob`), true))
+      await assertFails(set(ref(db('bob'), `${room}/tickets/bob`), { round: 1 }))
+      await assertFails(set(ref(db('bob'), `${room}/secret`), { round: 1 }))
+    })
+
+    it('keeps an activity index anyone signed in can read, with only timestamps in it', async () => {
+      await assertSucceeds(set(ref(db('bob'), 'roomIndex/ABCD'), Date.now()))
+      await assertFails(set(ref(db('bob'), 'roomIndex/ABCD'), 'later'))
+      await assertFails(set(ref(db('bob'), 'roomIndex/ABCD'), Date.now() + 10 * 60_000))
+      await assertSucceeds(get(ref(db('bob'), 'roomIndex')))
+      await assertFails(get(ref(db(null), 'roomIndex')))
+      await assertSucceeds(set(ref(db('bob'), 'roomIndex/ABCD'), null))
+    })
   })
 })

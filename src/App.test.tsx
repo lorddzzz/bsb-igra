@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url": "http://localhost/?local"}
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import App from './App'
 
@@ -46,6 +46,10 @@ describe('app', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Izađi iz sobe' }))
     expect(await screen.findByRole('button', { name: 'Napravi sobu' })).toBeTruthy()
     expect(localStorage.getItem('uljez-room')).toBeNull()
+    // the host leaving deletes the room and its expiry entry
+    const stored = () => JSON.parse(localStorage.getItem('uljez-local-db') ?? '{}') as Record<string, Record<string, unknown>>
+    await waitFor(() => expect(stored().rooms?.[code!]).toBeUndefined())
+    expect(stored().roomIndex?.[code!]).toBeUndefined()
   })
 
   it('says so when a typed room code does not exist', async () => {

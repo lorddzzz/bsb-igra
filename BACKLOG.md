@@ -107,14 +107,6 @@ Decide whether database-rule publishing needs automation beyond the manual proce
 
 Starting points: [deploy workflow](.github/workflows/deploy.yml), [rules configuration](firebase.json).
 
-### B15 — Expire rooms and allocate codes atomically
-
-**Status: To review**
-
-Rooms have creation timestamps but no automatic expiry in this repository. Creation checks whether a code is taken and then writes the room in a separate operation, so simultaneous creators can race. Consider atomic allocation, a retention policy, and safe cleanup of abandoned rooms, while retaining finished-game summaries independently. Short room codes remain appropriate for easy sharing among trusted friends.
-
-Starting point: [room creation](src/game/room.ts).
-
 ### B16 — Bound history downloads and watch capacity
 
 **Status: To review**

@@ -90,6 +90,15 @@ export function createLocalBackend(): Backend {
     async get(path) {
       return read(load(), path)
     },
+    async keysAtOrBelow(path, cutoff, limit) {
+      const v = read(load(), path)
+      if (!v || typeof v !== 'object') return []
+      return Object.entries(v as Tree)
+        .filter((e): e is [string, number] => typeof e[1] === 'number' && e[1] <= cutoff)
+        .sort((a, b) => a[1] - b[1])
+        .slice(0, limit)
+        .map(([k]) => k)
+    },
     async set(path, value) {
       commit(write(load(), path, prune(clean(value))))
     },
@@ -107,7 +116,7 @@ export function createLocalBackend(): Backend {
     },
     presence(path) {
       void this.set(path, true)
-      return () => { void this.set(path, Date.now()) }
+      return (markOffline = true) => { if (markOffline) void this.set(path, Date.now()) }
     },
   }
 }

@@ -36,6 +36,16 @@ Whether the live rules currently match the file is **unverified**: compare the c
 
 The game-expansion preparation adds a host-change validation: only an online existing player can replace a host who has been confirmed offline for at least 15 seconds. Publish these rules before deploying that frontend. The client checks first for useful feedback; the rule is what rejects a reconnect that races the transfer. It preserves ordinary writes and room creation by legacy builds.
 
+## Room retention
+
+Rooms are deleted from the phones, since there is no server-side job:
+
+- The host leaving a room (the exit button or any Back button) deletes it, after saving a finished game to `history/`.
+- Creating a room first deletes up to 20 rooms unused for 24 hours, skipping any with a phone still connected. "Unused" is `roomIndex/<code>`, a timestamp refreshed when a room is created, joined or opened by a player. Clients cannot list `rooms` (that would expose the secrets), so `roomIndex` is how they find old rooms. Rules also let anyone delete a room that old, and let only the host delete a fresh one.
+- A phone connected to a deleted room shows "Soba je zatvorena" and forgets it.
+- `history/` is never deleted. Rooms made by builds from before this change have no index entry and are not found by the cleanup; delete the `rooms` node by hand in the console once (Realtime Database, Data, `rooms`, delete), at a quiet moment since it ends any live game.
+- Publish the rules before or together with the frontend. The frontend tolerates old rules (index and delete writes are best effort), but nothing is cleaned up until they are live.
+
 ## Recovery
 
 - **Bad frontend release.** Revert the commit on `main` (a new commit, not a history rewrite) and push; Pages redeploys the previous code. Or re-run the deploy workflow on a known-good commit with "Run workflow" on that ref if the environment's branch policy allows it. This restores code only. It does not undo anything written to the database, and phones that already loaded the bad build need a refresh.

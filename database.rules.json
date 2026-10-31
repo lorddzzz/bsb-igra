@@ -8,6 +8,7 @@
     },
     "rooms": {
       "$code": {
+        ".write": "auth != null && !newData.exists() && (!data.child('pub').exists() || data.child('pub/hostUid').val() === auth.uid || (root.child('roomIndex').child($code).isNumber() ? root.child('roomIndex').child($code).val() < now - 86400000 : data.child('pub/createdAt').val() < now - 86400000))",
         "pub": {
           ".read": "auth != null",
           ".write": "auth != null",
@@ -16,19 +17,27 @@
         "online": {
           ".read": "auth != null",
           "$uid": {
-            ".write": "auth != null && auth.uid === $uid"
+            ".write": "auth != null && auth.uid === $uid && root.child('rooms').child($code).child('pub').exists()"
           }
         },
         "tickets": {
           "$uid": {
             ".read": "auth != null && auth.uid === $uid",
-            ".write": "auth != null"
+            ".write": "auth != null && root.child('rooms').child($code).child('pub').exists()"
           }
         },
         "secret": {
           ".read": "auth != null && root.child('rooms').child($code).child('pub/phase').val().matches(/^(reveal|guess|missions|score|over)$/)",
-          ".write": "auth != null"
+          ".write": "auth != null && root.child('rooms').child($code).child('pub').exists()"
         }
+      }
+    },
+    "roomIndex": {
+      ".read": "auth != null",
+      ".indexOn": ".value",
+      "$code": {
+        ".write": "auth != null",
+        ".validate": "newData.isNumber() && newData.val() <= now + 60000"
       }
     }
   }

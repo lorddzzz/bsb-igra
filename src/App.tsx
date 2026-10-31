@@ -1,8 +1,8 @@
-import { Component, Suspense, useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { Component, Suspense, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { connect, isLocalBackend, type Backend } from './backend'
-import { createRoom, joinRoom, roomExists, useRoom, type JoinError } from './game/room'
+import { closeRoom, createRoom, joinRoom, roomExists, useRoom, type JoinError } from './game/room'
 import { badgesFor, type GameId } from './game/types'
-import { useRecordGame } from './history/record'
+import { recordGame, useRecordGame } from './history/record'
 import { GAMES } from './games'
 import { screensFor } from './gameScreens'
 import { Tabela } from './screens/Tabela'
@@ -80,7 +80,13 @@ export default function App() {
     url.searchParams.delete('soba')
     history.replaceState(null, '', url)
   }
+  // The open room fills this in, so leaving can tidy up the room (the host deletes it).
+  const exitRoom = useRef<(() => Promise<void>) | null>(null)
+  const registerExit = useCallback((fn: (() => Promise<void>) | null) => { exitRoom.current = fn }, [])
   const leave = () => {
+    const tidy = exitRoom.current
+    exitRoom.current = null
+    void tidy?.()
     save(ROOM_KEY, null)
     setCode('')
     setRoomGame(null)
@@ -141,7 +147,7 @@ export default function App() {
         ) : !be ? (
           <Waiting>Povezivanje</Waiting>
         ) : code ? (
-          <Room be={be} code={code} onLeave={leave} onGame={setRoomGame} />
+          <Room be={be} code={code} onLeave={leave} onGame={setRoomGame} onExit={registerExit} />
         ) : board ? (
           <Tabela be={be} onBack={() => setBoard(false)} />
         ) : (
@@ -328,15 +334,34 @@ function Room({
   code,
   onLeave,
   onGame,
+  onExit,
 }: {
   be: Backend
   code: string
   onLeave: () => void
   onGame: (game: string) => void
+  onExit: (tidy: (() => Promise<void>) | null) => void
 }) {
   const view = useRoom(be, code)
   const game = view.pub?.game ?? 'uljez'
   useEffect(() => onGame(game), [game, onGame])
+  // Leaving as host deletes the room. The finished game is saved first, since it is read from the room.
+  const pub = view.pub
+  useEffect(() => {
+    onExit(
+      pub && pub.hostUid === be.uid
+        ? async () => {
+            await recordGame(be, code, pub)
+            await closeRoom(be, code)
+          }
+        : null,
+    )
+  }, [onExit, be, code, pub])
+  // A room that is gone (closed or expired) must not be reopened by the next visit.
+  const missing = !view.loading && !view.error && view.connected !== false && !view.pub
+  useEffect(() => {
+    if (missing) save(ROOM_KEY, null)
+  }, [missing])
   if (view.connected === false)
     return <div className="card center" role="status">
       <h2>Veza je prekinuta</h2>
@@ -354,7 +379,8 @@ function Room({
   if (!view.pub)
     return (
       <div className="card center">
-        <h2>Soba {code} ne postoji</h2>
+        <h2>{view.gone ? `Soba ${code} je zatvorena` : `Soba ${code} ne postoji`}</h2>
+        {view.gone && <p>Domaćin je izašao ili je soba istekla. Napravi novu sobu ili uđi u drugu.</p>}
         <Button onClick={onLeave}>Nazad</Button>
       </div>
     )

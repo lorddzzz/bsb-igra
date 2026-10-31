@@ -74,6 +74,15 @@ export class MemoryDb {
       async get(path) {
         return db.get(path)
       },
+      async keysAtOrBelow(path, cutoff, limit) {
+        const v = db.get(path)
+        if (!v || typeof v !== 'object') return []
+        return Object.entries(v as Tree)
+          .filter((e): e is [string, number] => typeof e[1] === 'number' && e[1] <= cutoff)
+          .sort((a, b) => a[1] - b[1])
+          .slice(0, limit)
+          .map(([k]) => k)
+      },
       async set(path, value) {
         db.commit(path, value)
       },

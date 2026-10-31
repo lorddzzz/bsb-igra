@@ -9,6 +9,8 @@ export interface Backend {
   update(path: string, patch: Record<string, unknown>): Promise<void>
   /** Atomic read-modify-write. Return undefined from `fn` to abort. Resolves true when committed. */
   transaction<T>(path: string, fn: (current: T | null) => T | null | undefined): Promise<boolean>
+  /** Keys under `path` whose number value is at or below `cutoff`, oldest first, at most `limit`. */
+  keysAtOrBelow(path: string, cutoff: number, limit: number): Promise<string[]>
   /**
    * The database server's clock in ms, estimated on this phone. Phones' own clocks can be off by
    * seconds; this one is the same on every phone to within network jitter.
@@ -16,8 +18,11 @@ export interface Backend {
   serverNow(): number
   /** Live transport status. Older in-memory backends without this signal are always connected. */
   connection?(cb: (connected: boolean) => void): () => void
-  /** Marks this player online, and offline again when the connection drops. */
-  presence(path: string): void | (() => void)
+  /**
+   * Marks this player online, and offline again when the connection drops. The returned function
+   * marks them offline; pass `false` to skip that write, for a room that has been deleted.
+   */
+  presence(path: string): void | ((markOffline?: boolean) => void)
 }
 
 /** Firebase rejects undefined values, so strip them (and empty containers stay as-is). */

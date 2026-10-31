@@ -4,8 +4,12 @@ import {
   connectDatabaseEmulator,
   getDatabase,
   get,
+  endAt,
+  limitToFirst,
   onDisconnect,
   onValue,
+  orderByValue,
+  query,
   ref,
   runTransaction,
   serverTimestamp,
@@ -57,6 +61,14 @@ export async function createFirebaseBackend(
     async get(path) {
       return (await get(ref(db, path))).val()
     },
+    async keysAtOrBelow(path, cutoff, limit) {
+      const snap = await get(query(ref(db, path), orderByValue(), endAt(cutoff), limitToFirst(limit)))
+      const keys: string[] = []
+      snap.forEach((child) => {
+        if (typeof child.val() === 'number') keys.push(child.key!)
+      })
+      return keys
+    },
     async set(path, value) {
       await set(ref(db, path), clean(value))
     },
@@ -80,10 +92,11 @@ export async function createFirebaseBackend(
           .then(async () => { if (live) await set(r, true) })
           .catch(() => {})
       })
-      return () => {
+      return (markOffline = true) => {
         live = false
         stop()
-        void set(r, serverTimestamp()).catch(() => {})
+        if (markOffline) void set(r, serverTimestamp()).catch(() => {})
+        else void onDisconnect(r).cancel().catch(() => {})
       }
     },
   }
