@@ -252,15 +252,44 @@ function Home({
   onBoard: () => void
 }) {
   const [code, setCode] = useState('')
-  const [error, setError] = useState('')
+  const [joinError, setJoinError] = useState('')
+  const [createError, setCreateError] = useState('')
   const current = GAMES.find((g) => g.id === game) ?? GAMES[0]
 
   return (
     <section className="screen home">
+      <div className="card join-card">
+        <h2>Imaš kod sobe?</h2>
+        <div className="join-row">
+          <input
+            className="code-input"
+            value={code}
+            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))}
+            placeholder="ABCD"
+            autoCapitalize="characters"
+            autoComplete="off"
+            inputMode="text"
+          />
+          <Button
+            disabled={code.length !== 4}
+            onClick={async () => {
+              if (await roomExists(be, code)) onEnter(code)
+              else setJoinError(`Soba ${code} ne postoji.`)
+            }}
+          >
+            Uđi
+          </Button>
+        </div>
+        {joinError && <p className="error">{joinError}</p>}
+      </div>
+      <div className="or-divider" aria-hidden>
+        <span>ili napravi novu sobu</span>
+      </div>
       <div className="hero">
         <div className="hero-sub">DRUŽINA · IGRE ZA EKIPU</div>
-        <h1 className={`hero-title chrome${current.name.length > 6 ? ' long' : ''}`}>{current.name}</h1>
-        <p className="muted">{current.tagline}</p>
+        {/* One fixed size and a reserved tagline height, so nothing below moves when another game is picked. */}
+        <h1 className="hero-title chrome">{current.name}</h1>
+        <p className="muted hero-tagline">{current.tagline}</p>
       </div>
       <div className="game-picker" role="radiogroup" aria-label="Izaberi igru">
         {GAMES.map((g) => (
@@ -282,37 +311,13 @@ function Home({
           try {
             onEnter(await createRoom(be, game))
           } catch (e) {
-            setError(String((e as Error).message))
+            setCreateError(String((e as Error).message))
           }
         }}
       >
         Napravi sobu
       </Button>
-      <div className="card">
-        <h2>Imaš kod sobe?</h2>
-        <div className="join-row">
-          <input
-            className="code-input"
-            value={code}
-            onChange={(e) => setCode(e.target.value.toUpperCase().replace(/[^A-Z]/g, '').slice(0, 4))}
-            placeholder="ABCD"
-            autoCapitalize="characters"
-            autoComplete="off"
-            inputMode="text"
-          />
-          <Button
-            variant="ghost"
-            disabled={code.length !== 4}
-            onClick={async () => {
-              if (await roomExists(be, code)) onEnter(code)
-              else setError(`Soba ${code} ne postoji.`)
-            }}
-          >
-            Uđi
-          </Button>
-        </div>
-        {error && <p className="error">{error}</p>}
-      </div>
+      {createError && <p className="error">{createError}</p>}
       <button className="board-btn" onClick={onBoard}>
         <span aria-hidden>🏆</span> Tabela svih vremena
       </button>

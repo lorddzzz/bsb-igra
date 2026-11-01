@@ -25,6 +25,17 @@ describe('app', () => {
     expect(screen.getByRole('radio', { name: /KVIZ/ }).getAttribute('aria-checked')).toBe('true')
   })
 
+  it('puts the room code entry above the game picker, since most players only join', async () => {
+    render(<App />)
+    const input = await screen.findByPlaceholderText('ABCD')
+    const picker = screen.getByRole('radiogroup', { name: 'Izaberi igru' })
+    expect(input.compareDocumentPosition(picker) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    // the title keeps one size for every game, so picking a game never moves the screen
+    fireEvent.click(screen.getByRole('radio', { name: /ČIJE JE OVO/ }))
+    expect(document.querySelector('.hero-title')?.textContent).toBe('ČIJE JE OVO?')
+    expect(document.querySelector('.hero-title')?.className).toBe('hero-title chrome')
+  })
+
   it('makes a room, checks in and lands in the lobby, then leaves', async () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('radio', { name: /MISIJA/ }))

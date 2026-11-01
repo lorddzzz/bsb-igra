@@ -361,34 +361,72 @@ main {
 }
 
 /* Home */
+.home {
+  gap: 12px;
+}
 .hero {
   text-align: center;
-  padding: 36px 0 12px;
+  padding: 2px 0 0;
 }
 .hero-sub {
   display: inline-block;
   font-family: var(--display);
-  font-size: 15px;
+  font-size: 13px;
   letter-spacing: 2px;
   color: #fff;
   background: var(--hero);
   border: 2px solid var(--ink);
-  padding: 2px 12px;
+  padding: 1px 10px;
   transform: rotate(-2deg);
   box-shadow: var(--shadow-sm);
 }
+/* One size for every game name, wide enough for the longest ("ČIJE JE OVO?"), so the screen never shifts. */
 .hero-title {
   font-family: var(--display);
   font-weight: 400;
-  font-size: 84px;
-  line-height: 1.05;
-  letter-spacing: 3px;
-  margin: 10px 0 6px;
+  font-size: 52px;
+  line-height: 1.1;
+  letter-spacing: 2px;
+  margin: 6px 0 2px;
+  white-space: nowrap;
   transform: rotate(-2deg);
 }
-.hero-title.long {
-  font-size: 54px;
+/* Every tagline is one line from about 360px wide; narrower phones reserve a second line so nothing shifts. */
+.hero-tagline {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.35;
+  min-height: calc(2 * 1.35em);
+}
+@media (min-width: 360px) {
+  .hero-tagline {
+    min-height: calc(1.35em);
+  }
+}
+.join-card {
+  padding: 12px 14px 14px;
+}
+.join-card h2 {
+  margin-bottom: 8px;
+}
+.join-card .code-input {
+  padding: 8px 14px;
+}
+.or-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 800;
   letter-spacing: 2px;
+  text-transform: uppercase;
+}
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 2px dashed rgba(255, 255, 255, 0.18);
 }
 .join-row {
   display: flex;
@@ -1142,14 +1180,14 @@ main {
 .game-picker {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
+  gap: 8px;
 }
 .game-card {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
-  padding: 14px 6px;
+  gap: 2px;
+  padding: 8px 4px;
   border-radius: 12px;
   background: var(--card);
   border: 3px solid var(--ink);
@@ -1159,17 +1197,18 @@ main {
 .game-card b {
   font-family: var(--display);
   font-weight: 400;
-  font-size: 20px;
+  font-size: 16px;
   letter-spacing: 1px;
   text-shadow: 2px 2px 0 var(--ink);
 }
 .game-card small {
   color: var(--muted);
-  font-size: 12px;
-  line-height: 1.35;
+  font-size: 11px;
+  line-height: 1.25;
 }
 .game-card .game-icon {
-  font-size: 30px;
+  font-size: 24px;
+  line-height: 1.2;
 }
 .game-card.on {
   border-color: var(--pow);
