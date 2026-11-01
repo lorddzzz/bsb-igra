@@ -124,6 +124,11 @@ export default function App() {
         >
           {muted ? '🔇' : '🔊'}
         </button>
+        {be && !code && !board && (
+          <button className="icon-btn" onClick={() => setBoard(true)} aria-label="Tabela svih vremena">
+            🏆
+          </button>
+        )}
         <button className="icon-btn" onClick={() => setRules(true)} aria-label="Pravila">
           ?
         </button>
@@ -159,7 +164,6 @@ export default function App() {
               setPicked(g)
             }}
             onEnter={enter}
-            onBoard={() => setBoard(true)}
           />
         )}
         </Crashed>
@@ -243,13 +247,11 @@ function Home({
   game,
   onPick,
   onEnter,
-  onBoard,
 }: {
   be: Backend
   game: GameId
   onPick: (game: GameId) => void
   onEnter: (code: string) => void
-  onBoard: () => void
 }) {
   const [code, setCode] = useState('')
   const [joinError, setJoinError] = useState('')
@@ -306,21 +308,20 @@ function Home({
           </button>
         ))}
       </div>
-      <Button
-        onClick={async () => {
-          try {
-            onEnter(await createRoom(be, game))
-          } catch (e) {
-            setCreateError(String((e as Error).message))
-          }
-        }}
-      >
-        Napravi sobu
-      </Button>
-      {createError && <p className="error">{createError}</p>}
-      <button className="board-btn" onClick={onBoard}>
-        <span aria-hidden>🏆</span> Tabela svih vremena
-      </button>
+      <div className="create-bar">
+        <Button
+          onClick={async () => {
+            try {
+              onEnter(await createRoom(be, game))
+            } catch (e) {
+              setCreateError(String((e as Error).message))
+            }
+          }}
+        >
+          Napravi sobu
+        </Button>
+        {createError && <p className="error">{createError}</p>}
+      </div>
       <p className="version-note">verzija {BUILD_ID}</p>
     </section>
   )

@@ -36,6 +36,14 @@ describe('app', () => {
     expect(document.querySelector('.hero-title')?.className).toBe('hero-title chrome')
   })
 
+  it('opens the all-time scoreboard from the trophy in the header', async () => {
+    render(<App />)
+    fireEvent.click(await screen.findByRole('button', { name: 'Tabela svih vremena' }))
+    expect(await screen.findByRole('heading', { name: /Tabela svih vremena/ })).toBeTruthy()
+    // the scoreboard has its own way back, so the trophy is not offered there
+    expect(screen.queryByRole('button', { name: 'Tabela svih vremena' })).toBeNull()
+  })
+
   it('makes a room, checks in and lands in the lobby, then leaves', async () => {
     render(<App />)
     fireEvent.click(await screen.findByRole('radio', { name: /MISIJA/ }))
