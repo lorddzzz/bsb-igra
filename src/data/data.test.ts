@@ -5,6 +5,8 @@ import { ROLES } from '../misija/logic'
 import { BLEF_QUESTIONS, BLANK } from './blefQuestions'
 import { CIJA_LEVELS, CIJA_PROMPTS } from './cijaPrompts'
 import { MAX_ROUNDS } from '../cija/logic'
+import { PRVI_LEVELS, PRVI_PROMPTS } from './prviPrompts'
+import { ROUNDS as PRVI_ROUNDS } from '../prvi/logic'
 import { KVIZ_QUESTIONS, KVIZ_TOPICS, TOPIC_LABELS } from './kvizQuestions'
 import { WAVE_SCALES } from './waveScales'
 import { CATEGORIES } from './words'
@@ -24,6 +26,8 @@ function allText(): string[] {
     ...BLEF_QUESTIONS.flatMap((q) => [q.q, q.a, ...(q.alt ?? []), ...q.fakes]),
     ...CIJA_PROMPTS.map((p) => p.q),
     ...CIJA_LEVELS.flatMap((l) => [l.name, l.detail]),
+    ...PRVI_PROMPTS.flatMap((p) => [p.q, p.title]),
+    ...PRVI_LEVELS.flatMap((l) => [l.name, l.detail]),
     ...WAVE_SCALES.flatMap((s) => [s.left, s.right]),
     ...CARDS.flatMap((c) => [c.name, c.effect]),
     ...Object.values(SPECIALS).flatMap((s) => [s.name, s.text]),
@@ -50,6 +54,7 @@ describe('all content', () => {
     expect(dupes(KVIZ_QUESTIONS.map((q) => q.id))).toEqual([])
     expect(dupes(BLEF_QUESTIONS.map((q) => q.id))).toEqual([])
     expect(dupes(CIJA_PROMPTS.map((p) => p.id))).toEqual([])
+    expect(dupes(PRVI_PROMPTS.map((p) => p.id))).toEqual([])
     expect(dupes(WAVE_SCALES.map((s) => s.id))).toEqual([])
     expect(dupes(CARDS.map((c) => c.id))).toEqual([])
     expect(dupes(ALL_BADGES.map((b) => b.id))).toEqual([])
@@ -135,5 +140,24 @@ describe('Čije je ovo? prompts', () => {
   })
   it('fits on a phone card', () => {
     for (const p of CIJA_PROMPTS) expect(p.q.length, p.id).toBeLessThanOrEqual(80)
+  })
+})
+
+describe('Ko bi prvi? prompts', () => {
+  it('has enough prompts at every level for a few fresh games, and none twice', () => {
+    for (const level of PRVI_LEVELS) {
+      const mine = PRVI_PROMPTS.filter((p) => p.level === level.id)
+      expect(mine.length, level.id).toBeGreaterThanOrEqual(PRVI_ROUNDS * 3)
+      expect(dupes(mine.map((p) => p.q.toLowerCase())), level.id).toEqual([])
+    }
+    for (const p of PRVI_PROMPTS) expect(PRVI_LEVELS.map((l) => l.id), p.id).toContain(p.level)
+    expect(dupes(PRVI_PROMPTS.map((p) => p.title.toLowerCase()))).toEqual([])
+  })
+  it('asks "Ko bi…?" and fits on a phone card', () => {
+    for (const p of PRVI_PROMPTS) {
+      expect(p.q, p.id).toMatch(/^Ko bi .+\?$/)
+      expect(p.q.length, p.id).toBeLessThanOrEqual(80)
+      expect(p.title.length, p.id).toBeLessThanOrEqual(28)
+    }
   })
 })

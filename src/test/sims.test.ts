@@ -3,7 +3,8 @@ import { playerOrder } from '../game/util'
 import { foolCap, validMatching } from '../cija/logic'
 import { misijaOf, wins as missionWins } from '../misija/logic'
 import { HAND, licOf, WINS_NEEDED } from '../licitacija/logic'
-import { simBlef, simCija, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from './sims'
+import { ROUNDS as PRVI_ROUNDS } from '../prvi/logic'
+import { simBlef, simCija, simKviz, simLic, simMisija, simPrvi, simUljez, simWave, type Snapshot } from './sims'
 
 // Whole games played by bots through the real rules, with Firebase's data shape between every step.
 // Many seeds, so rare paths (two impostors, ties, Pljačka on a leader, forced teams) all come up.
@@ -73,6 +74,31 @@ describe('simulated games end cleanly under Firebase shapes', () => {
         const paid = results.flatMap((s) => Object.values(s.pub.cija?.result?.gains ?? {})).reduce((sum, g) => sum + g.points, 0)
         expect(Object.values(over.pub.scores ?? {}).reduce((a, b) => a + b, 0)).toBe(paid)
       }
+  })
+
+  it.each(SEEDS)('Ko bi prvi? seed %i', (seed) => {
+    for (const n of [3, 5, 8, 12]) {
+      const snaps = simPrvi(seed, n)
+      const over = snaps.at(-1)!
+      expect(over.pub.phase, `${n} players`).toBe('over')
+      expect(over.pub.round).toBe(PRVI_ROUNDS)
+      snaps.forEach(scoresOk)
+      const results = snaps.filter((x) => x.pub.phase === 'result')
+      expect(results).toHaveLength(PRVI_ROUNDS)
+      for (const s of results) {
+        const r = s.pub.prvi!.result!
+        const counts = Object.values(r.counts ?? {})
+        // every player voted exactly once
+        expect(counts.reduce((a, b) => a + b, 0), s.label).toBe(n)
+        const top = r.top ?? []
+        if (Math.max(...counts) <= 1) expect(top, s.label).toEqual([])
+        else for (const uid of top) expect(r.counts![uid], s.label).toBe(Math.max(...counts))
+        // a point exactly for voting with a most-voted player
+        for (const [uid, g] of Object.entries(r.gains)) expect(g.points, s.label).toBe(top.includes(s.pub.prvi!.votes![uid]) ? 1 : 0)
+      }
+      const paid = results.flatMap((s) => Object.values(s.pub.prvi!.result!.gains)).reduce((sum, g) => sum + g.points, 0)
+      expect(Object.values(over.pub.scores ?? {}).reduce((a, b) => a + b, 0)).toBe(paid)
+    }
   })
 
   it.each(SEEDS)('Talas seed %i', (seed) => {

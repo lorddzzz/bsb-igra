@@ -1,6 +1,6 @@
 # Družina
 
-Seven party games for friends on their phones, in a comic-book hero HQ look. One shared link, a 4-letter room code, phones synced live. The whole app is in Serbian (latinica).
+Eight party games for friends on their phones, in a comic-book hero HQ look. One shared link, a 4-letter room code, phones synced live. The whole app is in Serbian (latinica).
 
 - **Uljez**: everyone gets the same secret word except the impostor, who only knows the category. Two rounds of one-word clues, then a vote.
 - **Blef**: a strange true fact with a blank; invent a believable lie, then find the truth.
@@ -9,6 +9,7 @@ Seven party games for friends on their phones, in a comic-book hero HQ look. One
 - **Licitacija**: secret bidding for two.
 - **Misija**: Avalon-style hidden roles for 5 to 12.
 - **Čije je ovo?**: everyone answers a personal prompt anonymously, then matches the answers to the friends who wrote them. For 3 to 8, with mild, medium or spicy prompts.
+- **Ko bi prvi?**: "who would be first to…" prompts; everyone secretly votes for a friend, and voting with the majority scores. The most-voted friend takes the prompt's title for the night. 10 prompts, 3 to 12 players, low effort by design.
 
 Every finished game is saved to an all-time scoreboard ("Tabela svih vremena" on the home screen): wins and points per player name across gatherings, plus fun titles such as most escapes as impostor. Names are matched ignoring case, spaces and accents (`src/history/`).
 
@@ -24,7 +25,7 @@ Agent and contributor guidance is in [AGENTS.md](AGENTS.md), with detailed proce
 
 - React + TypeScript (Vite), hosted on GitHub Pages, deployed by `.github/workflows/deploy.yml` on every push to `main`.
 - Phones sync through Firebase Realtime Database with anonymous sign-in. `database.rules.json` keeps each ticket private to its owner and hides the round's answer until voting is over. Finished games go to `history/{id}`, which anyone signed in can read and add to but never change.
-- Words and categories: `src/data/words.ts`, quiz questions `src/data/kvizQuestions.ts`, Blef facts `src/data/blefQuestions.ts`, Čije je ovo? prompts `src/data/cijaPrompts.ts`. Scoring and rules: `src/<game>/logic.ts`.
+- Words and categories: `src/data/words.ts`, quiz questions `src/data/kvizQuestions.ts`, Blef facts `src/data/blefQuestions.ts`, Čije je ovo? prompts `src/data/cijaPrompts.ts`, Ko bi prvi? prompts and titles `src/data/prviPrompts.ts`. Scoring and rules: `src/<game>/logic.ts`.
 
 ## Development
 
@@ -49,7 +50,7 @@ Three layers, from fast to slow:
 
 `npm run test:e2e:emu` installs the checked-in rules into the exact demo database namespace used by the app and checks access before running games. Starting emulators manually does not provide that assurance.
 
-For one emulator flow, use `E2E_GAME=blef npm run test:e2e:emu` (PowerShell: `$env:E2E_GAME='blef'; npm run test:e2e:emu`). Supported names: `play`, `blef`, `wave`, `kviz`, `lic`, `misija`, `cija`, `recovery`. The recovery flow checks an explicit host transfer and the former host rejoining.
+For one emulator flow, use `E2E_GAME=blef npm run test:e2e:emu` (PowerShell: `$env:E2E_GAME='blef'; npm run test:e2e:emu`). Supported names: `play`, `blef`, `wave`, `kviz`, `lic`, `misija`, `cija`, `prvi`, `recovery`. The recovery flow checks an explicit host transfer and the former host rejoining.
 
 ## Adding games and recovering rooms
 

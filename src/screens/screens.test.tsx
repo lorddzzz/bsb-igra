@@ -6,13 +6,14 @@ import { normalizeSecret, playerOrder } from '../game/util'
 import type { RoomView } from '../game/room'
 import type { Pub } from '../game/types'
 import { MemoryDb } from '../test/memoryBackend'
-import { simBlef, simCija, simKviz, simLic, simMisija, simUljez, simWave, type Snapshot } from '../test/sims'
+import { simBlef, simCija, simKviz, simLic, simMisija, simPrvi, simUljez, simWave, type Snapshot } from '../test/sims'
 import { Blef } from './Blef'
 import { Cija } from './Cija'
 import { Uljez } from './Uljez'
 import { Kviz } from './Kviz'
 import { Licitacija } from './Licitacija'
 import { Misija } from './Misija'
+import { Prvi } from './Prvi'
 import { Talas } from './Talas'
 
 // Every state a simulated game passes through, rendered on every phone, with data shaped exactly
@@ -90,6 +91,9 @@ describe('every screen renders in every state, on every phone', () => {
   })
   it('Čije je ovo?', () => {
     for (const [seed, n] of [[1, 3], [5, 8]]) renderAll(Cija, distinct(simCija(seed, n)), `Cija ${n}p`)
+  })
+  it('Ko bi prvi?', () => {
+    for (const [seed, n] of [[1, 3], [5, 12]]) renderAll(Prvi, distinct(simPrvi(seed, n)), `Prvi ${n}p`)
   })
   it('Talas', () => {
     for (const [seed, n] of [[1, 3], [4, 5]]) renderAll(Talas, distinct(simWave(seed, n)), `Talas ${n}p`)

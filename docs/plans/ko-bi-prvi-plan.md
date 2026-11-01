@@ -1,6 +1,6 @@
 # Ko bi prvi? — design
 
-Status: **design agreed 2026-11-01**, not implemented. Proposed game id and folder: `prvi`; `src/prvi/`, `src/screens/Prvi.tsx`, `src/data/prviPrompts.ts`, `e2e/prvi.mjs`. Player-facing name: **KO BI PRVI?** Built for a late, relaxed night: no hard thinking, one tap per round, loud reveals.
+Status: **implemented 2026-11-01** (design agreed the same day). Needs the owner's playtest for feel and pacing. Game id and folder: `prvi`; `src/prvi/`, `src/screens/Prvi.tsx`, `src/data/prviPrompts.ts`, `e2e/prvi.mjs`. Player-facing name: **KO BI PRVI?** Built for a late, relaxed night: no hard thinking, one tap per round, loud reveals.
 
 ## Goal
 
@@ -14,6 +14,7 @@ Status: **design agreed 2026-11-01**, not implemented. Proposed game id and fold
 | Scoring | **Vote with the majority**: +1 if you voted for a player with the most votes. The chosen player gets the title, not points. |
 | Reveal | **Named**: each player is shown with who voted for them. |
 | Length | **Fixed 10 prompts.** No length setting in the lobby. |
+| No majority | **When every vote goes to a different player** (every count is 1), nobody scores and nobody gets the title ("Ekipa se ne slaže!"). |
 
 ## Flow
 
@@ -34,9 +35,8 @@ Example, 5 players: 3 vote Marko and 2 vote Ana, so the three Marko voters get +
 
 Votes live in `pub` like Blef and Čije je ovo answers; the app trusts friends. The screens never show a vote before the reveal. No database-rule change is planned.
 
-## Edge cases and assumptions (proposals, not agreed)
+## Edge cases (built)
 
-- **Everyone votes for a different player** (every count is 1). Proposal: nobody scores and nobody gets the title ("Ekipa se ne slaže!"). The rule as stated would give everyone +1, which rewards a non-majority.
 - **A player leaves or stalls.** Shared policy: absent players stay and their votes are never invented. The round waits, and host takeover remains available. Absent players still appear on the ballot.
 - **Invalid votes.** The logic rejects votes for a uid not in the room, a second vote from the same player after they confirm, or a vote outside the voting phase.
 - **3 players.** With self-votes allowed, three players have 3 choices each. A 1–1–1 split falls under the "every count is 1" rule above.
@@ -45,7 +45,7 @@ Votes live in `pub` like Blef and Čije je ovo answers; the app trusts friends. 
 
 ## Tune in playtest
 
-10 rounds (fixed by decision, but easy to change), whether the reveal needs a short drumroll or staged animation, and whether the host or any player advances to the next prompt.
+10 rounds (fixed by decision, but easy to change), whether the reveal needs a short drumroll or staged animation, and whether only the host should advance to the next prompt (built that way, as in the other games).
 
 ## Content
 
@@ -53,7 +53,7 @@ About 90 prompts in Serbian Latin (latinica, with diacritics) in `src/data/prviP
 
 ## Scoreboard
 
-Add `prvi` to `SCORED` in `src/history/logic.ts`. Proposed fun stats: "U glavi ekipe" (most majority votes) and "Zvezda večeri" (most titles won). Both are proposals.
+`prvi` is in `SCORED` in `src/history/logic.ts`. Fun titles on the all-time scoreboard, built as proposed and open to change: "U glavi ekipe" (`prvi.majority`, most majority votes) and "Zvezda večeri" (`prvi.titles`, most titles won).
 
 ## Acceptance
 

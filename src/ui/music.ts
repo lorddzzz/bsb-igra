@@ -500,7 +500,43 @@ const cija: Track = {
   },
 }
 
-export const TRACKS: Record<GameId, Track> = { uljez, blef, talas, kviz, licitacija, misija, cija }
+// ---------------------------------------------------------------------------
+// Ko bi prvi?: "Ponoćni kauč". A lazy late-night groove for a tipsy room: soft electric-piano chords
+// walking down, a round bass, rim clicks and a lazy whistle of a tune.
+
+const PRVI_TUNE: Note[][] = [
+  [[0, 72, 3], [4, 76, 2], [6, 79, 4], [12, 77, 3]],
+  [[0, 76, 3], [4, 74, 2], [8, 71, 4]],
+  [[0, 74, 3], [4, 77, 2], [6, 81, 4], [12, 79, 3]],
+  [[0, 76, 6], [8, 72, 6]],
+]
+
+const prvi: Track = {
+  name: 'Ponoćni kauč',
+  bpm: 88,
+  swing: 0.22,
+  echo: 3,
+  gain: 1.8,
+  // Fmaj7, Em7, Dm7, Cmaj7.
+  chords: [
+    chord(41, [57, 60, 64], [41, 48, 45, 48]),
+    chord(40, [55, 59, 62], [40, 47, 43, 47]),
+    chord(38, [53, 57, 60], [38, 45, 41, 45]),
+    chord(36, [52, 55, 59], [36, 43, 40, 43]),
+  ],
+  play(c, io, { bar, pos, chord: ch, full, s }, at) {
+    if (pos === 0 || pos === 10) pad(c, io, ch.pad, at, s * 6, 0.035, 1100)
+    // Round bass on 1 and the "and" of 3.
+    if (pos === 0 || pos === 10) voice(c, io, ch.arp[pos === 0 ? 0 : 1], at, { type: 'triangle', vol: 0.3, len: s * 3, cutoff: 700 })
+    if (pos === 0 || pos === 8) kick(c, io, at, 0.22)
+    if (pos === 4 || pos === 12) rim(c, io, at, 0.06)
+    if (pos % 4 === 2) hat(c, io, at, 0.02, 0.04)
+    if (!full) return
+    melody(PRVI_TUNE[bar % 4], pos, (n, len) => voice(c, io, n, at, { type: 'sine', vol: 0.1, len: s * len, attack: 0.04, cutoff: 2600, vibrato: 6, echo: true }))
+  },
+}
+
+export const TRACKS: Record<GameId, Track> = { uljez, blef, talas, kviz, licitacija, misija, cija, prvi }
 
 /** One sixteenth note of a track, in seconds. */
 export const stepLength = (t: Track) => 60 / t.bpm / 4

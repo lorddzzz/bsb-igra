@@ -6,7 +6,7 @@ import type { Role } from '../misija/types'
 import type { HistoryGame, HistoryPlayer } from './types'
 
 /** Games with a points table at the end; Licitacija counts won games, Misija only sides. */
-export const SCORED: GameId[] = ['uljez', 'blef', 'talas', 'kviz', 'cija']
+export const SCORED: GameId[] = ['uljez', 'blef', 'talas', 'kviz', 'cija', 'prvi']
 
 /**
  * The all-time key for a typed name: case, spaces and accents don't matter, so Dule, dule and Dulé
@@ -102,6 +102,7 @@ export function recordId(pub: Pub, record: Omit<HistoryGame, 'at'>): string {
     kviz: pub.kviz?.game,
     lic: [pub.lic?.deck, pub.lic?.set],
     cija: pub.cija?.prompts,
+    prvi: pub.prvi?.prompts,
     misija: [pub.misija?.game, pub.misija?.tally],
   }
   return `${record.room}-${hash(stable({ record, nonce }))}`
@@ -177,6 +178,8 @@ export const RECORDS: HistoryTitle[] = [
   { stat: 'blef.truth', game: 'blef', icon: '💡', title: 'Tragač istine', text: 'puta pronašao istinu' },
   { stat: 'cija.guessed', game: 'cija', icon: '🔮', title: 'Čita drugare', text: 'pogođenih odgovora' },
   { stat: 'cija.fooled', game: 'cija', icon: '🎭', title: 'Čovek misterija', text: 'drugara navukao da pogreši' },
+  { stat: 'prvi.majority', game: 'prvi', icon: '🐑', title: 'U glavi ekipe', text: 'puta glasao sa većinom' },
+  { stat: 'prvi.titles', game: 'prvi', icon: '🌟', title: 'Zvezda večeri', text: 'osvojenih titula' },
   { stat: 'talas.bull', game: 'talas', icon: '🎯', title: 'Telepata', text: 'punih pogodaka' },
   { stat: 'kviz.right', game: 'kviz', icon: '📚', title: 'Enciklopedija', text: 'tačnih odgovora' },
   { stat: 'kviz.robs', game: 'kviz', icon: '💰', title: 'Lopov', text: 'poena otetih u Pljački' },

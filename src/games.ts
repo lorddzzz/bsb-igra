@@ -20,6 +20,7 @@ export const GAMES: GameDefinition[] = [
   { id: 'licitacija', name: 'LICITACIJA', icon: '🎟️', tagline: 'Ti protiv drugara. Tajna ponuda, ko da više?', players: '2 igrača', maxPlayers: 2, badges: BADGES },
   { id: 'misija', name: 'MISIJA', icon: '🦹', tagline: 'Velika ekipa, skriveni špijuni. Kome veruješ?', players: '5–12 igrača', maxPlayers: 12, badges: ALL_BADGES },
   { id: 'cija', name: 'ČIJE JE OVO?', icon: '🎭', tagline: 'Anonimni odgovori. Pogodi čiji je koji.', players: '3–8 igrača', maxPlayers: 8, badges: ALL_BADGES },
+  { id: 'prvi', name: 'KO BI PRVI?', icon: '👉', tagline: 'Ko bi prvi zaspao? Glasaj za drugara.', players: '3–12 igrača', maxPlayers: 12, badges: ALL_BADGES },
 ]
 
 /** Missing game IDs belong to rooms created before the game picker. */

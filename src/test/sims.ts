@@ -5,6 +5,7 @@
  */
 import { applyBlef, buildOptions, currentQuestion as blefQuestion, nextBlefRound, optionsOf as blefOptions, scoreBlef, startBlef } from '../blef/logic'
 import { applyCija, closeAnswers, nextCijaRound, orderOf as cijaOrder, scoreCija, startCija } from '../cija/logic'
+import { applyPrvi, nextPrviRound, scorePrvi, startPrvi } from '../prvi/logic'
 import { normalizeSecret, pickOne, playerOrder, shuffle, type Rng } from '../game/util'
 import { allGuessed, applyRound, categoryChoices, caughtImpostors, newGameSeed, nextRound, resetToLobby, scoreRound, seededRng, setupRound } from '../uljez/logic'
 import { ALL_BADGES, type GameId, type Mode, type Pub } from '../game/types'
@@ -285,6 +286,29 @@ export function simCija(seed: number, n: number, rounds = 3, level: 'lagano' | '
     }
     r.set(applyCija(r.pub, scoreCija(r.pub)), 'result')
     r.set(nextCijaRound(r.pub), 'next')
+  }
+  return r.snaps
+}
+
+/**
+ * Ko bi prvi?: bots mostly agree on a favourite per prompt, so majorities, ties and the
+ * "everyone voted for someone different" case all come up across seeds.
+ */
+export function simPrvi(seed: number, n: number, level: 'lagano' | 'srednje' | 'ljuto' = 'lagano'): Snapshot[] {
+  const rng = seededRng(seed)
+  const r = new Recorder({ ...lobby('prvi', n), prvi: { level } })
+  r.set(startPrvi(r.pub, rng), 'start')
+  while (r.pub.phase !== 'over') {
+    const players = playerOrder(r.pub)
+    const favourite = pickOne(players, rng)
+    const unanimous = rng() < 0.15
+    const split = rng() < 0.15 ? shuffle(players, rng) : null
+    players.forEach((uid, i) => {
+      const target = split ? split[i] : unanimous || rng() < 0.5 ? favourite : pickOne(players, rng)
+      r.set({ ...r.pub, prvi: { ...r.pub.prvi, votes: { ...(r.pub.prvi?.votes ?? {}), [uid]: target } } }, `${uid} voted`)
+    })
+    r.set(applyPrvi(r.pub, scorePrvi(r.pub)), 'result')
+    r.set(nextPrviRound(r.pub), 'next')
   }
   return r.snaps
 }

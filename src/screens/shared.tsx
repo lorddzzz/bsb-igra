@@ -173,6 +173,7 @@ export function Winner({
   one,
   many,
   onNewGame,
+  children,
 }: {
   pub: Pub
   me: string
@@ -180,6 +181,8 @@ export function Winner({
   one: string
   many: string
   onNewGame: () => void
+  /** Extra end-of-game cards, shown above the final table. */
+  children?: ReactNode
 }) {
   const table = standings(pub)
   const top = table[0]?.score ?? 0
@@ -203,6 +206,7 @@ export function Winner({
         ))}
         <p>{winners.length > 1 ? many : one}</p>
       </div>
+      {children}
       <ScoreTable pub={pub} me={me} />
       {isHost ? (
         <Button onClick={onNewGame}>Nova igra</Button>

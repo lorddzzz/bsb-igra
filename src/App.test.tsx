@@ -14,12 +14,12 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('app', () => {
-  it('offers all seven games and remembers the one picked', async () => {
+  it('offers all eight games and remembers the one picked', async () => {
     render(<App />)
     // proof this runs on the local backend, never the real database
     expect(await screen.findByText('Probni režim (bez interneta)')).toBeTruthy()
     const games = await screen.findAllByRole('radio')
-    expect(games.map((g) => g.querySelector('b')?.textContent)).toEqual(['ULJEZ', 'BLEF', 'TALAS', 'KVIZ', 'LICITACIJA', 'MISIJA', 'ČIJE JE OVO?'])
+    expect(games.map((g) => g.querySelector('b')?.textContent)).toEqual(['ULJEZ', 'BLEF', 'TALAS', 'KVIZ', 'LICITACIJA', 'MISIJA', 'ČIJE JE OVO?', 'KO BI PRVI?'])
     fireEvent.click(screen.getByRole('radio', { name: /KVIZ/ }))
     expect(localStorage.getItem('druzina-game')).toBe('kviz')
     expect(screen.getByRole('radio', { name: /KVIZ/ }).getAttribute('aria-checked')).toBe('true')

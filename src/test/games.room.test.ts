@@ -12,6 +12,8 @@ import { useKvizActions } from '../kviz/room'
 import { useLicActions } from '../licitacija/room'
 import { leader, misijaOf, teamSize } from '../misija/logic'
 import { useMisijaActions } from '../misija/room'
+import { prviOf, ROUNDS as PRVI_ROUNDS } from '../prvi/logic'
+import { usePrviActions } from '../prvi/room'
 import { clueGiver, waveOf } from '../talas/logic'
 import { useWaveActions } from '../talas/room'
 import type { Backend } from '../backend'
@@ -181,6 +183,84 @@ describe('Čije je ovo?', () => {
     await act(async () => phones[0].actions.newGame())
     await settle()
     expect(pub()).toMatchObject({ phase: 'lobby', round: 0, cija: { rounds: 2 } })
+  })
+})
+
+describe('Ko bi prvi?', () => {
+  it('lets only the host pick the level and start, once', async () => {
+    const { phones, pub } = await table('prvi', 3, withPub(usePrviActions))
+    await act(async () => phones[1].actions.setLevel('ljuto'))
+    await settle()
+    expect(pub().prvi).toBeUndefined()
+    await act(async () => phones[0].actions.setLevel('ljuto'))
+    await act(async () => phones[1].actions.start())
+    await settle()
+    expect(pub().phase).toBe('lobby')
+    await act(async () => {
+      void phones[0].actions.start()
+      void phones[0].actions.start()
+    })
+    await settle()
+    expect(pub()).toMatchObject({ phase: 'vote', round: 1, prvi: { level: 'ljuto' } })
+    expect(prviOf(pub()).prompts).toHaveLength(PRVI_ROUNDS)
+    await act(async () => phones[0].actions.setLevel('lagano'))
+    await settle()
+    expect(pub().prvi?.level).toBe('ljuto')
+  })
+
+  it('keeps the first vote, refuses strangers, scores once everyone voted, and lets only the host move on', async () => {
+    const { phones, pub } = await table('prvi', 3, withPub(usePrviActions))
+    const [a, b, c] = phones
+    await act(async () => a.actions.start())
+    await settle()
+    await act(async () => a.actions.vote('z'))
+    await settle()
+    expect(prviOf(pub()).votes).toBeUndefined()
+    await act(async () => a.actions.vote('a'))
+    await settle()
+    await act(async () => a.actions.vote('b'))
+    await act(async () => b.actions.vote('a'))
+    await settle()
+    expect(prviOf(pub()).votes).toEqual({ a: 'a', b: 'a' })
+    expect(pub().phase).toBe('vote')
+    await act(async () => a.actions.closeVoting())
+    expect(pub().phase).toBe('vote')
+    await act(async () => c.actions.vote('b'))
+    await settle()
+    expect(pub().phase).toBe('result')
+    expect(prviOf(pub()).result?.top).toEqual(['a'])
+    expect(pub().scores).toEqual({ a: 1, b: 1, c: 0 })
+    await act(async () => b.actions.next())
+    expect(pub().phase).toBe('result')
+    await act(async () => {
+      void a.actions.next()
+      void a.actions.next()
+    })
+    await settle()
+    expect(pub()).toMatchObject({ phase: 'vote', round: 2 })
+    expect(prviOf(pub()).votes).toBeUndefined()
+    expect(prviOf(pub()).titles).toEqual({ a: [prviOf(pub()).prompts![0]] })
+  })
+
+  it('ends after the last prompt and returns to a lobby that keeps the level', async () => {
+    const { phones, pub } = await table('prvi', 3, withPub(usePrviActions))
+    await act(async () => phones[0].actions.setLevel('srednje'))
+    await act(async () => phones[0].actions.start())
+    await settle()
+    for (let round = 1; round <= PRVI_ROUNDS; round++) {
+      for (const p of phones) await act(async () => p.actions.vote('c'))
+      await settle()
+      expect(pub().phase).toBe('result')
+      await act(async () => phones[0].actions.next())
+      await settle()
+    }
+    expect(pub().phase).toBe('over')
+    expect(pub().scores).toEqual({ a: PRVI_ROUNDS, b: PRVI_ROUNDS, c: PRVI_ROUNDS })
+    await act(async () => phones[1].actions.newGame())
+    expect(pub().phase).toBe('over')
+    await act(async () => phones[0].actions.newGame())
+    await settle()
+    expect(pub()).toMatchObject({ phase: 'lobby', round: 0, prvi: { level: 'srednje' } })
   })
 })
 
