@@ -21,6 +21,7 @@ Goal: see the change the way a player on a phone would, and report what was and 
 ## When to go further
 
 - A flow change in a game: run that game's script, `node e2e/<game>.mjs` against `npm run build && npx vite preview --port 5173`, or the full `npm run e2e` (~8 min) when several screens changed.
+- Changed a label, class, element type or layout of home, lobby, header or a game screen: the e2e scripts locate things by those; grep `e2e/` and the screen tests for the old text and update them (see AGENTS.md, "What breaks CI when you change things").
 - Layout risk: also run with `WIDTH=375 HEIGHT=667`.
 
 ## Report

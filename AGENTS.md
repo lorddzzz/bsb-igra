@@ -25,7 +25,20 @@ Working instructions for this repository. Procedures are skills in [.claude/skil
 - Prose-only changes: check links and commands against their definitions, and `git diff --check`.
 - Behavior changes need tests at the affected layer: rule and scenario tests, multi-phone simulations. Do not mirror the implementation.
 - UI changes need a real browser check at phone size with an inspected screenshot; see [verify-ui](.claude/skills/verify-ui/SKILL.md).
+- Changed a main screen, shared UI, a label or a game clock? Read [What breaks CI when you change things](#what-breaks-ci-when-you-change-things) and run the matching `e2e/<game>.mjs` (or `npm run e2e`) before pushing; CI e2e does not gate deploy but red runs must not be left.
 - Do the mechanical verification yourself. Owner playtests are for feel, UX and direction. Report what ran, what failed, and what could not run.
+
+## What breaks CI when you change things
+
+The "Full checks" workflow (`.github/workflows/checks.yml`) runs after every push to `main`: every game's `e2e/<game>.mjs` on simulated phones (at 390x844 and again at 375x667), plus the same flows on the Firebase emulator (`scripts/e2e-emu.mjs`), plus the database rules. It does not gate the deploy, so a red run is easy to miss. Check it for your commit before reporting done, and run the affected scripts locally first.
+
+- **Main screens and shared UI** (`App.tsx`, `src/screens/shared.tsx`, `src/ui/`, home, lobby, header, scoreboard): every e2e script drives them by role, label, placeholder, text and CSS class (`radio` of the game name, `Napravi sobu`, `Uđi u sobu`, `Počni igru`, `Nova igra`, `.code-chip`, `.badge-pick`, `.logo`, `Družina (N)`, `.winner`, `.standings`). Renaming, restyling to another element, or changing such a label means updating `e2e/session.mjs`, `e2e/phone.mjs` and every `e2e/*.mjs` that uses it (`grep -rn '<old text>' e2e scripts src/**/*.test.tsx`), `scripts/e2e-emu.mjs`, and the screen tests (`src/App.test.tsx`, `src/screens/*.test.tsx`).
+- **A game screen or its text/classes**: update that game's `e2e/<game>.mjs`, `src/screens/<Game>.test.tsx` and `src/screens/screens.test.tsx`. The e2e probe also fails on horizontal overflow, clipped text and tap targets under about 44px at both phone sizes, so a layout change needs the 375x667 run too (`WIDTH=375 HEIGHT=667`).
+- **Timings** (lead-ins, splashes, reveal pauses, timers in `src/<game>/logic.ts`): e2e scripts wait for the result of these clocks with timeouts. Waits must cover the longest chain (for example Kviz reveal 4 s + splash 3 s) several times over, because CI emulator runs are far slower than a laptop. When you lengthen a clock, grep the e2e scripts for the `waitFor` timeouts that depend on it. Never shorten a wait to speed the run up; fix a flaky wait by waiting for the state, or with a generous timeout, never by retrying blindly.
+- **Adding or changing a game, `GameId`, `src/games.ts`**: `src/games.test.ts`, `src/history/logic.test.ts`, `src/test/sims.ts`, `e2e/all.sh`, and the game list in `scripts/e2e-emu.mjs`.
+- **Database shape, `database.rules.json`, `protocol`**: `npm run test:rules`, the emulator e2e (`npm run test:e2e:emu`, needs Java and Firebase tools) and the shapes in `src/test/firebaseShape.ts`.
+- **Console errors fail e2e scripts** (except known offline noise). A new `console.error`/uncaught error on any screen turns the run red.
+- A failure in `emulator-e2e` often passes locally in `?local` mode. Reproduce with `npm run test:e2e:emu`, read the job log (`get_job_logs`) and the uploaded `emulator-screenshots` artifact before guessing.
 
 ## Git and delivery
 

@@ -19,6 +19,8 @@ Match the checks to what changed, run them yourself, and report faithfully. The 
 | Docs and prose only | resolve local links and file paths, check commands against `package.json`, `git diff --check`. No runtime tests. |
 | CI, workflows, config | run the affected tool where you can (build, a dry run, the script itself) |
 
+Changing home, lobby, header, shared UI, labels or a game's clocks: also follow "What breaks CI when you change things" in AGENTS.md (selectors used by every e2e script, tests to update, timeouts).
+
 Deploy gates only lint, unit tests and build; rules and e2e do not gate it, so they are on you.
 
 ## Do it well
@@ -28,6 +30,7 @@ Deploy gates only lint, unit tests and build; rules and e2e do not gate it, so t
 - Test observable outcomes and invariants, not a copy of the algorithm. Fixed seeds and injected clocks, never real randomness or time.
 - Read your own diff adversarially before reporting: leftover debug code, unrelated formatting, a missing doc or backlog status update.
 - Fix failures at the root. Never skip, disable or loosen a test to get green. If a failure looks unrelated, show it fails on `main` too before saying so.
+- After pushing to `main`, look up the "Full checks" run for that commit (not the latest) and read the failing job log if red. A red e2e run is a task, not noise.
 - Update docs and the BACKLOG status when behavior or a decision changed.
 
 ## Report

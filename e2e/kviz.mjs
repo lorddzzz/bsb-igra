@@ -8,6 +8,8 @@ import { createPhoneSession } from './session.mjs'
 
 const BASE = process.env.BASE ?? 'http://127.0.0.1:5173/'
 const OUT = process.argv[2] ?? 'e2e/shots-kviz'
+// A question can follow a 3 s splash or lead-in on a slow runner, so wait generously for it to appear.
+const QUESTION_WAIT = 20000
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch(launchOptions)
@@ -61,7 +63,7 @@ for (let round = 1; round <= total; round++) {
     splashShot = true
     await shot(host, `10-special-r${round}`)
   }
-  for (const p of pages) await p.locator('button.kv-option').first().waitFor({ timeout: 6000 })
+  for (const p of pages) await p.locator('button.kv-option').first().waitFor({ timeout: QUESTION_WAIT })
   if (round === 1) await shot(pages[1], '04-question')
   const t0 = Date.now()
   // Somewhere after question 2, Dusan answers and then attacks Jova, who is still thinking.
@@ -125,7 +127,7 @@ console.log('code', code, 'standings', await host.locator('.standings li').allTe
 await host.getByRole('button', { name: 'Nova igra' }).click()
 await host.getByRole('button', { name: /Počni igru/ }).click()
 await host.locator('.kv-lead').waitFor()
-await host.locator('button.kv-option').first().waitFor({ timeout: 6000 })
+await host.locator('button.kv-option').first().waitFor({ timeout: QUESTION_WAIT })
 console.log('second game started with a fresh lead-in')
 
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors')
