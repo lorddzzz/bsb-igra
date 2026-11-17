@@ -1,6 +1,6 @@
 # Tiha misija — design
 
-Status: **design agreed 2026-11-17, not implemented.** The four decisions below are the owner's; everything under "Assumptions" and "Tune in playtest" is a proposal until the owner confirms or the playtest says otherwise. Proposed game id and folder: `tiha` (`misija` is taken). Player-facing name: **TIHA MISIJA**.
+Status: **design agreed 2026-11-17, implementation in progress** (see [status](tiha-misija-status.md)). The four decisions below are the owner's; everything under "Assumptions" and "Tune in playtest" is a proposal until the owner confirms or the playtest says otherwise. Proposed game id and folder: `tiha` (`misija` is taken). Player-facing name: **TIHA MISIJA**.
 
 Built for two people on a couch on a quiet night: played only on the phones, without talking.
 
@@ -79,3 +79,45 @@ Co-operative: no winner. Proposed: save the mission reached for the pair, with a
 ## Out of scope
 
 More than 2 players, saved campaign progress between evenings, hand-written mission ladders, chat or emoji, timers.
+
+## Implementation contract
+
+State and card encoding: `src/tiha/types.ts` (authoritative). Everything is in `pub.tiha`; no tickets, no database-rule change. Phases: `lobby → draft → play → result → draft | over`. `pub.round` counts deals from 1.
+
+`src/tiha/logic.ts` exports (pure; `Rng` from `src/game/util.ts`; every transition returns `undefined` when the move is not allowed, so double taps are harmless):
+
+```ts
+export const TIHA_PLAYERS = 2
+export const COLORS: TihaSuit[]            // ['r','g','b','y']
+export const COLOR_MAX = 7; export const TRUMPS = 3; export const HAND_SIZE = 12; export const START_LIVES = 3
+export const DECK: TihaCard[]              // 31 cards
+export function tihaOf(pub: Pub): TihaState            // pub.tiha ?? {}
+export function pair(pub: Pub): string[]               // the two players, join order
+export function partnerOf(pub: Pub, uid: string): string | undefined
+export function suitOf(card: TihaCard): TihaSuit
+export function rankOf(card: TihaCard): number
+export function handOf(pub: Pub, uid: string): TihaCard[]      // sorted by colour (r,g,b,y,a) then rank
+export function tasksOf(pub: Pub): TihaTask[]                  // asList
+export function tableOf(pub: Pub): TihaPlay[]                  // asList
+export function playable(pub: Pub, uid: string): TihaCard[]    // [] unless phase 'play' and uid's turn; follows the led colour when possible
+export function trickWinner(cards: TihaPlay[]): string         // 2 cards, lead first
+export function marksFor(pub: Pub, uid: string, card: TihaCard): TihaMark[]  // truthful marks; [] for trumps, cards not in hand, or after uid signalled
+export function generateTasks(level: number, hands: Record<string, TihaCard[]>, rng: Rng): TihaTask[]
+export function startTiha(pub: Pub, rng: Rng): Pub | undefined         // from lobby or over: level 1, lives 3, cleared 0, round 1, deal → 'draft'
+export function takeTask(pub: Pub, uid: string, taskId: number): Pub | undefined   // 'draft'; last task taken → 'play', turn = captain
+export function signal(pub: Pub, uid: string, card: TihaCard, mark: TihaMark): Pub | undefined  // 'play', only on uid's turn
+export function playCard(pub: Pub, uid: string, card: TihaCard): Pub | undefined   // resolves the trick, tasks and the mission end in the same step
+export function nextTiha(pub: Pub, rng: Rng): Pub | undefined          // 'result' → new deal ('draft', round+1) or 'over' when lives are 0
+export function resetTihaLobby(pub: Pub): Pub                          // keeps protocol, game, hostUid, players
+```
+
+Rules fixed for the build:
+
+- **Deal**: shuffle `DECK`, 12 to each player, 7 hidden. Captain: first deal of a run is `pair(pub)[0]`, then alternates every deal.
+- **Draft**: captain picks first, then alternate; with an odd task count the captain gets one more.
+- **Trick**: follower must follow the led colour (trump is its own colour) if able. Highest trump wins, else highest card of the led colour. Winner leads.
+- **Task resolution after each trick**: a 'win' task is done when its owner wins the trick with its card and failed when the partner does; `order: 'first'` fails if another 'win' task is done earlier, `order: 'last'` fails if it is done while another 'win' task is still open. A 'count' task fails as soon as the owner has more than `n` tricks or cannot reach `n` any more, and is done only after trick 12. A 'last' task resolves on trick 12.
+- **Mission end**: any failed task → `result` with `outcome: 'lost'`, `failedTask`, `lives - 1`. All tasks done → `result`, `outcome: 'won'`, `cleared + 1`. The hand does not play out after either.
+- **Next**: after 'won', `level + 1`; after 'lost' the same level; lives 0 → `over` (keep `cleared`, `level`).
+- **Generation**: tasks by level: 1 → 1 win; 2 → 2 wins; 3 → 2 wins, one with an order; 4 → 3 wins; 5 → 3 wins + 1 count; 6 → 3 wins (one ordered) + last; 7+ → 4 wins (cap 5 at level 10+) with one order, plus a count or a last. Win cards are distinct, non-trump, taken only from the two hands. At most one 'first' and one 'last' order, at most one 'count' (n from 0–4) and one 'last' kind per mission.
+- **Scoreboard**: `summarize` saves a run at `over` with both players' `stats: { missions: cleared }`; title "Tihi tandem" on `tiha.missions` (summed over runs like the other titles, a change from the "best run" proposal because titles only sum).

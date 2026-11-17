@@ -5,6 +5,7 @@ import type { CijaState } from '../cija/types'
 import type { KvizState } from '../kviz/types'
 import type { MisijaState } from '../misija/types'
 import type { PrviState } from '../prvi/types'
+import type { TihaState } from '../tiha/types'
 import type { LicState } from '../licitacija/types'
 import type { WaveState } from '../talas/types'
 
@@ -39,9 +40,12 @@ export type Phase =
   | 'set'
   // Čije je ovo?
   | 'match'
+  // Tiha misija
+  | 'draft'
+  | 'play'
 
 /** Which game a room plays. Rooms from before the game picker have none and play Uljez. */
-export type GameId = 'uljez' | 'blef' | 'talas' | 'kviz' | 'licitacija' | 'misija' | 'cija' | 'prvi'
+export type GameId = 'uljez' | 'blef' | 'talas' | 'kviz' | 'licitacija' | 'misija' | 'cija' | 'prvi' | 'tiha'
 
 export type Mode = 'quick' | 'normal' | 'endless'
 
@@ -134,6 +138,8 @@ export interface Pub {
   cija?: CijaState
   /** Ko bi prvi?'s own state; only in those rooms. */
   prvi?: PrviState
+  /** Tiha misija's own state; only in those rooms. */
+  tiha?: TihaState
 }
 
 /** One player's private card for the round. Lives at rooms/{code}/tickets/{uid}. */
