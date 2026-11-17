@@ -124,7 +124,13 @@ export function Tabela({ be, onBack }: { be: Backend; onBack: () => void }) {
                       <span className="tabela-title-icon">{gameOf(g.game).icon}</span>
                       <span>
                         <b>{gameOf(g.game).name}</b> <small className="muted">{day(g.at)}</small>
-                        <small>{won.length ? `Pobeda: ${won.join(', ')}` : 'Nerešeno'}</small>
+                        <small>
+                          {g.game === 'tiha'
+                            ? `Uspešnih misija: ${g.players[0]?.stats?.missions ?? 0}`
+                            : won.length
+                              ? `Pobeda: ${won.join(', ')}`
+                              : 'Nerešeno'}
+                        </small>
                       </span>
                     </li>
                   )

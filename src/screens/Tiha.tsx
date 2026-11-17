@@ -245,7 +245,8 @@ function Draft({ pub, me, actions }: ScreenProps) {
                 disabled={!myTurn}
                 onClick={() => {
                   sound.pop()
-                  return actions.take(task.id)
+                  // A refused or failed take leaves the tile open, so the player can simply tap again.
+                  void Promise.resolve(actions.take(task.id)).catch(() => {})
                 }}
               >
                 <TaskText task={task} />
@@ -286,6 +287,8 @@ function Play({ pub, me, actions }: ScreenProps) {
   const canPlay = playable(pub, me)
   const mySignal = t.signals?.[me]
   const oppSignal = t.signals?.[opp]
+  // only a yes/no about one already-shown card; the partner's hand itself is never rendered
+  const oppSignalPlayed = Boolean(oppSignal) && !handOf(pub, opp).includes(oppSignal!.card)
   const all = handOf(pub, me)
   // the logic keeps the lead card in the hand until the trick is resolved
   const hand = all.filter((c) => !table.some((p) => p.uid === me && p.card === c))
@@ -326,10 +329,11 @@ function Play({ pub, me, actions }: ScreenProps) {
       </div>
 
       {oppSignal && (
-        <div className="th-signal">
+        <div className={`th-signal${oppSignalPlayed ? ' gone' : ''}`}>
           <span>{nameOf(pub, opp)} pokazuje:</span>
           <TihaCardView card={oppSignal.card} size="sm" />
           <b>– {markText(oppSignal.mark, oppSignal.card)}</b>
+          {oppSignalPlayed && <small>(odigrana)</small>}
         </div>
       )}
 

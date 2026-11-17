@@ -518,7 +518,7 @@ describe('tiha generateTasks', () => {
         const cards = wins.map((t) => t.card!)
         expect(new Set(cards).size).toBe(cards.length)
         expect(cards.every((c) => dealt.has(c) && NON_TRUMP.includes(c))).toBe(true)
-        counts.forEach((t) => expect(t.n! >= 0 && t.n! <= 4).toBe(true))
+        counts.forEach((t) => expect(t.n! >= 2 && t.n! <= 5).toBe(true))
         expect(wins.filter((t) => t.order)).toHaveLength(level === 3 || level >= 6 ? 1 : 0)
         expect(tasks.filter((t) => t.kind !== 'win' && t.order)).toHaveLength(0)
         expect(counts).toHaveLength(level === 5 ? 1 : level >= 7 ? counts.length : 0)

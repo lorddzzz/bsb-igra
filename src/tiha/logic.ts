@@ -106,7 +106,7 @@ export function generateTasks(level: number, hands: Record<string, TihaCard[]>, 
   if ((lv === 3 || lv >= 6) && wins.length >= 2)
     tasks[Math.floor(rng() * wins.length)].order = rng() < 0.5 ? 'first' : 'last'
   const extra = lv === 5 ? 'count' : lv === 6 ? 'last' : lv >= 7 ? (rng() < 0.5 ? 'count' : 'last') : undefined
-  if (extra === 'count') tasks.push({ kind: 'count', n: Math.floor(rng() * 5) })
+  if (extra === 'count') tasks.push({ kind: 'count', n: 2 + Math.floor(rng() * 4) })
   if (extra === 'last') tasks.push({ kind: 'last' })
   return shuffle(tasks, rng).map((t, id) => ({ id, ...t }))
 }
