@@ -5,7 +5,10 @@ import { misijaOf, sideOf } from '../misija/logic'
 import type { Role } from '../misija/types'
 import type { HistoryGame, HistoryPlayer } from './types'
 
-/** Games with a points table at the end; Licitacija counts won games, Misija only sides. */
+/**
+ * Games with a points table at the end. Licitacija counts won games, Misija only sides, and Tiha misija
+ * is co-operative (no winner) and counts completed missions.
+ */
 export const SCORED: GameId[] = ['uljez', 'blef', 'talas', 'kviz', 'cija', 'prvi']
 
 /**
@@ -54,6 +57,9 @@ export function summarize(pub: Pub, code: string, roles?: Record<string, Role>):
     const champ = matchWinner(pub)
     if (!champ) return null
     players = order.map((uid) => ({ ...base(uid), won: uid === champ, stats: trimStats({ sets: licWins(pub, uid) }) }))
+  } else if (game === 'tiha') {
+    const cleared = pub.tiha?.cleared ?? 0
+    players = order.map((uid) => ({ ...base(uid), won: false, stats: trimStats({ missions: cleared }) }))
   } else {
     const top = Math.max(...order.map((uid) => pub.scores?.[uid] ?? 0))
     players = order.map((uid) => {
@@ -101,6 +107,7 @@ export function recordId(pub: Pub, record: Omit<HistoryGame, 'at'>): string {
     wave: [pub.wave?.offset, pub.wave?.seen],
     kviz: pub.kviz?.game,
     lic: [pub.lic?.deck, pub.lic?.set],
+    tiha: [pub.tiha?.hands, pub.tiha?.cleared, pub.tiha?.level],
     cija: pub.cija?.prompts,
     prvi: pub.prvi?.prompts,
     misija: [pub.misija?.game, pub.misija?.tally],
@@ -185,6 +192,7 @@ export const RECORDS: HistoryTitle[] = [
   { stat: 'kviz.robs', game: 'kviz', icon: '💰', title: 'Lopov', text: 'poena otetih u Pljački' },
   { stat: 'licitacija.sets', game: 'licitacija', icon: '🎟️', title: 'Licitator', text: 'dobijenih partija' },
   { stat: 'misija.spyWin', game: 'misija', icon: '🦹', title: 'Glavni špijun', text: 'pobeda kao špijun' },
+  { stat: 'tiha.missions', game: 'tiha', icon: '🤫', title: 'Tihi tandem', text: 'uspešnih misija' },
 ]
 
 /** Who holds each title (ties share it). Titles nobody has earned yet are left out. */

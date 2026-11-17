@@ -84,6 +84,47 @@ describe('summarize', () => {
     expect(rec.players.every((p) => p.points === undefined)).toBe(true)
   })
 
+  describe('Tiha misija (co-operative)', () => {
+    const tihaPub = (cleared: number | undefined, hands: Record<string, string[]>): Pub =>
+      ({
+        hostUid: 'a',
+        game: 'tiha',
+        createdAt: 1,
+        mode: 'online',
+        phase: 'over',
+        round: 3,
+        players: {
+          a: { name: 'Ana', joinedAt: 1, badge: 'vuk' },
+          b: { name: 'Bane', joinedAt: 2, badge: 'sova' },
+        },
+        tiha: { cleared, level: (cleared ?? 0) + 1, hands },
+      }) as unknown as Pub
+
+    it('saves the completed missions for both players, with no winner', () => {
+      const pub = tihaPub(2, { a: ['g7', 'a2'], b: ['r1', 'y4'] })
+      const rec = summarize(pub, 'ABCD')!
+      expect(rec.game).toBe('tiha')
+      expect(rec.players.map((p) => p.stats)).toEqual([{ missions: 2 }, { missions: 2 }])
+      expect(rec.players.every((p) => p.won === false)).toBe(true)
+      expect(totals([{ ...rec, at: 1 }])[0].stats['tiha.missions']).toBe(2)
+    })
+
+    it('saves no stats when no mission was completed', () => {
+      const rec = summarize(tihaPub(0, { a: ['g7'], b: ['r1'] }), 'ABCD')!
+      expect(rec.players.every((p) => p.stats === undefined)).toBe(true)
+    })
+
+    it('gives two runs with different hands different ids', () => {
+      const one = tihaPub(2, { a: ['g7', 'a2'], b: ['r1', 'y4'] })
+      const two = tihaPub(2, { a: ['b3', 'a1'], b: ['r5', 'g2'] })
+      expect(recordId(one, summarize(one, 'ABCD')!)).not.toBe(recordId(two, summarize(two, 'ABCD')!))
+    })
+
+    it('saves nothing before the run is over', () => {
+      expect(summarize({ ...tihaPub(1, {}), phase: 'play' } as Pub, 'ABCD')).toBeNull()
+    })
+  })
+
   it.each([5, 8, 12])('Misija with %i players: the winning side wins, and spies are marked', (n) => {
     const s = last(simMisija(13, n, 2))
     expect(summarize(s.pub, 'ABCD')).toBeNull() // needs roles

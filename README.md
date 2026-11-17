@@ -1,12 +1,13 @@
 # Družina
 
-Eight party games for friends on their phones, in a comic-book hero HQ look. One shared link, a 4-letter room code, phones synced live. The whole app is in Serbian (latinica).
+Nine party games for friends on their phones, in a comic-book hero HQ look. One shared link, a 4-letter room code, phones synced live. The whole app is in Serbian (latinica).
 
 - **Uljez**: everyone gets the same secret word except the impostor, who only knows the category. Two rounds of one-word clues, then a vote.
 - **Blef**: a strange true fact with a blank; invent a believable lie, then find the truth.
 - **Talas**: Wavelength-style scale guessing.
 - **Kviz**: live trivia with attack cards and special rounds.
 - **Licitacija**: secret bidding for two.
+- **Tiha misija**: a silent co-operative card game for two.
 - **Misija**: Avalon-style hidden roles for 5 to 12.
 - **Čije je ovo?**: everyone answers a personal prompt anonymously, then matches the answers to the friends who wrote them. For 3 to 8, with mild, medium or spicy prompts.
 - **Ko bi prvi?**: "who would be first to…" prompts; everyone secretly votes for a friend, and voting with the majority scores. The most-voted friend takes the prompt's title for the night. 10 prompts, 3 to 12 players, low effort by design.

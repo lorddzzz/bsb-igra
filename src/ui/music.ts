@@ -536,7 +536,42 @@ const prvi: Track = {
   },
 }
 
-export const TRACKS: Record<GameId, Track> = { uljez, blef, talas, kviz, licitacija, misija, cija, prvi }
+// ---------------------------------------------------------------------------
+// Tiha misija: "Na prstima". Two people creeping on tiptoe: a slow, sparse bass, soft rim clicks
+// like a finger on the table, and a short hushed whistle of a tune.
+
+const TIHA_TUNE: Note[][] = [
+  [[0, 67, 3], [4, 69, 2], [6, 71, 4]],
+  [[0, 72, 4], [6, 69, 2], [8, 67, 6]],
+  [[0, 65, 3], [4, 67, 2], [6, 69, 4]],
+  [[0, 67, 8], [10, 64, 4]],
+]
+
+const tiha: Track = {
+  name: 'Na prstima',
+  bpm: 72,
+  swing: 0.12,
+  echo: 4,
+  gain: 1.8,
+  // Gm, Eb, Cm, D.
+  chords: [
+    chord(43, [55, 58, 62], []),
+    chord(39, [55, 58, 63], []),
+    chord(36, [55, 60, 63], []),
+    chord(38, [54, 57, 62], []),
+  ],
+  play(c, io, { bar, pos, chord: ch, full, s }, at) {
+    // Slow, sparse bass: on 1 and the "a" of 3.
+    if (pos === 0 || pos === 10) voice(c, io, ch.bass, at, { type: 'triangle', vol: 0.26, len: s * 4, cutoff: 500 })
+    // Soft rim clicks, like fingers tapping the table.
+    if (pos === 6 || pos === 14) rim(c, io, at, 0.1)
+    if (pos === 0 && bar % 2 === 0) pad(c, io, ch.pad, at, s * 16, 0.02, 800)
+    if (!full) return
+    melody(TIHA_TUNE[bar % 4], pos, (n, len) => voice(c, io, n, at, { type: 'sine', vol: 0.09, len: s * len + 0.2, attack: 0.03, cutoff: 2000, vibrato: 5, echo: true }))
+  },
+}
+
+export const TRACKS: Record<GameId, Track> = { uljez, blef, talas, kviz, licitacija, misija, cija, prvi, tiha }
 
 /** One sixteenth note of a track, in seconds. */
 export const stepLength = (t: Track) => 60 / t.bpm / 4

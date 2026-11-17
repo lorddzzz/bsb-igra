@@ -18,6 +18,7 @@ export const GAMES: GameDefinition[] = [
   { id: 'talas', name: 'TALAS', icon: '📡', tagline: 'Talasna dužina: pogodi šta je drugar mislio.', players: '3–5 igrača', maxPlayers: 5, badges: BADGES },
   { id: 'kviz', name: 'KVIZ', icon: '⏱️', tagline: 'Isto pitanje, isti sat, 4 odgovora. Brzo!', players: '3–5 igrača', maxPlayers: 5, badges: BADGES },
   { id: 'licitacija', name: 'LICITACIJA', icon: '🎟️', tagline: 'Ti protiv drugara. Tajna ponuda, ko da više?', players: '2 igrača', maxPlayers: 2, badges: BADGES },
+  { id: 'tiha', name: 'TIHA MISIJA', icon: '🤫', tagline: 'Vas dvoje, karte i nijedna reč. Zajedno protiv misije.', players: '2 igrača', maxPlayers: 2, badges: BADGES },
   { id: 'misija', name: 'MISIJA', icon: '🦹', tagline: 'Velika ekipa, skriveni špijuni. Kome veruješ?', players: '5–12 igrača', maxPlayers: 12, badges: ALL_BADGES },
   { id: 'cija', name: 'ČIJE JE OVO?', icon: '🎭', tagline: 'Anonimni odgovori. Pogodi čiji je koji.', players: '3–8 igrača', maxPlayers: 8, badges: ALL_BADGES },
   { id: 'prvi', name: 'KO BI PRVI?', icon: '👉', tagline: 'Ko bi prvi zaspao? Glasaj za drugara.', players: '3–12 igrača', maxPlayers: 12, badges: ALL_BADGES },
