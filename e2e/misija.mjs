@@ -60,7 +60,7 @@ for (let i = 0; i < names.length; i++) {
 const [host] = pages
 await host.goto(session.url())
 await session.resetLocal(host)
-await host.getByRole('radio', { name: /MISIJA/ }).click()
+await host.getByRole('radio', { name: /(?<!TIHA )MISIJA/ }).click()
 await shot(host, '01-home')
 await host.getByRole('button', { name: 'Napravi sobu' }).click()
 const join = async (p, [name, badge]) => {

@@ -14,12 +14,12 @@ beforeEach(() => {
 afterEach(cleanup)
 
 describe('app', () => {
-  it('offers all eight games and remembers the one picked', async () => {
+  it('offers all nine games and remembers the one picked', async () => {
     render(<App />)
     // proof this runs on the local backend, never the real database
     expect(await screen.findByText('Probni režim (bez interneta)')).toBeTruthy()
     const games = await screen.findAllByRole('radio')
-    expect(games.map((g) => g.querySelector('b')?.textContent)).toEqual(['ULJEZ', 'BLEF', 'TALAS', 'KVIZ', 'LICITACIJA', 'MISIJA', 'ČIJE JE OVO?', 'KO BI PRVI?'])
+    expect(games.map((g) => g.querySelector('b')?.textContent)).toEqual(['ULJEZ', 'BLEF', 'TALAS', 'KVIZ', 'LICITACIJA', 'TIHA MISIJA', 'MISIJA', 'ČIJE JE OVO?', 'KO BI PRVI?'])
     fireEvent.click(screen.getByRole('radio', { name: /KVIZ/ }))
     expect(localStorage.getItem('druzina-game')).toBe('kviz')
     expect(screen.getByRole('radio', { name: /KVIZ/ }).getAttribute('aria-checked')).toBe('true')
@@ -46,7 +46,7 @@ describe('app', () => {
 
   it('makes a room, checks in and lands in the lobby, then leaves', async () => {
     render(<App />)
-    fireEvent.click(await screen.findByRole('radio', { name: /MISIJA/ }))
+    fireEvent.click(await screen.findByRole('radio', { name: /(?<!TIHA )MISIJA/ }))
     fireEvent.click(await screen.findByRole('button', { name: 'Napravi sobu' }))
     const name = await screen.findByPlaceholderText('npr. Marko')
     // Misija has twelve badges to pick from

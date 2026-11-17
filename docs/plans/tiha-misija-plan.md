@@ -1,6 +1,6 @@
 # Tiha misija — design
 
-Status: **design agreed 2026-11-17, implementation in progress** (see [status](tiha-misija-status.md)). The four decisions below are the owner's; everything under "Assumptions" and "Tune in playtest" is a proposal until the owner confirms or the playtest says otherwise. Proposed game id and folder: `tiha` (`misija` is taken). Player-facing name: **TIHA MISIJA**.
+Status: **implemented 2026-11-17** (design agreed the same day; build record in [status](tiha-misija-status.md)). Needs the owner's playtest for feel, pacing and difficulty. The four decisions below are the owner's; everything under "Assumptions" and "Tune in playtest" is a proposal until the owner confirms or the playtest says otherwise. Proposed game id and folder: `tiha` (`misija` is taken). Player-facing name: **TIHA MISIJA**.
 
 Built for two people on a couch on a quiet night: played only on the phones, without talking.
 
@@ -42,6 +42,7 @@ A hand is visible only to its owner. Hidden cards are visible to nobody until th
 
 ## Assumptions (proposals)
 
+- All of these were built as proposed.
 - **Deck**: 4 colours × 1–7 plus 3 trumps = 31 cards; 12 per hand, 7 hidden.
 - **Theme**: colours and trumps get comic-book HQ names; trumps are "super" cards.
 - **Signal restrictions**: trumps cannot be signalled; a signal must be true when given.
@@ -68,7 +69,7 @@ Deck size and hidden-card count, hand size (round length; target 3–4 minutes a
 
 ## Scoreboard
 
-Co-operative: no winner. Proposed: save the mission reached for the pair, with an all-time title for the best run ("Tihi tandem", `tiha.best`). How a team result fits `src/history/logic.ts` is an implementation question.
+Co-operative: no winner. Built: a finished run is saved with the missions completed for both players; the all-time title "Tihi tandem" (`tiha.missions`) sums completed missions over all runs, because titles only sum (the proposal was the best single run). Recent games show "Uspešnih misija: N". A run counts as a played game without a win in the overall table, which slightly lowers both players' win rate there; open to change.
 
 ## Acceptance
 

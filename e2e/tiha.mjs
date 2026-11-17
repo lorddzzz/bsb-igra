@@ -28,7 +28,8 @@ for (let i = 0; i < 2; i++) {
   const p = await session.newPage()
   p.on('pageerror', (e) => errors.push(`page ${i}: ${e.message}`))
   p.on('console', (m) => {
-    if (m.type() === 'error' && !m.text().includes('Failed to load resource')) errors.push(`console ${i}: ${m.text()}`)
+    // offline noise: fonts without internet, and the emulator transport cut on purpose by verifyLobby
+    if (m.type() === 'error' && !/Failed to load resource|ERR_INTERNET_DISCONNECTED/.test(m.text())) errors.push(`console ${i}: ${m.text()}`)
   })
   pages.push(p)
 }
@@ -299,7 +300,6 @@ const next = await drive(() => true, 'a move after the reload')
 console.log(`reload: identity and ${before.cards.length} cards kept, ${before.count}; game went on with "${next}"`)
 
 console.log(errors.length ? 'ERRORS:\n' + errors.join('\n') : 'no page errors')
-// fonts come from Google; a sandbox without internet can't load them, which is not the game's fault
 if (errors.length) process.exitCode = 1
 report()
 await browser.close()
