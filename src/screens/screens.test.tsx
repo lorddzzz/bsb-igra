@@ -6,7 +6,7 @@ import { normalizeSecret, playerOrder } from '../game/util'
 import type { RoomView } from '../game/room'
 import type { Pub } from '../game/types'
 import { MemoryDb } from '../test/memoryBackend'
-import { simBlef, simCija, simKviz, simLic, simMisija, simPrvi, simUljez, simWave, type Snapshot } from '../test/sims'
+import { simBlef, simCija, simKviz, simLic, simMisija, simPrvi, simTiha, simUljez, simWave, type Snapshot } from '../test/sims'
 import { Blef } from './Blef'
 import { Cija } from './Cija'
 import { Uljez } from './Uljez'
@@ -15,6 +15,7 @@ import { Licitacija } from './Licitacija'
 import { Misija } from './Misija'
 import { Prvi } from './Prvi'
 import { Talas } from './Talas'
+import { Tiha } from './Tiha'
 
 // Every state a simulated game passes through, rendered on every phone, with data shaped exactly
 // like Firebase returns it. This is the guard against the "black screen": a screen that crashes on
@@ -103,6 +104,9 @@ describe('every screen renders in every state, on every phone', () => {
   })
   it('Licitacija', () => {
     renderAll(Licitacija, simLic(3).filter((_, i) => i % 4 === 0 || true), 'Licitacija')
+  })
+  it('Tiha misija', () => {
+    renderAll(Tiha, simTiha(3), 'Tiha misija')
   })
   it('Misija', () => {
     for (const [seed, n, sp] of [[1, 5, 0], [2, 8, 5], [3, 12, 3], [4, 7, 1]])

@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { playerOrder } from '../game/util'
+import { asList, playerOrder } from '../game/util'
 import { foolCap, validMatching } from '../cija/logic'
 import { misijaOf, wins as missionWins } from '../misija/logic'
 import { HAND, licOf, WINS_NEEDED } from '../licitacija/logic'
+import { tableOf, tihaOf } from '../tiha/logic'
 import { ROUNDS as PRVI_ROUNDS } from '../prvi/logic'
-import { simBlef, simCija, simKviz, simLic, simMisija, simPrvi, simUljez, simWave, type Snapshot } from './sims'
+import { simBlef, simCija, simKviz, simLic, simMisija, simPrvi, simTiha, simUljez, simWave, type Snapshot } from './sims'
 
 // Whole games played by bots through the real rules, with Firebase's data shape between every step.
 // Many seeds, so rare paths (two impostors, ties, Pljačka on a leader, forced teams) all come up.
@@ -137,6 +138,27 @@ describe('simulated games end cleanly under Firebase shapes', () => {
     // every game uses each bidding card exactly once per player
     for (const s of snaps.filter((x) => x.pub.phase === 'set' || x.pub.phase === 'over'))
       for (const uid of ['a', 'b']) expect([...(licOf(s.pub).played?.[uid] ?? [])].sort((x, y) => x - y)).toEqual(HAND)
+  })
+
+  it.each(SEEDS)('Tiha misija seed %i', (seed) => {
+    const snaps = simTiha(seed)
+    const over = snaps.at(-1)!
+    expect(over.pub.phase).toBe('over')
+    expect(tihaOf(over.pub).lives).toBe(0)
+    for (const s of snaps) {
+      const t = tihaOf(s.pub)
+      if (s.pub.phase === 'play') expect(['a', 'b'], s.label).toContain(t.turn)
+      if (s.pub.phase === 'draft' || s.pub.phase === 'play') {
+        // every card is in exactly one place: a hand, the hidden cards, the table, or already played
+        const hands = Object.values(t.hands ?? {}).flatMap((h) => asList<string>(h))
+        const cards = [...hands, ...asList<string>(t.hidden)]
+        expect(new Set(cards).size, s.label).toBe(cards.length)
+        const played = (t.tricks ?? 0) * 2
+        expect(cards.length, s.label).toBe(31 - played)
+        for (const p of tableOf(s.pub)) expect(hands, s.label).toContain(p.card)
+        if (t.lastTrick) for (const p of t.lastTrick.cards) expect(cards, s.label).not.toContain(p.card)
+      }
+    }
   })
 
   it.each(SEEDS)('Misija seed %i', (seed) => {

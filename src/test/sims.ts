@@ -28,6 +28,7 @@ import {
   teamSize,
 } from '../misija/logic'
 import type { MisijaSecret, MisijaTicket } from '../misija/types'
+import { handOf as playerHand, marksFor, nextTiha, playCard as tihaPlay, playable as tihaPlayable, signal as tihaSignal, startTiha, takeTask, tasksOf as tihaTasks } from '../tiha/logic'
 import { applyWave, clueGiver, guessers, nextWaveRound, scoreWave, startWave, waveOf } from '../talas/logic'
 import { firebaseShape } from './firebaseShape'
 
@@ -216,6 +217,35 @@ export function simLic(seed: number): Snapshot[] {
       }
     } else if (r.pub.phase === 'duel') r.set(nextLic(r.pub), 'next')
     else if (r.pub.phase === 'set') r.set(nextSet(r.pub, rng), 'next set')
+  }
+  return r.snaps
+}
+
+/** One run of Tiha misija: random bots draft, signal now and then, play legal cards until the lives run out. */
+export function simTiha(seed: number): Snapshot[] {
+  const rng = seededRng(seed)
+  const r = new Recorder(lobby('tiha', 2))
+  const move = (next: Pub | undefined, what: string) => {
+    if (!next) throw new Error(`${what} refused`)
+    r.set(next, what)
+  }
+  move(startTiha(r.pub, rng), 'start')
+  for (let guard = 0; guard < 2000 && r.pub.phase !== 'over'; guard++) {
+    const turn = r.pub.tiha?.turn as string
+    if (r.pub.phase === 'draft') {
+      const open = tihaTasks(r.pub).filter((x) => !x.owner)
+      const task = pickOne(open, rng)
+      move(takeTask(r.pub, turn, task.id), `${turn} takes task ${task.id}`)
+    } else if (r.pub.phase === 'play') {
+      const withMark = playerHand(r.pub, turn).filter((c) => marksFor(r.pub, turn, c).length)
+      if (rng() < 0.15 && withMark.length) {
+        const card = pickOne(withMark, rng)
+        const mark = pickOne(marksFor(r.pub, turn, card), rng)
+        move(tihaSignal(r.pub, turn, card, mark), `${turn} signals ${card} ${mark}`)
+      }
+      const card = pickOne(tihaPlayable(r.pub, turn), rng)
+      move(tihaPlay(r.pub, turn, card), `${turn} plays ${card}`)
+    } else if (r.pub.phase === 'result') move(nextTiha(r.pub, rng), 'next')
   }
   return r.snaps
 }

@@ -55,6 +55,10 @@ export const GAME_SCREENS: Record<GameId, GameScreens> = {
     Screen: lazyNamed(() => import('./screens/Misija'), 'Misija'),
     Rules: lazyNamed(() => import('./screens/rules/Misija'), 'MisijaRules'),
   },
+  tiha: {
+    Screen: lazyNamed(() => import('./screens/Tiha'), 'Tiha'),
+    Rules: lazyNamed(() => import('./screens/rules/Tiha'), 'TihaRules'),
+  },
 }
 
 /** Only missing IDs mean legacy Uljez. Unknown games must ask for a refresh. */

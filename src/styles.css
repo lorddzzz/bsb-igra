@@ -2467,3 +2467,439 @@ button.kv-option:active:not(:disabled) {
 .prvi-scorers {
   margin: 0;
 }
+
+/* Tiha misija */
+.th-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 10px;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  background: var(--bg2);
+  border: 3px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+}
+.th-level {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 22px;
+  letter-spacing: 2px;
+  color: var(--pow);
+}
+.th-lives {
+  display: inline-flex;
+  gap: 2px;
+  font-size: 20px;
+}
+.th-captain {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  color: var(--muted);
+}
+.th-captain b {
+  color: var(--text);
+}
+
+/* Cards: big number, small shape, so colour is never the only clue. Trumps are dark with a bolt. */
+.tc {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-radius: 8px;
+  border: 2px solid var(--ink);
+  box-shadow: var(--shadow-sm);
+  color: var(--ink);
+  flex: none;
+}
+.tc-n {
+  font-family: var(--display);
+  font-weight: 400;
+}
+.tc-s {
+  font-style: normal;
+}
+.tc-r {
+  background: #ff6b81;
+}
+.tc-g {
+  background: #4fe07a;
+}
+.tc-b {
+  background: #6bb4ff;
+}
+.tc-y {
+  background: #ffd60a;
+}
+.tc-a {
+  background: #2a1650;
+  color: var(--pow);
+  border-color: var(--pow);
+  box-shadow: 2px 2px 0 var(--ink);
+}
+.tc-sm {
+  width: 30px;
+  height: 40px;
+  border-radius: 6px;
+}
+.tc-sm .tc-n {
+  font-size: 18px;
+}
+.tc-sm .tc-s {
+  font-size: 9px;
+}
+.tc-md {
+  width: 42px;
+  height: 58px;
+}
+.tc-md .tc-n {
+  font-size: 28px;
+}
+.tc-md .tc-s {
+  font-size: 12px;
+}
+.tc-lg {
+  width: 72px;
+  height: 100px;
+  border-radius: 12px;
+}
+.tc-lg .tc-n {
+  font-size: 52px;
+}
+.tc-lg .tc-s {
+  font-size: 18px;
+}
+.tc-fill {
+  width: 100%;
+  aspect-ratio: 5 / 7;
+}
+.tc-fill .tc-n {
+  font-size: 30px;
+}
+.tc-fill .tc-s {
+  font-size: 13px;
+}
+.tc.on {
+  box-shadow: 3px 3px 0 var(--hero);
+  border-color: var(--hero);
+}
+.tc-flag {
+  position: absolute;
+  top: -8px;
+  right: -6px;
+  font-style: normal;
+  font-size: 14px;
+}
+
+/* Hand: 6 per row, so 12 cards wrap into two rows and never scroll */
+.th-hand {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px 6px;
+  padding-top: 6px;
+}
+.tc-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  display: block;
+  transition:
+    transform 0.12s,
+    opacity 0.2s;
+}
+.tc-btn.sel {
+  transform: translateY(-10px);
+}
+.tc-btn.dim,
+.tc-btn:disabled.dim {
+  opacity: 0.28;
+}
+.tc-btn:disabled:not(.dim) {
+  cursor: default;
+}
+
+/* Tasks */
+.th-tasks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.th-task {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 56px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 3px solid var(--ink);
+  background: var(--bg2);
+  text-align: left;
+  font-weight: 800;
+  box-shadow: var(--shadow-sm);
+}
+.th-task.open {
+  background: var(--paper);
+  color: var(--ink);
+}
+.th-task.open:disabled {
+  opacity: 0.8;
+}
+.th-task.owned {
+  opacity: 0.85;
+}
+.th-task.owned.mine {
+  border-color: var(--pow);
+  opacity: 1;
+}
+.th-task-text {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.th-order {
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 2px solid var(--ink);
+  background: var(--hero);
+  color: #fff;
+  font-family: var(--display);
+  font-size: 13px;
+  letter-spacing: 1px;
+}
+small.th-order {
+  padding: 0 4px;
+  font-size: 10px;
+  border-width: 1.5px;
+}
+.th-owner-tag {
+  flex: none;
+  max-width: 40%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--muted);
+}
+.th-task.owned.mine .th-owner-tag {
+  color: var(--pow);
+}
+.th-owner-tag.take {
+  color: var(--ink);
+  background: var(--pow);
+  border: 2px solid var(--ink);
+  border-radius: 8px;
+  padding: 2px 8px;
+}
+.th-strip {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+}
+.th-strip-group {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+}
+.th-strip-group .label {
+  letter-spacing: 1px;
+  min-width: 78px;
+}
+.th-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.th-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px 3px 4px;
+  border-radius: 10px;
+  border: 2px solid var(--ink);
+  background: var(--bg2);
+  font-size: 13px;
+  font-weight: 800;
+}
+.th-chip.done {
+  border-color: var(--good);
+}
+.th-chip.failed {
+  border-color: var(--bad);
+}
+
+/* Signals */
+.th-signal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 12px;
+  border: 2px dashed var(--zap);
+  font-weight: 700;
+  font-size: 14px;
+}
+.th-signal.mine {
+  border-color: var(--pow);
+}
+.th-signal.gone {
+  opacity: 0.45;
+}
+
+/* Table */
+.th-table {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+}
+.th-count {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 14px;
+}
+.th-count b {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 18px;
+  letter-spacing: 1.5px;
+  color: var(--pow);
+}
+.th-trick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  min-height: 112px;
+  justify-content: center;
+}
+.th-pair {
+  display: flex;
+  gap: 18px;
+}
+.th-played {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  max-width: 120px;
+}
+.th-played small {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-weight: 800;
+}
+.th-played.win .tc {
+  box-shadow: 3px 3px 0 var(--pow);
+  border-color: var(--pow);
+}
+.th-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  padding: 10px 0 8px;
+  background: linear-gradient(to bottom, transparent, var(--bg) 24%);
+}
+.th-actions.row {
+  flex-direction: row;
+}
+.th-actions.row .btn {
+  padding: 15px 8px;
+}
+.th-actions.row .btn-primary {
+  flex: 2;
+}
+.th-actions.row .btn-ghost {
+  flex: 1;
+}
+.th-actions.signal .btn {
+  flex: 1;
+  font-size: 17px;
+  line-height: 1.15;
+  padding: 10px 6px;
+}
+.th-actions.signal .btn-ghost {
+  flex: 0.7;
+}
+
+/* Result */
+.th-banner {
+  text-align: center;
+  padding: 18px 8px;
+  border-radius: var(--radius);
+  border: 4px solid var(--ink);
+  box-shadow: var(--shadow);
+  font-family: var(--display);
+  font-size: 38px;
+  letter-spacing: 2px;
+  line-height: 1.05;
+  transform: rotate(-2deg);
+  animation: pop 0.5s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+.th-banner.won {
+  background: var(--good);
+  color: var(--ink);
+}
+.th-banner.lost {
+  background: var(--hero);
+  color: #fff;
+}
+.th-failed {
+  align-items: center;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.th-failed p {
+  margin: 0;
+}
+.th-minus {
+  font-family: var(--display);
+  font-weight: 400;
+  font-size: 22px;
+  color: var(--bad);
+}
+.th-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.th-left {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.th-left:last-child {
+  margin-bottom: 0;
+}
+.th-left-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 800;
+}
+.th-banner .chrome {
+  color: #fff;
+}
