@@ -15,8 +15,11 @@ import { useMisijaActions } from '../misija/room'
 import { prviOf, ROUNDS as PRVI_ROUNDS } from '../prvi/logic'
 import { usePrviActions } from '../prvi/room'
 import { clueGiver, waveOf } from '../talas/logic'
+import { handOf as tihaHand, marksFor as tihaMarks, playable as tihaPlayable, tableOf as tihaOnTable, tihaOf, tasksOf as tihaTasks } from '../tiha/logic'
+import { useTihaActions } from '../tiha/room'
 import { useWaveActions } from '../talas/room'
 import type { Backend } from '../backend'
+import { firebaseShape } from './firebaseShape'
 import { phone, room, settle } from './phones'
 
 afterEach(() => {
@@ -424,5 +427,175 @@ describe('Misija', () => {
     await act(async () => phones[0].actions.next())
     await settle()
     expect(pub()).toMatchObject({ phase: 'team', round: 2 })
+  })
+})
+
+describe('Tiha misija', () => {
+  async function tihaTable() {
+    const t = await table('tiha', 2, withPub(useTihaActions))
+    // every read goes through the Firebase shape: empty lists and objects are gone, like on a real database
+    const read = () => firebaseShape(t.pub())
+    const by = (uid: string) => t.phones.find((p) => p.be.uid === uid)!
+    const turnPhone = () => by(tihaOf(read()).turn!)
+    const idle = () => t.phones.find((p) => p !== turnPhone())!
+    /** Both players take tasks in turn until the tricks start. */
+    const draftAll = async () => {
+      for (let i = 0; i < 12 && read().phase === 'draft'; i++) {
+        const open = tihaTasks(read()).find((x) => !x.owner)!
+        await act(async () => turnPhone().actions.take(open.id))
+        await settle()
+      }
+      expect(read().phase).toBe('play')
+    }
+    /** One card by whoever's turn it is, picked from what `playable` allows. */
+    const playOne = async () => {
+      const p = turnPhone()
+      await act(async () => p.actions.play(tihaPlayable(read(), p.be.uid)[0]))
+      await settle()
+    }
+    const playMission = async () => {
+      for (let i = 0; i < 30 && read().phase === 'play'; i++) await playOne()
+      expect(read().phase).toBe('result')
+    }
+    /** Missions with random plays until the three lives are gone. */
+    const runToOver = async () => {
+      for (let i = 0; i < 80 && read().phase !== 'over'; i++) {
+        if (read().phase === 'draft') await draftAll()
+        if (read().phase === 'play') await playMission()
+        if (read().phase === 'result') {
+          await act(async () => {
+            await Promise.all([t.phones[0].actions.next(), t.phones[1].actions.next()])
+          })
+          await settle()
+        }
+      }
+      expect(read().phase).toBe('over')
+    }
+    return { ...t, read, by, turnPhone, idle, draftAll, playOne, playMission, runToOver }
+  }
+
+  it('lets only the host start; a wrong or repeated draft pick changes nothing', async () => {
+    const { phones, read, draftAll } = await tihaTable()
+    await act(async () => phones[1].actions.start())
+    await settle()
+    expect(read().phase).toBe('lobby')
+    await act(async () => phones[0].actions.start())
+    await settle()
+    expect(read()).toMatchObject({ phase: 'draft', round: 1 })
+    expect(tihaOf(read())).toMatchObject({ level: 1, lives: 3, cleared: 0, captain: 'a', turn: 'a' })
+    expect(tihaHand(read(), 'a')).toHaveLength(12)
+    expect(tihaHand(read(), 'b')).toHaveLength(12)
+    const first = tihaTasks(read())[0]
+    // the guest is not the one picking
+    await act(async () => phones[1].actions.take(first.id))
+    await settle()
+    expect(tihaTasks(read()).every((x) => !x.owner)).toBe(true)
+    expect(tihaOf(read()).turn).toBe('a')
+    await act(async () => phones[0].actions.take(first.id))
+    await settle()
+    const after = read()
+    expect(tihaTasks(after).find((x) => x.id === first.id)?.owner).toBe('a')
+    // a second tap on the same task, from either phone, is harmless
+    await act(async () => {
+      await Promise.all([phones[0].actions.take(first.id), phones[1].actions.take(first.id)])
+    })
+    await settle()
+    expect(read()).toEqual(after)
+    await draftAll()
+  })
+
+  it('plays missions through the actions, one phone at a time, to the end of the run', async () => {
+    const { phones, read, by, turnPhone, idle, playOne, playMission, runToOver, draftAll } = await tihaTable()
+    await act(async () => phones[0].actions.start())
+    await settle()
+    await draftAll()
+    expect(tihaOf(read()).turn).toBe('a')
+
+    // the phone that is not on turn cannot play or signal
+    const waiting = idle()
+    const mine = tihaHand(read(), waiting.be.uid)
+    await act(async () => waiting.actions.play(mine[0]))
+    await settle()
+    expect(tihaOnTable(read())).toHaveLength(0)
+    const sig = mine.find((c) => tihaMarks(read(), waiting.be.uid, c).length)!
+    await act(async () => waiting.actions.signal(sig, tihaMarks(read(), waiting.be.uid, sig)[0]))
+    await settle()
+    expect(tihaOf(read()).signals).toBeUndefined()
+
+    // a signal is stored once and the second one is refused; the turn stays
+    const lead = turnPhone()
+    const flag = tihaHand(read(), lead.be.uid).find((c) => tihaMarks(read(), lead.be.uid, c).length)!
+    const [mark, ...other] = tihaMarks(read(), lead.be.uid, flag)
+    await act(async () => lead.actions.signal(flag, mark))
+    await settle()
+    expect(tihaOf(read()).signals?.[lead.be.uid]).toEqual({ card: flag, mark })
+    expect(tihaOf(read()).turn).toBe(lead.be.uid)
+    const second = tihaHand(read(), lead.be.uid).find((c) => c !== flag)!
+    await act(async () => lead.actions.signal(flag, other[0] ?? mark))
+    await act(async () => lead.actions.signal(second, 'only'))
+    await settle()
+    expect(tihaOf(read()).signals?.[lead.be.uid]).toEqual({ card: flag, mark })
+
+    // lead card: turn passes to the partner; the same card twice and the leader again change nothing
+    const card = tihaPlayable(read(), lead.be.uid)[0]
+    await act(async () => lead.actions.play(card))
+    await settle()
+    const mid = read()
+    expect(tihaOnTable(mid)).toEqual([{ uid: lead.be.uid, card }])
+    expect(tihaOf(mid).turn).toBe(by(lead.be.uid === 'a' ? 'b' : 'a').be.uid)
+    await act(async () => {
+      await lead.actions.play(card)
+      await lead.actions.play(tihaHand(mid, lead.be.uid).find((c) => c !== card)!)
+    })
+    await settle()
+    expect(read()).toEqual(mid)
+    // the follower answers: the trick is resolved, winner leads, table is empty again
+    await playOne()
+    expect(tihaOnTable(read())).toHaveLength(0)
+    expect(tihaOf(read()).tricks).toBe(1)
+    expect(tihaOf(read()).turn).toBe(tihaOf(read()).lastTrick!.winner)
+
+    await playMission()
+    expect(tihaOf(read()).outcome).toMatch(/won|lost/)
+    const before = read()
+    const lives = tihaOf(before).lives!
+    // both phones tap "next" at once: one deal, not two
+    await act(async () => {
+      await Promise.all([phones[0].actions.next(), phones[1].actions.next()])
+    })
+    await settle()
+    expect(lives).toBeGreaterThan(0)
+    expect(read()).toMatchObject({ phase: 'draft', round: before.round + 1 })
+    await runToOver()
+    expect(tihaOf(read()).lives).toBe(0)
+    expect(read().phase).toBe('over')
+  })
+
+  it('starts a new run on rematch and keeps protocol, game and host when the host resets to the lobby', async () => {
+    const { phones, read, runToOver } = await tihaTable()
+    const room = read()
+    await act(async () => phones[0].actions.start())
+    await settle()
+    await runToOver()
+    // the guest cannot reset the room; both tapping rematch deals once
+    await act(async () => phones[1].actions.lobby())
+    await settle()
+    expect(read().phase).toBe('over')
+    await act(async () => {
+      await Promise.all([phones[0].actions.rematch(), phones[1].actions.rematch()])
+    })
+    await settle()
+    expect(read()).toMatchObject({ phase: 'draft', round: 1 })
+    expect(tihaOf(read())).toMatchObject({ level: 1, lives: 3, cleared: 0 })
+    expect(tihaHand(read(), 'a')).toHaveLength(12)
+    await runToOver()
+    await act(async () => phones[1].actions.lobby())
+    await settle()
+    expect(read().phase).toBe('over')
+    await act(async () => phones[0].actions.lobby())
+    await settle()
+    expect(read()).toMatchObject({ phase: 'lobby', protocol: room.protocol, game: 'tiha', hostUid: room.hostUid })
+    expect(tihaOf(read()).hands).toBeUndefined()
+    expect(Object.keys(read().players ?? {})).toHaveLength(2)
   })
 })
